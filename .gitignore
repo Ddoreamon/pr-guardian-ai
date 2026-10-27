@@ -10,3 +10,5 @@ dist/
 build/
 benchmark/results/
 nohup.out
+.msg
+.gitcommitmsg

@@ -7,6 +7,15 @@ repository can.
 
 Splits are fixed here and must not be changed after measuring: `dev` is for
 sanity checks, `heldout` is scored once.
+
+Revision history (Dev only; the held-out cases XF-05..XF-10 have never changed):
+  dev v1  XF-04 changed number formatting (`{amount:.2f}` -> `{amount:,.2f}`) and
+          was labelled clean. That label was wrong: for totals >= 10,000 the
+          thousands separator changes the user-visible string, so it is not
+          behaviour-preserving. Counterexample:
+          tests/test_crossfile.py::test_previous_formatting_change_was_not_clean
+  dev v2  XF-04 replaced with a local variable rename, which is identical at
+          every amount. Labels re-verified with benchmark/verify_crossfile.
 """
 
 from __future__ import annotations
@@ -154,19 +163,26 @@ def test_zero_quantity_rejected():
         "line_total no longer rejects a non-positive quantity",
     ))
     cases.append(_case(
-        "XF-04", "dev", "clean_formatting",
-        "reporting uses thousands separators (no behaviour change)",
+        "XF-04", "dev", "clean_local_rename",
+        "reporting renames a local variable (no behaviour change)",
         "src/reporting.py",
-        _edit(REPORTING, 'f"Discount: {amount:.2f} on {total:.2f}"',
-              'f"Discount: {amount:,.2f} on {total:,.2f}"'),
+        _edit(REPORTING,
+              "    amount = discount_for(total)\n"
+              '    return f"Discount: {amount:.2f} on {total:.2f}"',
+              "    discount_amount = discount_for(total)\n"
+              '    return f"Discount: {discount_amount:.2f} on {total:.2f}"'),
         '''from src.reporting import describe_discount
 
 
-def test_description_contains_amount():
-    assert "10.00" in describe_discount(100)
+def test_description_is_exact():
+    assert describe_discount(100) == "Discount: 10.00 on 100.00"
+
+
+def test_description_large_amount_is_exact():
+    assert describe_discount(20000) == "Discount: 2000.00 on 20000.00"
 ''',
         False,
-        "formatting only; values for the shipped range are unchanged",
+        "local variable rename; output identical at every amount",
     ))
 
     # ---- held-out -------------------------------------------------------

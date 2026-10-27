@@ -127,30 +127,36 @@ def run_review(
     llm_note = ""
     tool_status = "disabled"
     tool_calls: list[ToolCallRecordModel] = []
+    tool_model_calls = 0
+    tool_rounds = 0
     if not use_llm:
         llm_status, llm_note = "disabled_by_request", "LLM step disabled for this review."
     elif cfg.tool_calls_enabled:
+        # Tools read the immutable snapshot of the ref under review, not the worktree.
         tool_result = review_with_tools(
-            diff_text, files, TrustedCodebase(repo), cfg,
+            diff_text, files, TrustedCodebase.from_git(repo, head), cfg,
             max_rounds=cfg.max_tool_rounds, max_tool_calls=cfg.max_tool_calls,
         )
         llm_findings = tool_result.findings
         notes += tool_result.notes
         llm_note = tool_result.notes[0] if tool_result.notes else ""
         tool_status = tool_result.status
+        tool_model_calls = tool_result.model_calls
+        tool_rounds = tool_result.rounds
         tool_calls = [ToolCallRecordModel(**r.as_dict()) for r in tool_result.trace]
-        notes.append(f"tool calls: {len(tool_result.trace)} "
-                     f"(rounds used: {tool_result.rounds}, status: {tool_result.status})")
         if tool_result.status == "not_configured":
             llm_status = "not_configured"
         elif tool_result.status == "disabled":
             llm_status = "disabled_by_public_policy"
-        elif tool_result.schema_valid and tool_result.status in {"ok", "tool_limit"}:
+        elif tool_result.status == "tool_limit":
+            # budget ran out: successful investigation, incomplete coverage
+            llm_status = "partial" if tool_result.schema_valid else "failed"
+        elif tool_result.schema_valid:
             llm_status = "ok"
         else:
             llm_status = "failed"
-            if tool_result.error:
-                llm_note = f"{llm_note} ({tool_result.error})"
+        if tool_result.error:
+            llm_note = f"{llm_note} ({tool_result.error})".strip()
     else:
         result = review_with_llm(diff_text, files, settings=cfg)
         llm_findings = result.findings
@@ -182,4 +188,6 @@ def run_review(
         llm_note=llm_note,
         tool_status=tool_status,
         tool_calls=tool_calls,
+        tool_model_calls=tool_model_calls,
+        tool_rounds=tool_rounds,
     )

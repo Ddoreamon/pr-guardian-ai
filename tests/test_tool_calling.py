@@ -65,14 +65,23 @@ class _Resp:
 
 @pytest.fixture
 def codebase(tmp_path):
+    """A real git repo; tools read the committed snapshot, never the worktree."""
+    import subprocess
+
     from pr_guardian.agent_tools import TrustedCodebase
 
     root = tmp_path / "repo"
     (root / "src").mkdir(parents=True)
     (root / "src" / "a.py").write_text("x = 1\ny = 2\nz = 3\n", encoding="utf-8")
     (root / "src" / "b.py").write_text("def helper():\n    return 1\n", encoding="utf-8")
+    (root / "src" / "conf.py").write_text("DISCOUNT_RATE = 0.10\n", encoding="utf-8")
     (root / ".env").write_text("PR_GUARDIAN_API_KEY=sk-leak-me\n", encoding="utf-8")
-    return TrustedCodebase(root)
+    for args in (("init", "-q", "-b", "main"),
+                 ("config", "user.email", "t@example.com"),
+                 ("config", "user.name", "t"),
+                 ("add", "-A"), ("commit", "-q", "-m", "base")):
+        subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True)
+    return TrustedCodebase.from_git(root, "HEAD")
 
 
 class _Queue:
@@ -303,3 +312,78 @@ def test_findings_are_always_suspected(queued, codebase):
     queued([_msg(content=confirmed)])
     res = tool_calling.review_with_tools("diff", FILES, codebase, _settings())
     assert res.findings[0].verification_status == VerificationStatus.SUSPECTED
+
+# ---- outcome classification and accounting --------------------------------
+
+def test_unknown_symbol_counts_as_a_miss_not_a_hit(queued, codebase):
+    queued([
+        _msg(tool_calls=[_tool_call("c1", "find_symbol_definition", {"symbol": "ghost"})]),
+        _msg(content='{"findings": []}'),
+    ])
+    res = tool_calling.review_with_tools("diff", FILES, codebase, _settings())
+    assert res.trace[0].ok is True            # the tool executed fine
+    assert res.trace[0].outcome == "miss"     # but retrieved nothing usable
+    assert res.hits == 0 and res.misses == 1
+
+
+def test_successful_lookup_is_a_hit(queued, codebase):
+    queued([
+        _msg(tool_calls=[_tool_call("c1", "find_symbol_definition", {"symbol": "helper"})]),
+        _msg(content='{"findings": []}'),
+    ])
+    res = tool_calling.review_with_tools("diff", FILES, codebase, _settings())
+    assert res.trace[0].outcome == "hit"
+    assert res.hits == 1
+
+
+def test_constants_are_findable_through_the_tool(queued, codebase):
+    queued([
+        _msg(tool_calls=[_tool_call("c1", "find_symbol_definition", {"symbol": "DISCOUNT_RATE"})]),
+        _msg(content='{"findings": []}'),
+    ])
+    res = tool_calling.review_with_tools("diff", FILES, codebase, _settings())
+    assert res.trace[0].outcome == "hit"
+    assert res.trace[0].matched == 1
+
+
+def test_out_of_scope_read_is_an_error(queued, codebase):
+    queued([
+        _msg(tool_calls=[_tool_call("c1", "read_code_context",
+                                    {"file_path": "tests/test_a.py", "start_line": 1, "end_line": 2})]),
+        _msg(content='{"findings": []}'),
+    ])
+    res = tool_calling.review_with_tools("diff", FILES, codebase, _settings())
+    assert res.trace[0].outcome == "error"
+    assert res.trace[0].error_code == "denied_path"
+    assert res.errors == 1
+
+
+def test_all_requests_are_counted(queued, codebase):
+    """Two loop turns = two counted requests."""
+    queued([
+        _msg(tool_calls=[_tool_call("c1", "read_code_context",
+                                    {"file_path": "src/a.py", "start_line": 1, "end_line": 1})]),
+        _msg(content=FINDINGS_JSON),
+    ])
+    res = tool_calling.review_with_tools("diff", FILES, codebase, _settings())
+    assert res.model_calls == 2
+    assert res.rounds == 2
+
+
+def test_repair_request_is_counted_too(queued, codebase):
+    queued([_msg(content="prose only"), _msg(content=FINDINGS_JSON)])
+    res = tool_calling.review_with_tools("diff", FILES, codebase, _settings())
+    assert res.model_calls == 2          # first answer + counted repair
+    assert res.schema_valid is True
+
+
+def test_budget_exhaustion_is_outcome_and_partial_status(queued, codebase):
+    call = _tool_call("c", "read_code_context", {"file_path": "src/a.py", "start_line": 1, "end_line": 1})
+    queued([_msg(tool_calls=[call]), _msg(tool_calls=[call]), _msg(tool_calls=[call]),
+            _msg(content='{"findings": []}')])
+    res = tool_calling.review_with_tools("diff", FILES, codebase, _settings(max_tool_calls=1))
+
+    assert res.budget_denied >= 1
+    assert any(t.outcome == "budget_denied" for t in res.trace)
+    assert res.status == "tool_limit"
+    assert any("PARTIAL" in n for n in res.notes)

@@ -93,3 +93,28 @@ def test_labels_agree_with_tests(case_id):
     assert _run_case_tests(case, apply_pr=False) is True
     # a bug PR must fail its tests; a clean PR must pass them
     assert _run_case_tests(case, apply_pr=True) is (not case.has_bug)
+
+def test_previous_formatting_change_was_not_clean():
+    """Counterexample that forced the XF-04 revision.
+
+    The original XF-04 PR changed `{amount:.2f}` to `{amount:,.2f}` and was
+    labelled clean. For totals >= 10,000 the rendered string changes, so it was
+    not behaviour-preserving and the label was wrong. This test keeps that fact
+    recorded instead of silently editing history.
+    """
+    before = f"Discount: {2000.0:.2f} on {20000.0:.2f}"
+    after = f"Discount: {2000.0:,.2f} on {20000.0:,.2f}"
+    assert before == "Discount: 2000.00 on 20000.00"
+    assert after == "Discount: 2,000.00 on 20,000.00"
+    assert before != after, "the old XF-04 did change user-visible output"
+
+
+def test_revised_xf04_is_identical_at_boundary_amounts():
+    """The replacement edit must be a true no-op for every amount."""
+    case = next(c for c in build_cases() if c.case_id == "XF-04")
+    base_text = files_for(case, apply_pr=False)[case.changed_file]
+    pr_text = case.content_pr
+    assert base_text != pr_text, "the PR must still change something"
+    # only identifier names differ
+    assert "discount_amount" in pr_text and "discount_amount" not in base_text
+    assert pr_text.replace("discount_amount", "amount") == base_text

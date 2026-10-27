@@ -50,7 +50,12 @@ class CaseOutcome:
     located: bool | None
     tool_calls: int = 0
     tool_calls_ok: int = 0
+    tool_hits: int = 0
+    tool_misses: int = 0
+    tool_error_calls: int = 0
+    tool_budget: int = 0
     tool_rounds: int = 0
+    model_calls: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
     latency_s: float = 0.0
@@ -78,7 +83,13 @@ class MethodSummary:
     location_accuracy: float | None = None
     tool_calls: int = 0
     tool_calls_ok: int = 0
+    tool_hits: int = 0
+    tool_misses: int = 0
+    tool_error_calls: int = 0
+    tool_budget_denials: int = 0
     tool_success_rate: float | None = None
+    tool_hit_rate: float | None = None
+    model_calls: int = 0
     schema_valid_rate: float | None = None
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -208,6 +219,8 @@ def run_case(method: str, case: CrossFileCase, root: Path,
     started = time.perf_counter()
     trace = []
     rounds = 0
+    model_calls = 0
+    tool_error_calls = 0
     prompt_tokens = completion_tokens = 0
     status = "ok"
     error = ""
@@ -223,13 +236,15 @@ def run_case(method: str, case: CrossFileCase, root: Path,
         if res.error:
             status, error = "error", res.error
     else:
-        res = review_with_tools(diff_text, files, TrustedCodebase(repo), settings)
+        res = review_with_tools(diff_text, files, TrustedCodebase.from_git(repo, "pr"), settings)
         findings = list(res.findings)
         usage = res.usage or {}
         prompt_tokens = usage.get("prompt_tokens", 0)
         completion_tokens = usage.get("completion_tokens", 0)
         trace = res.trace
         rounds = res.rounds
+        model_calls = res.model_calls
+        tool_error_calls = sum(1 for t in trace if t.outcome == "error")
         schema_valid = res.schema_valid
         status = res.status
         error = res.error
@@ -242,7 +257,12 @@ def run_case(method: str, case: CrossFileCase, root: Path,
         tp=tp, fp=fp, located=(located if case.has_bug else None),
         tool_calls=len(trace),
         tool_calls_ok=sum(1 for t in trace if t.ok),
+        tool_hits=sum(1 for t in trace if t.outcome == "hit"),
+        tool_misses=sum(1 for t in trace if t.outcome == "miss"),
+        tool_error_calls=tool_error_calls,
+        tool_budget=sum(1 for t in trace if t.outcome == "budget_denied"),
         tool_rounds=rounds,
+        model_calls=model_calls,
         prompt_tokens=prompt_tokens, completion_tokens=completion_tokens,
         latency_s=round(time.perf_counter() - started, 3),
         status=status if schema_valid else "schema_invalid",
@@ -274,7 +294,13 @@ def summarise(method: str, split: str, cases: list[CrossFileCase],
         clean_false_alarm_rate=_div(fp, len(clean)),
         location_accuracy=_div(sum(1 for o in bug if o.located), len(bug)),
         tool_calls=calls, tool_calls_ok=calls_ok,
+        tool_hits=sum(o.tool_hits for o in outcomes),
+        tool_misses=sum(o.tool_misses for o in outcomes),
+        tool_error_calls=sum(o.tool_error_calls for o in outcomes),
+        tool_budget_denials=sum(o.tool_budget for o in outcomes),
         tool_success_rate=_div(calls_ok, calls),
+        tool_hit_rate=_div(sum(o.tool_hits for o in outcomes), calls),
+        model_calls=sum(o.model_calls for o in outcomes),
         schema_valid_rate=_div(schema_ok, len(outcomes)),
         prompt_tokens=sum(o.prompt_tokens for o in outcomes),
         completion_tokens=sum(o.completion_tokens for o in outcomes),
@@ -293,8 +319,14 @@ def render(summaries: list[MethodSummary]) -> str:
         "",
         "Each case changes ONE file; the contract that makes it wrong lives in another",
         "file, so it is only decidable by reading the repository.",
-        "Matching rule is identical to the main benchmark and was frozen before measuring.",
-        "Methods never see the hidden ground-truth tests.",
+        "",
+        "Matching rule (frozen before measuring, and NOT the same as the main benchmark):",
+        "a finding counts only if it lands inside a definition the change touched, resolved",
+        "with the AST so pure deletions are covered too. The main 37-case benchmark uses a",
+        "different rule (finding on a changed line), so numbers from the two sets are not",
+        "directly comparable.",
+        "",
+        "Methods never see the hidden ground-truth tests. Tools read the PR commit snapshot.",
         "",
         "| Method | Split | Cases (bug/clean) | TP | FP | FN | Precision | Recall | F1 | Clean false-alarm | Location accuracy |",
         "|---|---|---|---|---|---|---|---|---|---|---|",
@@ -306,12 +338,13 @@ def render(summaries: list[MethodSummary]) -> str:
             f"{_pct(s.clean_false_alarm_rate)} | {_pct(s.location_accuracy)} |"
         )
     lines += ["", "## Tool usage and cost", "",
-              "| Method | Split | Tool calls | Succeeded | Tool success rate | Schema-valid | Prompt tokens | Completion tokens | Mean latency (s) |",
-              "|---|---|---|---|---|---|---|---|---|"]
+              "| Method | Split | Model requests | Tool calls | Executed | Effective hits | Misses | Errors | Budget denied | Hit rate | Schema-valid | Prompt tokens | Completion tokens | Mean latency (s) |",
+              "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for s in summaries:
         lines.append(
-            f"| {s.method} | {s.split} | {s.tool_calls} | {s.tool_calls_ok} | "
-            f"{_pct(s.tool_success_rate)} | {_pct(s.schema_valid_rate)} | {s.prompt_tokens} | "
+            f"| {s.method} | {s.split} | {s.model_calls} | {s.tool_calls} | {s.tool_calls_ok} | "
+            f"{s.tool_hits} | {s.tool_misses} | {s.tool_error_calls} | {s.tool_budget_denials} | "
+            f"{_pct(s.tool_hit_rate)} | {_pct(s.schema_valid_rate)} | {s.prompt_tokens} | "
             f"{s.completion_tokens} | {s.mean_latency_s if s.mean_latency_s is not None else 'n/a'} |"
         )
     lines += ["", "## Per-case detail", "",
@@ -332,9 +365,10 @@ def write_outputs(summaries: list[MethodSummary], out: Path) -> None:
     (out / "results.json").write_text(
         json.dumps([asdict(s) for s in summaries], indent=2, ensure_ascii=False), encoding="utf-8")
     cols = ["method", "split", "n_cases", "n_bug", "n_clean", "tp", "fp", "fn", "precision",
-            "recall", "f1", "clean_false_alarm_rate", "location_accuracy", "tool_calls",
-            "tool_calls_ok", "tool_success_rate", "schema_valid_rate", "prompt_tokens",
-            "completion_tokens", "mean_latency_s"]
+            "recall", "f1", "clean_false_alarm_rate", "location_accuracy", "model_calls",
+            "tool_calls", "tool_calls_ok", "tool_hits", "tool_misses", "tool_error_calls",
+            "tool_budget_denials", "tool_success_rate", "tool_hit_rate", "schema_valid_rate",
+            "prompt_tokens", "completion_tokens", "mean_latency_s"]
     with (out / "summary.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore")
         w.writeheader()

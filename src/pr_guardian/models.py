@@ -70,10 +70,13 @@ class ToolCallRecordModel(BaseModel):
     name: str
     arguments: dict = Field(default_factory=dict)
     ok: bool
+    # hit | miss | error | budget_denied — "hit" means usable context was retrieved
+    outcome: str = "hit"
     error_code: str = ""
     error_message: str = ""
     result_chars: int = 0
     latency_s: float = 0.0
+    matched: int = 0
 
 
 class ReviewReport(BaseModel):
@@ -94,4 +97,6 @@ class ReviewReport(BaseModel):
     # V2: tool calling is opt-in; these stay empty/disabled when it is off.
     tool_status: str = "disabled"
     tool_calls: list[ToolCallRecordModel] = Field(default_factory=list)
+    tool_model_calls: int = 0
+    tool_rounds: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
