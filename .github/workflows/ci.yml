@@ -9,14 +9,47 @@ permissions:
 
 jobs:
   test:
+    name: Lint and tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # tests create git branches from history
+          fetch-depth: 0   # benchmark and demo fixtures create git branches
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e ".[dev]" pytest-json-report
-      - run: ruff check src tests demo
+      - run: pip install -e ".[dev]"
+      - run: ruff check src tests demo benchmark app scripts
       - run: pytest -q
+
+  browser:
+    name: Browser UI checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: python -m playwright install --with-deps chromium
+      - name: Start server
+        run: |
+          nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8765 \
+            > /tmp/server.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8765/health > /dev/null; then
+              echo "server ready"; break
+            fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8765/health
+      - name: Run Playwright checks
+        env:
+          PW_CHANNEL: ""
+        run: python scripts/browser_test.py
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: docs/screenshots/

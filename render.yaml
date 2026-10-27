@@ -1,0 +1,39 @@
+# Render blueprint for PR Guardian.
+#
+# Defaults are deliberately conservative for a public demo:
+#   - only the three preset, self-authored demo cases can be reviewed
+#   - pytest runs only on that trusted demo repository
+#   - live model calls are OFF unless you explicitly turn them on
+#   - even then, a global call budget caps spend
+#
+# To enable real model review on the public instance: set the API key, then set
+# PR_GUARDIAN_ALLOW_LIVE_LLM=1. Without both, the AI panel shows "Not Evaluated".
+
+services:
+  - type: web
+    name: pr-guardian-ai
+    runtime: python
+    plan: free
+    buildCommand: pip install -e .
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: PR_GUARDIAN_PUBLIC_MODE
+        value: "1"
+      # Flip to "1" only after setting PR_GUARDIAN_API_KEY and understanding the cost cap.
+      - key: PR_GUARDIAN_ALLOW_LIVE_LLM
+        value: "0"
+      - key: PR_GUARDIAN_ALLOW_TEST_EXECUTION
+        value: "1"
+      - key: PR_GUARDIAN_MAX_LIVE_LLM_CALLS
+        value: "25"
+      # Secrets: set these in the Render dashboard, never in this file.
+      - key: PR_GUARDIAN_API_KEY
+        sync: false
+      - key: PR_GUARDIAN_BASE_URL
+        sync: false
+      - key: PR_GUARDIAN_MODEL
+        sync: false

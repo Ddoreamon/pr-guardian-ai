@@ -3,8 +3,8 @@
 - **Case:** Boundary defect in discount rule
 - **Repository:** demo-repo
 - **Base / head:** `main` → `feature/boundary-bug`
-- **Review id:** `b00bcf47466d`
-- **Created:** 2026-10-27T08:06:20.376057+00:00
+- **Review id:** `79ae9f0a57ac`
+- **Created:** 2026-10-27T08:08:51.827821+00:00
 - **LLM status:** not_configured (LLM step skipped: PR_GUARDIAN_API_KEY is not set.)
 
 ## Test evidence

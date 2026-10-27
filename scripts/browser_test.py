@@ -10,6 +10,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -28,11 +29,16 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 def run(base_url: str) -> int:
     SHOTS.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as pw:
-        try:
-            browser = pw.chromium.launch(channel="chrome")
-        except Exception as exc:  # noqa: BLE001 - fall back to Edge if Chrome channel unavailable
-            print(f"chrome channel unavailable ({type(exc).__name__}), trying msedge")
-            browser = pw.chromium.launch(channel="msedge")
+        channel = os.environ.get("PW_CHANNEL", "chrome")
+        if channel:
+            try:
+                browser = pw.chromium.launch(channel=channel)
+            except Exception as exc:  # noqa: BLE001 - channel selection is environment-dependent
+                print(f"channel {channel!r} unavailable ({type(exc).__name__}), trying msedge")
+                browser = pw.chromium.launch(channel="msedge")
+        else:
+            # CI uses Playwright's own downloaded Chromium.
+            browser = pw.chromium.launch()
 
         page = browser.new_page(viewport={"width": 1280, "height": 900})
         page.goto(base_url, wait_until="networkidle")

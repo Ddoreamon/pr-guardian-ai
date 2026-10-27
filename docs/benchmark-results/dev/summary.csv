@@ -1,0 +1,2 @@
+method,split,status,n_cases,n_bug,n_clean,pr_tp,pr_fp,pr_fn,pr_precision,pr_recall,pr_f1,clean_false_alarm_rate,finding_precision,bug_location_accuracy,mean_latency_s,note
+ruff-only,dev,ok,20,17,3,0,0,17,,0.0,,0.0,,0.0,0.4648,
