@@ -36,6 +36,37 @@ def test_index_page_renders():
     assert res.text.count("case-card") >= 3
 
 
+def test_index_explains_public_demo_and_links_benchmark():
+    """Visitors must be told the hosted demo is deterministic-only, and be able
+    to reach the committed real-model results without leaving the page."""
+    html = client.get("/").text
+    assert 'id="demo-notice"' in html
+    assert "docs/benchmark-results/heldout-llm/REPORT.md" in html
+    assert "#benchmark" in html
+    if "not_configured" in html or "disabled_by_public_policy" in html:
+        assert "deterministic checks only" in html
+
+
+def test_notice_adapts_to_live_model_mode(monkeypatch):
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_settings", lambda: _FakeSettings())
+    html = client.get("/").text
+    assert "Live model review is enabled" in html
+    assert "deterministic checks only" not in html
+
+
+class _FakeSettings:
+    llm_status = staticmethod(lambda: "enabled")
+    model = "deepseek-flash"
+    public_mode = False
+    allow_test_execution = True
+    max_live_llm_calls = 25
+    api_key = "x"
+    llm_configured = True
+    live_llm_enabled = True
+
+
 def test_static_assets_served():
     assert client.get("/static/style.css").status_code == 200
     assert client.get("/static/app.js").status_code == 200

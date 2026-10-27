@@ -3,13 +3,13 @@
 - **Case:** Boundary defect in discount rule
 - **Repository:** demo-repo
 - **Base / head:** `main` → `feature/boundary-bug`
-- **Review id:** `769be00e9dfb`
-- **Created:** 2026-10-27T10:45:41.680816+00:00
+- **Review id:** `fc9714204597`
+- **Created:** 2026-10-27T11:35:53.976946+00:00
 - **LLM status:** ok (LLM model: deepseek-flash)
 
 ## Test evidence
 
-- pytest: 1 passed, 1 failed, 0 errors (0.50s)
+- pytest: 1 passed, 1 failed, 0 errors (0.69s)
 - Failing tests: `tests/test_discount.py::test_threshold_order_gets_discount`
 
 ## Changed files

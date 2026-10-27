@@ -288,3 +288,17 @@ body {
   .finding dt { margin-top: 6px; }
   .diff-line .ln { width: 38px; padding: 0 5px; }
 }
+
+.notice {
+  margin: 20px 0 0;
+  padding: 13px 16px;
+  border: 1px solid #2f3f57;
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  background: #141c29;
+}
+.notice p { margin: 0; font-size: 13px; line-height: 1.6; color: #c9d6e6; }
+.notice strong { color: var(--text); }
+.notice a { color: #8fb8ff; text-decoration: none; border-bottom: 1px solid rgba(143, 184, 255, .4); }
+.notice a:hover { color: #b6d0ff; border-bottom-color: #b6d0ff; }
+.notice code { font-family: var(--mono); font-size: 12px; color: #bcd0ea; }

@@ -56,6 +56,22 @@ def run(base_url: str) -> int:
               f"count={page.locator('.case-card').count()}")
         check("run button disabled before selection", page.locator("#run-btn").is_disabled())
         check("results hidden initially", "hidden" in (page.locator("#results-panel").get_attribute("class") or ""))
+
+        # --- visitor notice + committed benchmark link ---------------------
+        notice = page.locator("#demo-notice")
+        check("demo notice shown", notice.count() == 1)
+        notice_text = notice.inner_text().lower()
+        check("benchmark report link present",
+              page.locator('#demo-notice a[href*="docs/benchmark-results/heldout-llm/REPORT.md"]').count() == 1)
+        check("methodology link present",
+              page.locator('#demo-notice a[href*="#benchmark"]').count() == 1)
+        if live_llm:
+            check("notice reflects live-model mode", "live model review is enabled" in notice_text,
+                  notice.inner_text().replace("\n", " ")[:80])
+        else:
+            check("notice states deterministic-only in public mode",
+                  "deterministic checks only" in notice_text and "switched off" in notice_text,
+                  notice.inner_text().replace("\n", " ")[:80])
         page.screenshot(path=str(SHOTS / "01-landing.png"), full_page=True)
 
         # --- select the buggy case and load its diff ----------------------

@@ -1,6 +1,29 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set live_model = config.llm_status in ['enabled', 'ok'] %}
+<section class="notice" id="demo-notice" role="note">
+  {% if live_model %}
+  <p>
+    <strong>Live model review is enabled on this instance</strong>
+    (model <code>{{ config.model }}</code>). Model findings are always marked
+    <em>suspected</em> until a human accepts them. Held-out evaluation results are
+    committed in the repository:
+  {% else %}
+  <p>
+    <strong>This public demo runs deterministic checks only.</strong>
+    Live model review is switched off here, so every result you see is produced by
+    Ruff and pytest — nothing is simulated or pre-recorded. The real
+    <code>deepseek-flash</code> evaluation was run locally and committed:
+  {% endif %}
+    <a href="https://github.com/Ddoreamon/pr-guardian-ai/blob/main/docs/benchmark-results/heldout-llm/REPORT.md"
+       target="_blank" rel="noopener">held-out benchmark report</a>
+    ·
+    <a href="https://github.com/Ddoreamon/pr-guardian-ai#benchmark"
+       target="_blank" rel="noopener">methodology &amp; measured results</a>
+  </p>
+</section>
+
 <section class="panel" id="case-panel">
   <div class="panel-head">
     <h2>1 · Choose a demo change</h2>

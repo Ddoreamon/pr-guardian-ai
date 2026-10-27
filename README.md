@@ -11,6 +11,24 @@ cannot anchor to the diff, and a human accepts or rejects what remains.
 
 ---
 
+## Live demo vs. measured AI results — please read this first
+
+| | Where | What runs | What it proves |
+|---|---|---|---|
+| **Online demo** | **https://pr-guardian-ai-uodn.onrender.com** | Ruff + pytest only. **Live model calls are disabled** (`PR_GUARDIAN_ALLOW_LIVE_LLM=0` on the public instance). | The pipeline, the evidence handling, validation and human approval work end to end. |
+| **Real AI evaluation** | Committed artefacts in this repo: [held-out report](docs/benchmark-results/heldout-llm/REPORT.md), [raw JSON](docs/benchmark-results/heldout-llm/results.json), [smoke detail](docs/llm-smoke-results.json) | Real `deepseek-flash` calls, 17 frozen held-out cases, run locally. | Measured detection quality (precision / recall / F1 / false-alarm rate). |
+
+The hosted demo deliberately does **not** call a paid model: it is public, so it
+would be someone else's bill. Its AI panel therefore says *Not Evaluated*, which
+is an honest status, not an error. Every number quoted in the benchmark section
+below came from the local run, never from the hosted instance.
+
+> Free Render instances sleep after 15 minutes idle; the first request can take
+> about a minute. The demo repository is rebuilt at startup, so nothing is stale
+> after a wake-up.
+
+---
+
 ## What it does
 
 Given a git diff between two refs, the pipeline:
@@ -79,7 +97,7 @@ src/pr_guardian/   review engine (CLI + library)
   settings.py        env/.env configuration
 app/               FastAPI + Jinja2 web UI (templates, static, store, export)
 benchmark/         37 labelled PR cases, evaluator, ground-truth verifier
-tests/             97 pytest tests
+tests/             99 pytest tests
 scripts/           browser acceptance suite, real-LLM smoke test
 ```
 
@@ -259,22 +277,22 @@ Artefacts: [`docs/benchmark-results/heldout-llm/`](docs/benchmark-results/heldou
 ## Testing
 
 ```bash
-python -m pytest -q                      # 97 tests
+python -m pytest -q                      # 99 tests
 ruff check src tests demo benchmark app scripts
 
 # browser acceptance suite (needs the server running)
 python -m uvicorn app.main:app --port 8765 &
-python scripts/browser_test.py           # 38 checks (39 with a live model)
+python scripts/browser_test.py           # 42 checks (43 with a live model)
 ```
 
 | Suite | Count | Covers |
 |---|---|---|
 | Unit — diff parser, validator, LLM (mocked), metrics, settings, test-runner | 74 | parsing, trust rules, zero-division, schema failures, cost policy |
-| API — FastAPI endpoints | 23 | health, cases, diff, review, decisions, exports, error codes |
-| Browser — Playwright | 38–39 | real interactions, exports, mobile layout, error banner, live-model mode |
+| API — FastAPI endpoints | 25 | health, cases, diff, review, decisions, exports, error codes |
+| Browser — Playwright | 42–43 | real interactions, exports, mobile layout, error banner, live-model mode |
 
-Latest local run: **97 passed**; browser suite **38/38** (no API key) and
-**39/39** (live model configured) — the suite adapts to the server's mode.
+Latest local run: **99 passed**; browser suite **42/42** (no API key) and
+**43/43** (live model configured) — the suite adapts to the server's mode.
 
 ---
 
@@ -331,17 +349,39 @@ preset cases.
 
 ## Deployment (Render)
 
-`render.yaml` is included and defaults to a safe public configuration
-(preset cases only, live LLM off, pytest on the trusted demo repo only).
+**Live instance:** https://pr-guardian-ai-uodn.onrender.com (Free plan, manual
+Web Service, `pip install -e .` + `uvicorn app.main:app --host 0.0.0.0 --port $PORT`).
 
-1. Push the repository to GitHub.
-2. In Render: **New → Blueprint**, select the repository.
-3. Render reads `render.yaml` and creates the service.
-4. Health check: `GET /health`.
+`render.yaml` in this repo also encodes the same configuration for Blueprint
+deploys: preset cases only, live LLM off, pytest restricted to the trusted demo
+repository.
 
-To enable live model review on the deployed instance, set `PR_GUARDIAN_API_KEY`
-as a secret and set `PR_GUARDIAN_ALLOW_LIVE_LLM=1`. Without both, the AI panel
-says *Not Evaluated*.
+Public-instance environment variables that matter:
+
+| Key | Value | Effect |
+|---|---|---|
+| `PR_GUARDIAN_PUBLIC_MODE` | `1` | public deployment policy |
+| `PR_GUARDIAN_ALLOW_LIVE_LLM` | `0` | no paid model calls, even if a key exists |
+| `PR_GUARDIAN_MAX_LIVE_LLM_CALLS` | `25` | hard cap if the flag is ever enabled |
+| `PR_GUARDIAN_ALLOW_TEST_EXECUTION` | `1` | runs pytest only on the self-authored demo repo |
+| `PYTHON_VERSION` | `3.12.7` | Render needs a fully qualified version |
+
+To enable live model review on the deployed instance you would set
+`PR_GUARDIAN_API_KEY` as a secret **and** `PR_GUARDIAN_ALLOW_LIVE_LLM=1`. That is
+deliberately left off here, because a public URL spending someone's API budget is
+not a demo — it is a liability. The real-model evidence lives in the committed
+artefacts instead.
+
+Verify any deployment with:
+
+```bash
+curl -s https://<host>/health
+# {"status":"ok","llm_status":"not_configured","public_mode":true,
+#  "test_execution":true,"demo_repo_ready":true,"demo_repo_error":"","cases":3}
+```
+
+`demo_repo_ready` must be `true`; if it is `false`, the build image lacks `git` or
+the demo repository could not be created, and the page will say so.
 
 ---
 
