@@ -73,3 +73,64 @@ during the review, and a committed symlink.
 results committed earlier were produced when the worktree happened to equal the
 PR commit, but they are not re-run here — see the note in the plan for the new
 evaluation.
+
+## C-4 · The random baseline for pair consistency is p(1-p), not 2p(1-p)
+
+**Where:** `docs/v3-contrast-design.md` section 4.2, the printed `REPORT.md`
+header of `docs/benchmark-results/contrast-dev-v2/`, and every binomial p-value
+computed with a null of 0.5.
+
+**What was wrong:** the design document claimed that an independent coin-flip
+reviewer, flagging each variant with probability p, has pair-consistency
+probability `2p(1-p)` - 50% at p = 0.5. That is the probability that the two
+predictions *differ*, which includes the case where both are wrong.
+
+A pair is (A = bug, B = clean), so both are correct only when A is flagged and B
+is not:
+
+    P(both correct) = P(flag A) * P(not flag B) = p (1 - p)
+
+At p = 0.5 that is **25%**, not 50%. Per-case accuracy remains 50% for any p,
+because exactly one of the two answers must be right.
+
+| Observation | Old null (0.5) | Correct null (0.25) |
+|---|---|---|
+| 2 of 5 pairs correct | p ~ 0.8125 | **p ~ 0.3672** |
+| 3 of 5 pairs correct | p ~ 0.5000 | **p ~ 0.1035** |
+
+**Fix applied:** pair consistency is tested against p0 = 0.25; the design
+document, report header and tests state the correct formula, and a test derives
+p(1-p) from the definition.
+
+**Method comparison:** comparing each method to a random baseline is not a
+comparison between the methods. An exact McNemar test over the same variants (and
+the pair-level counterpart) is now reported with the discordant counts, computed
+only over variants that were actually scored.
+
+**History:** `contrast-dev/` and `contrast-dev-v2/` are not rewritten. Their
+p-values used the old null and are superseded by `contrast-dev-v2-rescored/`.
+
+
+## C-5 · "clean" now has two classes
+
+A clean variant is **unambiguous** only when the diff is a no-op for the changed
+function itself, on every input. When the diff does change that function's own
+observable behaviour (input mutation, exception type, default value, rounding
+rule, accepted scheme, empty-input handling) and the repository merely makes it
+harmless, the variant is **context-dependent**: a finding that accurately
+describes the change is scored **contested**, never false positive, and the pair
+is excluded from pair consistency.
+
+Rationale: the review rule adopted in `docs/v2.2-audit.md` treats documented
+contracts *including behaviour established by existing code* as the target. It
+would be inconsistent to call an accurate description of a real behaviour change
+a hallucination.
+
+| Class | Pairs |
+|---|---|
+| unambiguous | P1, P2, P4, P7 |
+| context-dependent | P3, P5, P6, P8, P9, P10, P11 |
+
+Consequence: the unambiguous subset is 3 dev pairs and **1 held-out pair**, so
+held-out pair consistency cannot carry a claim on its own. This is stated in the
+readiness report rather than papered over.

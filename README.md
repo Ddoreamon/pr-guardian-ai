@@ -365,39 +365,43 @@ tool activity.
 The public Render instance keeps `PR_GUARDIAN_TOOL_CALLS_ENABLED=0` and live
 model calls off; V2 is exercised locally only.
 
-### Contrast benchmark (dev split only, audited dataset v2)
+### Contrast benchmark (dev split only, dataset v3)
 
 Pairs place *the same diff* against two different context files, so a diff-only
 reviewer is right on one variant and wrong on the other by construction. Review
-target is a single rule, stated identically in both prompts: **a defect is a
-violation of a documented contract** (annotation, docstring, or behaviour the
-surrounding code establishes); green tests are necessary, not sufficient.
-Dataset revisions and the four redesigned pairs: [`docs/v2.2-audit.md`](docs/v2.2-audit.md).
+target is one rule, stated identically in both prompts: **a defect is a violation
+of a documented contract** (annotation, docstring, or behaviour the surrounding
+code establishes); green tests are necessary, not sufficient.
 
-Dev, `deepseek-flash`, one run, **not a claim that V2 is better**:
+A clean variant is **unambiguous** only when the diff is a no-op for the changed
+function itself on every input. Otherwise it is **context-dependent**: the
+repository makes it harmless, but a finding that accurately describes the change
+is scored **contested**, not a false positive, and the pair leaves pair
+consistency. Dataset revisions, the four redesigned pairs and the label classes:
+[`docs/v2.2-audit.md`](docs/v2.2-audit.md) and
+[`docs/BENCHMARK_CORRECTIONS.md`](docs/BENCHMARK_CORRECTIONS.md) (C-4, C-5).
 
-| Method | Accuracy | Precision | Recall | F1 | Pair consistency | Clean false alarms | Effective tool hit rate | Prompt tokens |
+Dev, `deepseek-flash`, one run, re-scored from stored findings under the v3 rules
+(no new model calls). **Not a claim that V2 is better.**
+
+| Method | Accuracy (decided) | Precision (decided) | Precision (strict) | Recall | Clean FAR (decided) | Clean FAR (strict) | Pair consistency | McNemar |
 |---|---|---|---|---|---|---|---|---|
-| V1 (diff only) | 70.00% | 62.50% | 100.00% | 76.92% | 2/5 (40%) | 60% | n/a | 3,798 |
-| V2 (tools) | 80.00% | 71.43% | 100.00% | 83.33% | 3/5 (60%) | 40% | 71.43% | 48,296 |
+| V1 (diff only) | 87.50% | 83.33% | 62.50% | 100% | 33.33% | 60.00% | 2/3 | 1 variant favours V2 |
+| V2 (tools) | 100.00% | 100.00% | 71.43% | 100% | 0.00% | 40.00% | 3/3 | p = 1.0 |
 
-Both methods were adjudicated manually, finding by finding:
-[`ADJUDICATION.md`](docs/benchmark-results/contrast-dev-v2/ADJUDICATION.md) and
-[`human-review-adjudicated.csv`](docs/benchmark-results/contrast-dev-v2/human-review-adjudicated.csv).
-Automatic scoring and the human verdict agreed on 20/20 variants, which is weaker
-than it sounds — the same person designed the cases and adjudicated them, and
-three labels (P3-b, P4-b, P5-b) are genuine judgement calls.
+`decided` excludes contested findings; `strict` counts them as false positives, so
+a model cannot improve its score by flagging every context-dependent case.
 
-V2's pair consistency of 3/5 has a one-sided binomial p = 0.5 against a coin
-flip, so **no capability advantage is established**. Its two remaining errors are
-judgement errors made *after* reading the differing context file, not retrieval
-failures — the earlier v1 run's [`trace-evidence.md`](docs/benchmark-results/contrast-dev/trace-evidence.md)
-shows the same pattern. Held-out (P6–P11) has not been run.
+The random baseline for pair consistency is **p(1−p) = 25%** at p = 0.5, not 50% —
+see correction C-4. With 3 decided pairs, V2's 3/3 gives p = 0.016 and V1's 2/3
+gives p = 0.156; the paired comparison over the same 8 variants is a single
+discordant variant (p = 1.0). **No capability advantage is established.**
 
-The earlier v1 dataset run is kept unchanged in
-[`docs/benchmark-results/contrast-dev/`](docs/benchmark-results/contrast-dev) as a
-historical record; v2 results live in
-[`contrast-dev-v2/`](docs/benchmark-results/contrast-dev-v2).
+Adjudication and raw findings:
+[`docs/benchmark-results/contrast-dev-v2-rescored/`](docs/benchmark-results/contrast-dev-v2-rescored),
+[`ADJUDICATION.md`](docs/benchmark-results/contrast-dev-v2/ADJUDICATION.md).
+Held-out has not been run; readiness conditions are in
+[`docs/v2.3-heldout-readiness.md`](docs/v2.3-heldout-readiness.md).
 
 ### Corrections to earlier benchmark artefacts
 

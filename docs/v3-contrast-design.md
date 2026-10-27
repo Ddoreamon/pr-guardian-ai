@@ -105,27 +105,42 @@ So **50% accuracy is the diff-only baseline, and 0% pair consistency is its
 signature.** Any method with pair consistency above 0% has done something other
 than reading the diff.
 
-### 4.2 A random reviewer
+### 4.2 A random reviewer  (**corrected — see C-4**)
 
-For a reviewer that flags each variant independently with probability *p*:
+> **Correction.** The first version of this section claimed pair consistency of
+> `2p(1−p)`, i.e. 50% at *p* = 0.5. That is the probability that the two
+> predictions *differ*, and it wrongly includes the case where both are wrong.
+> The derivation below is the corrected one; the old statement is kept here only
+> so the change is visible (`docs/BENCHMARK_CORRECTIONS.md` C-4).
 
-* expected accuracy = 50% for any *p* (one of the two answers must be right);
-* expected pair consistency = P(flag A) · P(not flag B) + P(not flag A) · P(flag B)
-  = 2p(1−p), which is **maximal at 50% when p = 0.5**, and 0 at p = 0 or 1.
+A pair is (A = bug, B = clean). For a reviewer that flags each variant
+independently with probability *p*, both variants are correct only when A is
+flagged **and** B is not:
 
-Random pair success is therefore **50%, not 0%** — the opposite of the
-deterministic case. The two must not be conflated: 0% is evidence of determinism,
-not of weakness.
+* expected accuracy = 50% for any *p* (exactly one answer must be right);
+* expected pair consistency = P(flag A) · P(not flag B) = **p(1−p)**, which is
+  **maximal at 25% when p = 0.5**, and 0 at p = 0 or 1.
+
+So a deterministic diff-only reviewer scores 0% pair consistency, a coin-flip
+reviewer 25%, and the null for the binomial test is **p0 = 0.25**, not 0.5.
+0% is evidence of determinism, not of weakness.
 
 ### 4.3 Reading a real result
 
-With 11 pairs, pair consistency under the null "no context used" is 0%, and under
-a coin-flip model 50%. A method reporting *k*/11 pairs correct is compared against
-the 50% coin-flip null with a one-sided binomial test (n = 11). At 9/11 the
-one-sided p-value is about 0.033; at 8/11 about 0.113. **We will report exact
-counts and this p-value rather than a bare percentage**, and we will not describe
-a difference as an improvement unless it clears that bar and the tool hit rate
-supports the mechanism.
+Pair consistency is tested against **p0 = 0.25** (the coin-flip pair
+probability), over sentinel pairs only, using a one-sided binomial test. We
+report exact counts and the p-value rather than a bare percentage, and we do not
+describe a difference as an improvement unless it clears that bar and the tool
+hit rate supports the mechanism.
+
+Comparing two methods to a random baseline is *not* a comparison between them:
+for that we report an exact McNemar test on the same variants, with the two
+discordant counts shown.
+
+Scoring classes (see C-5): a clean variant is *unambiguous* only if the diff is a
+no-op for the changed function itself. Otherwise it is *context-dependent*, an
+accurate description of the change is scored **contested** (not FP), and the pair
+is excluded from pair consistency.
 
 ---
 

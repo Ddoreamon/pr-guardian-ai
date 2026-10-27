@@ -19,6 +19,7 @@ from benchmark.evaluate_contrast import (
     VariantOutcome,
     _located,
     binomial_ge,
+    mcnemar_exact,
     semantic_match,
     summarise,
     touched_regions,
@@ -132,23 +133,55 @@ def test_semantic_is_documented_as_keyword_assisted():
     assert "not a full semantic judgement" in doc.lower() or "NOT a full semantic" in doc
 
 
-def test_binomial_p_values_match_the_design_document():
-    assert binomial_ge(11, 11) < 0.001
-    assert 0.02 < binomial_ge(9, 11) < 0.05     # ~0.033
-    assert 0.10 < binomial_ge(8, 11) < 0.13     # ~0.113
-    assert binomial_ge(0, 11) == 1.0
+def test_random_baseline_for_a_pair_is_p_times_one_minus_p():
+    """A pair is (A=bug, B=clean); a coin flip gets both right with p(1-p).
+
+    At p=0.5 that is 25%, not 50%: 2p(1-p) would also count the case where both
+    predictions are wrong.
+    """
+    for p in (0.2, 0.5, 0.8):
+        pair_probability = p * (1 - p)
+        both_wrong = p * (1 - p)  # A=clean missed, B=bug invented
+        assert abs((pair_probability + both_wrong) - 2 * p * (1 - p)) < 1e-12
+        assert pair_probability == (0.25 if p == 0.5 else pair_probability)
+
+
+def test_binomial_p_values_use_the_pair_null_of_025():
+    # dev split, n = 5 decided pairs
+    assert binomial_ge(2, 5, 0.25) == 0.367188
+    assert binomial_ge(3, 5, 0.25) == 0.103516
+    assert binomial_ge(5, 5, 0.25) < 0.01
+    assert binomial_ge(0, 5, 0.25) == 1.0
+
+
+def test_mcnemar_exact_is_two_sided():
+    assert mcnemar_exact(0, 0) == 1.0
+    assert mcnemar_exact(1, 0) == 1.0          # 2 * 0.5**1
+    assert mcnemar_exact(3, 0) == 0.25         # 2 * (1/8)
+    assert mcnemar_exact(2, 0) == 0.5
 
 
 # ---- summaries keep accuracy and pair consistency separate ----------------
 
-def _outcome(pid, variant, label, flagged, semantic=False, correct=None):
+def _outcome(pid, variant, label, flagged, semantic=False, cls="unambiguous"):
+    """Build an outcome using the same classification rule as the evaluator."""
     has_bug = label == "bug"
-    correct_location = (flagged == has_bug)
+    if has_bug:
+        outcome_class = "TP" if flagged else "FN"
+    elif not flagged:
+        outcome_class = "TN"
+    elif cls == "unambiguous":
+        outcome_class = "FP"
+    elif semantic:
+        outcome_class = "contested"
+    else:
+        outcome_class = "FP"
     return VariantOutcome(
         pair_id=pid, variant=variant, split="dev", mechanism="M1", label=label,
-        flagged=flagged, located=flagged and has_bug, semantic=semantic,
-        correct_location=correct_location,
+        flagged=flagged, located=flagged, semantic=semantic,
+        correct_location=(flagged == has_bug),
         correct_semantic=(semantic if has_bug else not flagged),
+        clean_class=cls, outcome_class=outcome_class,
     )
 
 
@@ -190,6 +223,47 @@ def test_using_context_scores_high_pair_consistency():
     assert s.pair_consistent == 5
     assert s.pair_consistency == 1.0
     assert s.semantic_pair_consistency == 1.0
+
+
+def test_contested_clean_finding_is_not_counted_as_false_positive():
+    """A clean variant whose diff really changes the function's own behaviour:
+    an accurate description is contested, not a false positive."""
+    outcomes = [
+        _outcome("P3", "a", "bug", True, semantic=True),
+        _outcome("P3", "b", "clean", True, semantic=True, cls="context_dependent"),
+    ]
+    s = summarise("m", "dev", outcomes, 1)
+    assert s.tp == 1 and s.fp == 0
+    assert s.contested == 1
+    assert s.decided == 1
+    assert s.clean_false_alarm_rate is None      # no decided clean variant
+    assert s.pairs_decided == 0
+    assert s.pair_consistency is None
+    assert s.contested_rate == 0.5
+
+
+def test_unfounded_finding_on_a_contested_pair_is_still_a_false_positive():
+    """Context-dependent or not, a claim the diff does not support is an FP."""
+    outcomes = [
+        _outcome("P3", "a", "bug", True, semantic=True),
+        _outcome("P3", "b", "clean", True, semantic=False, cls="context_dependent"),
+    ]
+    s = summarise("m", "dev", outcomes, 1)
+    assert s.fp == 1 and s.contested == 0
+
+
+def test_contested_pairs_are_excluded_from_pair_consistency():
+    outcomes = [
+        _outcome("P1", "a", "bug", True, semantic=True),
+        _outcome("P1", "b", "clean", False),
+        _outcome("P3", "a", "bug", True, semantic=True),
+        _outcome("P3", "b", "clean", True, semantic=True, cls="context_dependent"),
+    ]
+    s = summarise("m", "dev", outcomes, 2)
+    assert s.pairs == 2
+    assert s.pairs_decided == 1              # P3 excluded
+    assert s.pair_consistent == 1
+    assert s.pair_consistency == 1.0
 
 
 def test_located_but_wrong_explanation_is_not_semantically_correct():

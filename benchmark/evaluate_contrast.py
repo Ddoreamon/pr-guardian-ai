@@ -29,7 +29,13 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from benchmark.contrast_cases import ContrastPair, build_index, files_for
+from benchmark.contrast_cases import (
+    UNCONTROVERSIAL,
+    ContrastPair,
+    build_index,
+    clean_class_of,
+    files_for,
+)
 from pr_guardian.agent_tools import TrustedCodebase
 from pr_guardian.git_reader import read_changed_files
 from pr_guardian.llm_reviewer import review_with_llm
@@ -145,6 +151,9 @@ class VariantOutcome:
     semantic: bool
     correct_location: bool
     correct_semantic: bool
+    clean_class: str = ""
+    # TP | FP | FN | TN | contested
+    outcome_class: str = ""
     findings: int = 0
     tool_calls: int = 0
     tool_hits: int = 0
@@ -175,14 +184,22 @@ class FeedSummary:
     fp: int = 0
     fn: int = 0
     tn: int = 0
+    contested: int = 0
+    decided: int = 0
+    contested_rate: float | None = None
     accuracy: float | None = None
     precision: float | None = None
     recall: float | None = None
     f1: float | None = None
     clean_false_alarm_rate: float | None = None
+    # strict reading: a contested finding is treated as a false positive, so a
+    # model cannot improve its score by flagging every context-dependent case
+    precision_strict: float | None = None
+    clean_false_alarm_rate_strict: float | None = None
     location_accuracy: float | None = None
     semantic_accuracy: float | None = None
     pairs: int = 0
+    pairs_decided: int = 0
     pair_consistent: int = 0
     pair_consistency: float | None = None
     semantic_pair_consistent: int = 0
@@ -219,6 +236,16 @@ def binomial_ge(k: int, n: int, p: float = 0.5) -> float:
     if n == 0:
         return 1.0
     return round(sum(math.comb(n, i) * p**i * (1 - p) ** (n - i) for i in range(k, n + 1)), 6)
+
+
+def mcnemar_exact(b: int, c: int) -> float:
+    """Two-sided exact McNemar p-value for discordant counts b and c."""
+    n = b + c
+    if n == 0:
+        return 1.0
+    k = min(b, c)
+    tail = sum(math.comb(n, i) * 0.5**n for i in range(k + 1))
+    return round(min(1.0, 2 * tail), 6)
 
 
 def cost_estimate(prompt_tokens: int, completion_tokens: int) -> float | None:
@@ -268,15 +295,32 @@ def run_variant(method: str, pair: ContrastPair, variant: str, root: Path,
     latency = round(time.perf_counter() - started, 3)
     located = _located(pair, findings)
     flagged = any(f.file_path == pair.diff_file for f in findings)
-    semantic = semantic_match(pair, findings) if has_bug else False
+    # computed for clean variants as well: it decides contested vs FP
+    semantic = semantic_match(pair, findings)
 
     correct_location = (flagged == has_bug)
     correct_semantic = (semantic if has_bug else not flagged)
+
+    cls = clean_class_of(pair.pair_id)
+    if has_bug:
+        outcome_class = "TP" if located else "FN"
+    elif not located:
+        outcome_class = "TN"
+    elif cls == UNCONTROVERSIAL:
+        outcome_class = "FP"
+    elif semantic:
+        # the finding accurately describes a real change in the changed
+        # function; the repository makes it harmless, so it is not a defect,
+        # but calling it an FP would overstate the model's error.
+        outcome_class = "contested"
+    else:
+        outcome_class = "FP"
 
     return VariantOutcome(
         pair_id=pair.pair_id, variant=variant, split=pair.split, mechanism=pair.mechanism,
         label=label, flagged=flagged, located=located, semantic=semantic,
         correct_location=correct_location, correct_semantic=correct_semantic,
+        clean_class=cls, outcome_class=outcome_class,
         findings=len(findings),
         tool_calls=len(trace),
         tool_hits=sum(1 for t in trace if t.outcome == "hit"),
@@ -300,19 +344,25 @@ def summarise(method: str, split: str, outcomes: list[VariantOutcome],
     ok = [o for o in outcomes if o.status not in {"error"}]
     bugs = [o for o in ok if o.label == "bug"]
     cleans = [o for o in ok if o.label == "clean"]
-    tp = sum(1 for o in bugs if o.flagged)
-    fn = len(bugs) - tp
-    fp = sum(1 for o in cleans if o.flagged)
-    tn = len(cleans) - fp
+    tp = sum(1 for o in ok if o.outcome_class == "TP")
+    fp = sum(1 for o in ok if o.outcome_class == "FP")
+    fn = sum(1 for o in ok if o.outcome_class == "FN")
+    tn = sum(1 for o in ok if o.outcome_class == "TN")
+    contested = sum(1 for o in ok if o.outcome_class == "contested")
+    decided = tp + fp + fn + tn
     p, r = _div(tp, tp + fp), _div(tp, tp + fn)
 
     by_pair: dict[str, dict[str, VariantOutcome]] = {}
     for o in ok:
         by_pair.setdefault(o.pair_id, {})[o.variant] = o
-    consistent = sum(1 for v in by_pair.values()
-                     if len(v) == 2 and all(x.correct_location for x in v.values()))
-    semantic_consistent = sum(1 for v in by_pair.values()
-                              if len(v) == 2 and all(x.correct_semantic for x in v.values()))
+    # pair consistency only over pairs where neither variant was contested
+    decided_pairs = {k: v for k, v in by_pair.items()
+                     if len(v) == 2
+                     and all(x.outcome_class != "contested" for x in v.values())}
+    consistent = sum(1 for v in decided_pairs.values()
+                     if all(x.outcome_class in {"TP", "TN"} for x in v.values()))
+    semantic_consistent = sum(1 for v in decided_pairs.values()
+                              if all(x.correct_semantic for x in v.values()))
 
     calls = sum(o.tool_calls for o in outcomes)
     lat = [o.latency_s for o in ok]
@@ -320,17 +370,23 @@ def summarise(method: str, split: str, outcomes: list[VariantOutcome],
     completion_tokens = sum(o.completion_tokens for o in outcomes)
     return FeedSummary(
         method=method, split=split, variants=len(ok), bugs=len(bugs), cleans=len(cleans),
-        tp=tp, fp=fp, fn=fn, tn=tn,
-        accuracy=_div(sum(1 for o in ok if o.correct_location), len(ok)),
+        tp=tp, fp=fp, fn=fn, tn=tn, contested=contested, decided=decided,
+        contested_rate=_div(contested, len(ok)),
+        accuracy=_div(tp + tn, decided),
         precision=p, recall=r, f1=_f1(p, r),
-        clean_false_alarm_rate=_div(fp, len(cleans)),
+        clean_false_alarm_rate=_div(fp, fp + tn),
+        precision_strict=_div(tp, tp + fp + contested),
+        clean_false_alarm_rate_strict=_div(fp + contested, len(cleans)),
         location_accuracy=_div(sum(1 for o in bugs if o.located), len(bugs)),
-        semantic_accuracy=_div(sum(1 for o in ok if o.correct_semantic), len(ok)),
-        pairs=pair_count, pair_consistent=consistent,
-        pair_consistency=_div(consistent, pair_count),
+        semantic_accuracy=_div(sum(1 for o in ok if o.outcome_class in {"TP", "TN"}), decided),
+        pairs=pair_count, pairs_decided=len(decided_pairs),
+        pair_consistent=consistent,
+        pair_consistency=_div(consistent, len(decided_pairs)),
         semantic_pair_consistent=semantic_consistent,
-        semantic_pair_consistency=_div(semantic_consistent, pair_count),
-        pair_p_value=binomial_ge(consistent, pair_count),
+        semantic_pair_consistency=_div(semantic_consistent, len(decided_pairs)),
+        # null p0 = 0.25: an independent coin flip gets BOTH variants of a
+        # (bug, clean) pair right with probability p(1-p), i.e. 0.25 at p=0.5
+        pair_p_value=binomial_ge(consistent, len(decided_pairs), 0.25),
         tool_calls=calls,
         tool_hits=sum(o.tool_hits for o in outcomes),
         tool_misses=sum(o.tool_misses for o in outcomes),
@@ -362,23 +418,36 @@ def render(summaries: list[FeedSummary]) -> str:
         "`human-review-adjudicated.csv`. Pair consistency is not accuracy - see",
         "`docs/v3-contrast-design.md` section 4.",
         "",
+        "Random baseline: for a pair (A=bug, B=clean), independent Bernoulli(p)",
+        "predictions get BOTH variants right with probability p(1-p) - 25% at p=0.5,",
+        "not 50%. Pair consistency is therefore tested against p0 = 0.25, and only",
+        "over pairs where neither variant was contested.",
+        "",
+        "Contested: a clean variant whose diff does change the changed function's own",
+        "behaviour (side effect, exception type, default, rounding, accepted scheme,",
+        "empty input). The repository makes it harmless, but a finding that describes",
+        "that change is not scored as FP.",
+        "",
         "## Detection",
         "",
-        "| Method | Split | Variants (bug/clean) | TP | FP | FN | Accuracy | Precision | Recall | F1 | Clean false alarm | Location acc. | Semantic acc. (keyword) |",
-        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+        "| Method | Split | Variants (bug/clean) | TP | FP | FN | TN | Contested | Decided | Accuracy (decided) | Precision | Recall | F1 | Clean false alarm (decided) | Precision (strict) | Clean false alarm (strict) | Location acc. | Semantic acc. (keyword) |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for s in summaries:
         lines.append(
             f"| {s.method} | {s.split} | {s.variants} ({s.bugs}/{s.cleans}) | {s.tp} | {s.fp} | "
-            f"{s.fn} | {_pct(s.accuracy)} | {_pct(s.precision)} | {_pct(s.recall)} | {_pct(s.f1)} | "
-            f"{_pct(s.clean_false_alarm_rate)} | {_pct(s.location_accuracy)} | {_pct(s.semantic_accuracy)} |"
+            f"{s.fn} | {s.tn} | {s.contested} | {s.decided} | {_pct(s.accuracy)} | "
+            f"{_pct(s.precision)} | {_pct(s.recall)} | {_pct(s.f1)} | "
+            f"{_pct(s.clean_false_alarm_rate)} | {_pct(s.precision_strict)} | "
+            f"{_pct(s.clean_false_alarm_rate_strict)} | {_pct(s.location_accuracy)} | "
+            f"{_pct(s.semantic_accuracy)} |"
         )
     lines += ["", "## Pair consistency (both variants correct)", "",
-              "| Method | Split | Pairs | Consistent (located) | Pair consistency | Semantic consistent (keyword) | Semantic pair consistency | Binomial p (vs 50% coin flip) |",
-              "|---|---|---|---|---|---|---|---|"]
+              "| Method | Split | Pairs | Pairs decided | Consistent | Pair consistency | Semantic consistent | Semantic pair consistency | Binomial p (null p0 = 0.25) |",
+              "|---|---|---|---|---|---|---|---|---|"]
     for s in summaries:
         lines.append(
-            f"| {s.method} | {s.split} | {s.pairs} | {s.pair_consistent} | "
+            f"| {s.method} | {s.split} | {s.pairs} | {s.pairs_decided} | {s.pair_consistent} | "
             f"{_pct(s.pair_consistency)} | {s.semantic_pair_consistent} | "
             f"{_pct(s.semantic_pair_consistency)} | {s.pair_p_value} |"
         )
@@ -404,6 +473,28 @@ def render(summaries: list[FeedSummary]) -> str:
                 f"{o.located} | {o.semantic} | {o.correct_semantic} | {o.tool_calls} | {note} |"
             )
     return "\n".join(lines) + "\n"
+
+
+def compare_methods(first: FeedSummary, second: FeedSummary) -> str:
+    """Paired comparison of two methods on the same variants (exact McNemar)."""
+    key = lambda o: (o.pair_id, o.variant)
+    a = {key(o): o for o in first.outcomes if o.outcome_class != "contested"}
+    b = {key(o): o for o in second.outcomes if o.outcome_class != "contested"}
+    shared = sorted(set(a) & set(b))
+    only_a = sum(1 for k in shared
+                 if a[k].outcome_class in {"TP", "TN"}
+                 and b[k].outcome_class not in {"TP", "TN"})
+    only_b = sum(1 for k in shared
+                 if b[k].outcome_class in {"TP", "TN"}
+                 and a[k].outcome_class not in {"TP", "TN"})
+    p_value = mcnemar_exact(only_b, only_a)
+    return (
+        "\n## Paired comparison (same variants, decided only)\n\n"
+        f"| Comparison | Shared variants | Only {first.method} correct | "
+        f"Only {second.method} correct | Exact McNemar p |\n"
+        "|---|---|---|---|---|\n"
+        f"| {first.method} vs {second.method} | {len(shared)} | {only_a} | {only_b} | {p_value} |\n"
+    )
 
 
 def write_outputs(summaries: list[FeedSummary], out: Path) -> None:
@@ -482,6 +573,10 @@ def main(argv: list[str] | None = None) -> int:
 
     write_outputs(summaries, args.out)
     print(render(summaries))
+    if len(summaries) >= 2:
+        pairwise = compare_methods(summaries[0], summaries[1])
+        print(pairwise)
+        (args.out / "PAIRWISE.md").write_text(pairwise, encoding="utf-8")
     return 0
 
 

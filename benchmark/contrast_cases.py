@@ -34,7 +34,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-VERSION = "v2"
+VERSION = "v3"
 
 INIT = ""
 
@@ -780,6 +780,43 @@ PAIRS_BY_ID = {p.pair_id: p for p in PAIRS}
 VARIANTS = ("a", "b")
 LABELS = {"a": "bug", "b": "clean"}
 
+# Classification of the CLEAN variant, frozen before the held-out run.
+#
+#   unambiguous       the diff is a no-op for the changed function itself, on
+#                     every input: the callee ignores the new argument (M1), the
+#                     conversion is the identity (M2), or the changed branch is
+#                     unreachable behind an earlier guard (M4). Any finding here
+#                     is genuinely unfounded.
+#
+#   context_dependent the diff does change the changed function's own observable
+#                     behaviour for some direct input (input mutation, exception
+#                     type, default value, rounding, accepted scheme, empty-input
+#                     handling). The surrounding code makes it harmless in this
+#                     repository, but a reviewer who reports that change is
+#                     describing something real. Such a finding is scored
+#                     CONTESTED, never FP, and the pair is excluded from pair
+#                     consistency.
+CLEAN_CLASS: dict[str, str] = {
+    "P1": "unambiguous",
+    "P2": "unambiguous",
+    "P3": "context_dependent",
+    "P4": "unambiguous",
+    "P5": "context_dependent",
+    "P6": "context_dependent",
+    "P7": "unambiguous",
+    "P8": "context_dependent",
+    "P9": "context_dependent",
+    "P10": "context_dependent",
+    "P11": "context_dependent",
+}
+
+UNCONTROVERSIAL = "unambiguous"
+CONTESTED = "context_dependent"
+
+
+def clean_class_of(pair_id: str) -> str:
+    return CLEAN_CLASS[pair_id]
+
 
 def files_for(pair: ContrastPair, variant: str, *, apply_pr: bool) -> dict[str, str]:
     """Full file map for one variant, base or PR revision."""
@@ -799,6 +836,8 @@ def build_index() -> list[ContrastPair]:
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate pair ids")
     for pair in PAIRS:
+        if pair.pair_id not in CLEAN_CLASS:
+            raise ValueError(f"{pair.pair_id}: missing clean-variant classification")
         if pair.split not in {"dev", "heldout"}:
             raise ValueError(f"{pair.pair_id}: bad split {pair.split!r}")
         if pair.diff_file not in files_for(pair, "a", apply_pr=False):
