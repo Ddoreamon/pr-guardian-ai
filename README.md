@@ -365,6 +365,30 @@ tool activity.
 The public Render instance keeps `PR_GUARDIAN_TOOL_CALLS_ENABLED=0` and live
 model calls off; V2 is exercised locally only.
 
+### Contrast benchmark (dev split only)
+
+A newer set pairs *the same diff* with two different context files, so a
+diff-only reviewer is right on one variant and wrong on the other by
+construction. Dev split, `deepseek-flash`, one run — **not a claim that V2 is
+better**:
+
+| Method | Accuracy | Precision | Recall | Pair consistency | Clean false alarms | Effective tool hit rate | Prompt tokens |
+|---|---|---|---|---|---|---|---|
+| V1 (diff only) | 50.00% | 50.00% | 60.00% | 0/5 (0%) | 60% | n/a | 3,010 |
+| V2 (tools) | 70.00% | 62.50% | 100.00% | 2/5 (40%) | 60% | 96.43% | 34,728 |
+
+V1's 50% accuracy and 0% pair consistency are exactly what a deterministic
+diff-only reviewer must score on this design. V2's pair consistency is 2/5 with a
+one-sided binomial p = 0.81 against a coin flip, so the improvement is **not
+statistically distinguishable at five pairs**, and its clean false-alarm rate did
+not move. Held-out (P6–P11) has not been run.
+
+Details and the raw evidence:
+[`docs/benchmark-results/contrast-dev/`](docs/benchmark-results/contrast-dev),
+including [`trace-evidence.md`](docs/benchmark-results/contrast-dev/trace-evidence.md),
+which shows a real run where the model read the context file and still reached
+the wrong verdict.
+
 ### Corrections to earlier benchmark artefacts
 
 Committed reports are historical records and are not rewritten. Known defects in
