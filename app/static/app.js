@@ -152,6 +152,7 @@
       ok: "Completed",
       enabled: "Completed",
       failed: "Failed",
+      partial: "Partial (tool budget exhausted)",
       not_configured: "Not evaluated",
       disabled_by_public_policy: "Not evaluated (public policy)",
       disabled_by_request: "Not evaluated (disabled)"
@@ -167,6 +168,7 @@
     renderTests(report);
     renderLLM(report);
     renderFindings(report.final_findings, state.approvals);
+    renderToolTrace(report);
     updateApprovalSummary();
     renderLlmBanner(report);
   }
@@ -334,6 +336,82 @@
     var total = state.report && state.report.final_findings ? state.report.final_findings.length : 0;
     $("approval-summary").textContent = total + " finding(s) · " + accepted +
       " accepted · " + rejected + " rejected · " + (total - accepted - rejected) + " pending";
+  }
+
+
+  /* ---- agent tool trace (real ReviewReport.tool_calls only) ------------- */
+
+  function renderToolTrace(report) {
+    var panel = $("trace-panel");
+    var body = $("trace-body");
+    var calls = report.tool_calls || [];
+    if (!calls.length) {
+      show(panel, false);
+      body.innerHTML = "";
+      return;
+    }
+    show(panel, true);
+    panel.open = true;
+
+    var hits = calls.filter(function (c) { return c.outcome === "hit"; }).length;
+    var misses = calls.filter(function (c) { return c.outcome === "miss"; }).length;
+    var errors = calls.filter(function (c) { return c.outcome === "error"; }).length;
+    var denied = calls.filter(function (c) { return c.outcome === "budget_denied"; }).length;
+
+    $("trace-meta").textContent =
+      (report.tool_rounds || 0) + " round(s) · " + (report.tool_model_calls || 0) +
+      " model request(s) · " + calls.length + " tool call(s) · " + hits + " hit / " +
+      misses + " miss / " + errors + " error / " + denied + " denied";
+
+    var rounds = {};
+    calls.forEach(function (c) { (rounds[c.round] = rounds[c.round] || []).push(c); });
+
+    var html = "";
+    if (report.tool_status === "tool_limit" || report.llm_status === "partial") {
+      html += '<div class="banner warn">Partial result: the tool budget ran out before ' +
+        "the model finished investigating. Findings below are from the evidence gathered " +
+        "so far, not a complete review.</div>";
+    }
+    Object.keys(rounds).sort(function (a, b) { return a - b; }).forEach(function (r) {
+      html += '<div class="trace-round"><div class="trace-round-head">Model round ' + esc(r) + "</div>";
+      rounds[r].forEach(function (c) {
+        var outcome = c.outcome || (c.ok ? "hit" : "error");
+        html += '<div class="trace-call ' + esc(outcome) + '">';
+        html += '<div class="trace-call-head"><span class="trace-name">' + esc(c.name) + "</span>" +
+          '<span class="badge oc-' + esc(outcome) + '">' + esc(outcome.replace("_", " ")) + "</span>";
+        if (c.error_code) {
+          html += '<span class="badge st-invalid">' + esc(c.error_code) + "</span>";
+        }
+        html += "</div>";
+        html += '<pre class="trace-args">' + esc(JSON.stringify(c.arguments || {})) + "</pre>";
+        var facts = [];
+        if (c.outcome === "hit") { facts.push("context retrieved"); }
+        if (c.outcome === "miss") { facts.push("no usable context found"); }
+        if (typeof c.matched === "number" && c.matched > 0) { facts.push(c.matched + " match(es)"); }
+        if (typeof c.result_chars === "number" && c.result_chars) { facts.push(c.result_chars + " chars"); }
+        if (typeof c.latency_s === "number") { facts.push(c.latency_s.toFixed(3) + "s"); }
+        if (c.error_message) { facts.push(c.error_message); }
+        html += '<div class="trace-facts">' + facts.map(function (f) {
+          return "<span>" + esc(f) + "</span>";
+        }).join("") + "</div></div>";
+      });
+      html += "</div>";
+    });
+
+    var llmFindings = report.llm_findings || [];
+    html += '<div class="trace-final"><h4>Final model output → findings (' +
+      llmFindings.length + ")</h4>";
+    if (!llmFindings.length) {
+      html += '<p class="muted">The model reported no issues after using these tools.</p>';
+    } else {
+      html += "<ul>" + llmFindings.map(function (f) {
+        return "<li><code>" + esc(f.file_path) + ":" + f.start_line + "</code> — " +
+          esc(f.summary) + ' <span class="badge st-suspected">suspected</span></li>';
+      }).join("") + "</ul>";
+    }
+    html += "</div>";
+
+    body.innerHTML = html;
   }
 
   /* ---- export ---------------------------------------------------------- */

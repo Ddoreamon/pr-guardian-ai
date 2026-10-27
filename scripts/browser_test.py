@@ -10,6 +10,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -124,6 +125,8 @@ def run(base_url: str) -> int:
         finding_text = pytest_card.inner_text()
         check("finding is confirmed", "CONFIRMED" in finding_text.upper())
         check("finding is from pytest", "pytest" in finding_text)
+        check("tool trace hidden in V1 mode",
+              "hidden" in (page.locator("#trace-panel").get_attribute("class") or "hidden"))
         page.screenshot(path=str(SHOTS / "03-results.png"), full_page=True)
 
         # --- human approval ----------------------------------------------
@@ -211,6 +214,102 @@ def run(base_url: str) -> int:
         check("injection PR still reports real test results",
               "2" in page.locator("#tests-body").inner_text())
         page.screenshot(path=str(SHOTS / "06-injection.png"), full_page=True)
+
+
+        # --- tool trace panel ---------------------------------------------
+        # UI fixture: the review response is stubbed so the panel can be tested
+        # deterministically. This is a test double, never shown to a visitor.
+        trace_fixture = {
+            "review_id": "fixture-trace",
+            "case": {"case_id": "boundary-bug", "title": "fixture", "expectation": "fixture"},
+            "approvals": {},
+            "files": [],
+            "report": {
+                "review_id": "fixture-trace", "repository": "demo-repo",
+                "base_ref": "main", "head_ref": "feature/boundary-bug",
+                "model_name": "fixture-model", "changed_files": [],
+                "static_findings": [], "llm_findings": [
+                    {"id": "llm-1", "file_path": "src/discount.py", "start_line": 6,
+                     "end_line": 6, "category": "boundary", "severity": "medium",
+                     "summary": "threshold became exclusive", "explanation": "",
+                     "evidence": "", "suggested_fix": "",
+                     "source": "llm", "verification_status": "suspected"},
+                ],
+                "final_findings": [
+                    {"id": "llm-1", "file_path": "src/discount.py", "start_line": 6,
+                     "end_line": 6, "category": "boundary", "severity": "medium",
+                     "summary": "threshold became exclusive", "explanation": "",
+                     "evidence": "", "suggested_fix": "",
+                     "source": "llm", "verification_status": "suspected"},
+                ],
+                "notes": [], "test_summary": {"ran": False, "skipped_reason": "fixture"},
+                "llm_status": "partial", "llm_note": "",
+                "tool_status": "tool_limit",
+                "tool_model_calls": 3, "tool_rounds": 2,
+                "tool_calls": [
+                    {"round": 1, "name": "read_code_context",
+                     "arguments": {"file_path": "src/discount.py", "start_line": 1, "end_line": 20},
+                     "ok": True, "outcome": "hit", "error_code": "", "error_message": "",
+                     "result_chars": 420, "latency_s": 0.004, "matched": 0},
+                    {"round": 1, "name": "find_symbol_definition",
+                     "arguments": {"symbol": "DISCOUNT_RATE"}, "ok": True,
+                     "outcome": "miss", "error_code": "", "error_message": "",
+                     "result_chars": 95, "latency_s": 0.002, "matched": 0},
+                    {"round": 2, "name": "read_code_context",
+                     "arguments": {"file_path": "tests/test_discount.py", "start_line": 1, "end_line": 5},
+                     "ok": False, "outcome": "error", "error_code": "denied_path",
+                     "error_message": "reading this path is not permitted",
+                     "result_chars": 0, "latency_s": 0.001, "matched": 0},
+                    {"round": 2, "name": "read_code_context",
+                     "arguments": {"file_path": "src/discount.py", "start_line": 21, "end_line": 30},
+                     "ok": False, "outcome": "budget_denied", "error_code": "budget_exceeded",
+                     "error_message": "tool call budget exhausted",
+                     "result_chars": 0, "latency_s": 0.0, "matched": 0},
+                ],
+            },
+        }
+
+        trace_page = browser.new_page(viewport={"width": 1280, "height": 900})
+        trace_page.goto(base_url, wait_until="networkidle")
+        trace_page.route("**/api/reviews", lambda route: route.fulfill(
+            status=200, content_type="application/json", body=json.dumps(trace_fixture)))
+        trace_page.locator('.case-card[data-case-id="boundary-bug"]').click()
+        trace_page.wait_for_selector(".diff-file", timeout=15000)
+        trace_page.locator("#run-btn").click()
+        trace_page.wait_for_selector("#results-panel:not(.hidden)", timeout=30000)
+        expect(trace_page.locator("#trace-panel")).to_be_visible(timeout=10000)
+
+        meta = trace_page.locator("#trace-meta").inner_text()
+        check("trace meta shows rounds and counts", "2 round" in meta and "4 tool call" in meta, meta[:110])
+        body_text = trace_page.locator("#trace-body").inner_text()
+        check("trace lists tool names", "read_code_context" in body_text and
+              "find_symbol_definition" in body_text)
+        check("trace shows validated arguments", "src/discount.py" in body_text)
+        check("trace marks a hit", "context retrieved" in body_text)
+        check("trace marks a miss distinctly", "no usable context found" in body_text)
+        check("trace shows the error code", "denied_path" in body_text.lower())
+        check("trace shows budget denial", "budget denied" in body_text.lower())
+        check("trace flags partial completion", "partial result" in body_text.lower())
+        check("trace links final output to findings",
+              "threshold became exclusive" in body_text and "suspected" in body_text.lower())
+        check("trace groups by model round", "model round 1" in body_text.lower()
+              and "model round 2" in body_text.lower())
+
+        # collapsible
+        trace_page.locator("#trace-panel > summary").click()
+        collapsed = trace_page.locator("#trace-panel").get_attribute("open") is None
+        check("trace panel collapses", collapsed)
+        trace_page.locator("#trace-panel > summary").click()
+        trace_page.screenshot(path=str(SHOTS / "11-tool-trace.png"), full_page=True)
+
+        # mobile rendering of the trace
+        trace_page.set_viewport_size({"width": 390, "height": 844})
+        trace_page.wait_for_timeout(200)
+        overflow = trace_page.evaluate(
+            "document.documentElement.scrollWidth - document.documentElement.clientWidth")
+        check("trace panel has no mobile overflow", overflow <= 2, f"overflow={overflow}px")
+        trace_page.screenshot(path=str(SHOTS / "12-tool-trace-mobile.png"), full_page=True)
+        trace_page.close()
 
         # --- mobile layout ------------------------------------------------
         mobile = browser.new_page(viewport={"width": 390, "height": 844})

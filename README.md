@@ -344,8 +344,35 @@ Held-out result (one frozen run, `deepseek-flash`):
 * One dev run hit the 4-call budget mid-investigation, which is why the caps are
   configurable rather than fixed in code.
 
+### Agent tool trace in the UI
+
+When the flag is on and the model actually calls tools, the review page shows a
+collapsible **Agent tool trace** built from `ReviewReport.tool_calls` — the same
+records the API returns, with nothing synthesised:
+
+![Agent tool trace](docs/screenshots/13-real-tool-trace.png)
+
+It shows the model rounds, each tool name with the validated arguments, the
+outcome (`hit` / `miss` / `error` / `budget denied`), the error code, latency,
+result size and match count, and links the final model output to the findings it
+produced. A `miss` is labelled "no usable context found" and is **not** counted
+as successful retrieval. When the budget runs out the panel shows a partial-result
+warning and the report status becomes `partial`.
+
+In V1 mode (flag off, or no API key) the panel is absent: there is no fabricated
+tool activity.
+
 The public Render instance keeps `PR_GUARDIAN_TOOL_CALLS_ENABLED=0` and live
 model calls off; V2 is exercised locally only.
+
+### Corrections to earlier benchmark artefacts
+
+Committed reports are historical records and are not rewritten. Known defects in
+them are listed in [`docs/BENCHMARK_CORRECTIONS.md`](docs/BENCHMARK_CORRECTIONS.md):
+the cross-file matcher was never identical to the main benchmark's rule, dev case
+XF-04 was mislabelled as clean, and tools used to read the working tree instead
+of the reviewed commit. All three are fixed forward; no held-out result was
+re-scored.
 
 ---
 
