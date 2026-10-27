@@ -49,6 +49,13 @@ def _run_tests_on_head(repo: Path, head: str) -> TestSummary:
                 )
     except (subprocess.SubprocessError, OSError) as exc:
         return TestSummary(ran=False, skipped_reason=f"could not prepare worktree: {type(exc).__name__}")
+    if not result.ran:
+        reason = result.reason or "pytest did not produce a usable result"
+        if result.timed_out:
+            reason = "pytest timed out"
+        return TestSummary(ran=False, skipped_reason=reason,
+                           timed_out=result.timed_out,
+                           duration_seconds=result.duration_seconds)
     return TestSummary(
         ran=True,
         passed=result.passed,
