@@ -1,0 +1,3 @@
+method,split,variants,bugs,cleans,tp,fp,fn,tn,contested,decided,contested_rate,accuracy,precision,recall,f1,clean_false_alarm_rate,precision_strict,clean_false_alarm_rate_strict,location_accuracy,semantic_accuracy,pairs,pairs_decided,pair_consistent,pair_consistency,semantic_pair_consistent,semantic_pair_consistency,pair_p_value,tool_calls,tool_hits,tool_misses,tool_errors,tool_budget,tool_hit_rate,model_attempts,model_failures,prompt_tokens,completion_tokens,mean_latency_s,cost_usd,note
+v1-diff-only,heldout,0,0,0,0,0,0,0,0,0,,,,,,,,,,,6,0,0,,0,,1.0,0,0,0,0,0,,0,0,0,0,,,
+v2-tools,heldout,0,0,0,0,0,0,0,0,0,,,,,,,,,,,6,0,0,,0,,1.0,0,0,0,0,0,,0,0,0,0,,,

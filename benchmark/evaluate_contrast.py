@@ -488,7 +488,8 @@ def render(summaries: list[FeedSummary]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _git(*args: str) -> str:
+def _git_output(*args: str) -> str:
+    """Run git in the current directory and return stdout, or 'unknown'."""
     try:
         proc = subprocess.run(["git", *args], capture_output=True, text=True,
                               timeout=20, check=False)
@@ -503,9 +504,9 @@ def experiment_record(args, settings: Settings, pairs: list[ContrastPair],
     return {
         "started_at": started,
         "finished_at": finished,
-        "git_branch": _git("rev-parse", "--abbrev-ref", "HEAD"),
-        "git_sha": _git("rev-parse", "HEAD"),
-        "git_tree_clean": _git("status", "--porcelain") == "",
+        "git_branch": _git_output("rev-parse", "--abbrev-ref", "HEAD"),
+        "git_sha": _git_output("rev-parse", "HEAD"),
+        "git_tree_clean": _git_output("status", "--porcelain") == "",
         "dataset_version": VERSION,
         "split": args.split,
         "methods": methods,

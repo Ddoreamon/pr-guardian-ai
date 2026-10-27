@@ -355,3 +355,17 @@ def test_variant_outcome_records_tool_status_and_trace():
     assert o.partial is True
     assert o.tool_status == "tool_limit"
     assert o.tool_trace[0]["outcome"] == "hit"
+
+def test_materialise_produces_a_usable_git_repository(tmp_path):
+    """Regression: a shadowed git helper once made materialise() fail silently,
+    which produced 24 zero-call 'error' variants in a held-out run."""
+    from benchmark.contrast_cases import build_index
+    from benchmark.evaluate_contrast import materialise
+    from pr_guardian.git_reader import read_changed_files
+
+    pair = next(p for p in build_index() if p.pair_id == "P7")
+    repo = materialise(pair, "a", tmp_path)
+    assert (repo / ".git").exists()
+    files, diff = read_changed_files(repo, "main", "pr")
+    assert [f.file_path for f in files] == [pair.diff_file]
+    assert diff.strip(), "diff must not be empty"
