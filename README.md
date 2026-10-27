@@ -365,29 +365,39 @@ tool activity.
 The public Render instance keeps `PR_GUARDIAN_TOOL_CALLS_ENABLED=0` and live
 model calls off; V2 is exercised locally only.
 
-### Contrast benchmark (dev split only)
+### Contrast benchmark (dev split only, audited dataset v2)
 
-A newer set pairs *the same diff* with two different context files, so a
-diff-only reviewer is right on one variant and wrong on the other by
-construction. Dev split, `deepseek-flash`, one run — **not a claim that V2 is
-better**:
+Pairs place *the same diff* against two different context files, so a diff-only
+reviewer is right on one variant and wrong on the other by construction. Review
+target is a single rule, stated identically in both prompts: **a defect is a
+violation of a documented contract** (annotation, docstring, or behaviour the
+surrounding code establishes); green tests are necessary, not sufficient.
+Dataset revisions and the four redesigned pairs: [`docs/v2.2-audit.md`](docs/v2.2-audit.md).
 
-| Method | Accuracy | Precision | Recall | Pair consistency | Clean false alarms | Effective tool hit rate | Prompt tokens |
-|---|---|---|---|---|---|---|---|
-| V1 (diff only) | 50.00% | 50.00% | 60.00% | 0/5 (0%) | 60% | n/a | 3,010 |
-| V2 (tools) | 70.00% | 62.50% | 100.00% | 2/5 (40%) | 60% | 96.43% | 34,728 |
+Dev, `deepseek-flash`, one run, **not a claim that V2 is better**:
 
-V1's 50% accuracy and 0% pair consistency are exactly what a deterministic
-diff-only reviewer must score on this design. V2's pair consistency is 2/5 with a
-one-sided binomial p = 0.81 against a coin flip, so the improvement is **not
-statistically distinguishable at five pairs**, and its clean false-alarm rate did
-not move. Held-out (P6–P11) has not been run.
+| Method | Accuracy | Precision | Recall | F1 | Pair consistency | Clean false alarms | Effective tool hit rate | Prompt tokens |
+|---|---|---|---|---|---|---|---|---|
+| V1 (diff only) | 70.00% | 62.50% | 100.00% | 76.92% | 2/5 (40%) | 60% | n/a | 3,798 |
+| V2 (tools) | 80.00% | 71.43% | 100.00% | 83.33% | 3/5 (60%) | 40% | 71.43% | 48,296 |
 
-Details and the raw evidence:
-[`docs/benchmark-results/contrast-dev/`](docs/benchmark-results/contrast-dev),
-including [`trace-evidence.md`](docs/benchmark-results/contrast-dev/trace-evidence.md),
-which shows a real run where the model read the context file and still reached
-the wrong verdict.
+Both methods were adjudicated manually, finding by finding:
+[`ADJUDICATION.md`](docs/benchmark-results/contrast-dev-v2/ADJUDICATION.md) and
+[`human-review-adjudicated.csv`](docs/benchmark-results/contrast-dev-v2/human-review-adjudicated.csv).
+Automatic scoring and the human verdict agreed on 20/20 variants, which is weaker
+than it sounds — the same person designed the cases and adjudicated them, and
+three labels (P3-b, P4-b, P5-b) are genuine judgement calls.
+
+V2's pair consistency of 3/5 has a one-sided binomial p = 0.5 against a coin
+flip, so **no capability advantage is established**. Its two remaining errors are
+judgement errors made *after* reading the differing context file, not retrieval
+failures — the earlier v1 run's [`trace-evidence.md`](docs/benchmark-results/contrast-dev/trace-evidence.md)
+shows the same pattern. Held-out (P6–P11) has not been run.
+
+The earlier v1 dataset run is kept unchanged in
+[`docs/benchmark-results/contrast-dev/`](docs/benchmark-results/contrast-dev) as a
+historical record; v2 results live in
+[`contrast-dev-v2/`](docs/benchmark-results/contrast-dev-v2).
 
 ### Corrections to earlier benchmark artefacts
 
