@@ -50,6 +50,19 @@ class ReviewFinding(BaseModel):
     rule: str | None = None  # e.g. Ruff rule code
 
 
+class TestSummary(BaseModel):
+    """Outcome of running the trusted test suite on the head revision."""
+
+    ran: bool = False
+    skipped_reason: str = ""
+    passed: int = 0
+    failed: int = 0
+    errors: int = 0
+    failed_tests: list[str] = Field(default_factory=list)
+    timed_out: bool = False
+    duration_seconds: float = 0.0
+
+
 class ReviewReport(BaseModel):
     review_id: str
     repository: str
@@ -61,4 +74,8 @@ class ReviewReport(BaseModel):
     llm_findings: list[ReviewFinding] = Field(default_factory=list)
     final_findings: list[ReviewFinding] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    test_summary: TestSummary = Field(default_factory=TestSummary)
+    # enabled | ok | failed | not_configured | disabled_by_public_policy | disabled_by_request
+    llm_status: str = "not_configured"
+    llm_note: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

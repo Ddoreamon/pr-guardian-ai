@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}PR Guardian — Evidence-Based AI Code Review{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <div class="brand">
+        <span class="brand-mark">PG</span>
+        <div>
+          <h1>PR Guardian</h1>
+          <p class="tagline">AI code review with verifiable evidence</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <span class="pill" id="llm-status-pill" data-state="{{ config.llm_status }}">
+          LLM: {{ config.llm_status.replace('_', ' ') }}
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>
+        Deterministic tools supply evidence, a language model may propose
+        <em>suspected</em> issues, a validator filters them, and a human decides
+        what is accepted. Only preset, trusted demo cases can be reviewed here.
+      </p>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

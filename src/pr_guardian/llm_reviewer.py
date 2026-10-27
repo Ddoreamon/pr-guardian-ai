@@ -8,13 +8,13 @@ output: it returns no LLM findings and a note saying the LLM step was skipped.
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 
 import httpx
 from pydantic import BaseModel, Field, ValidationError
 
 from .models import ChangedFile, FindingSource, ReviewFinding, VerificationStatus
+from .settings import Settings, get_settings
 
 REVIEW_RULES = """You are a strict code reviewer. Report ONLY logic, boundary-condition,
 exception-handling, state-update, data-handling, or API-validation defects that are
@@ -58,13 +58,22 @@ def _build_user_prompt(diff_text: str, files: list[ChangedFile]) -> str:
     return f"Changed files:\n{summary}\n\nUnified diff (zero context):\n{diff_text}"
 
 
-def review_with_llm(diff_text: str, files: list[ChangedFile]) -> LLMResult:
-    api_key = os.environ.get("PR_GUARDIAN_API_KEY")
-    base_url = os.environ.get("PR_GUARDIAN_API_BASE", "https://api.openai.com/v1")
-    model = os.environ.get("PR_GUARDIAN_MODEL", "gpt-4o-mini")
+def review_with_llm(
+    diff_text: str,
+    files: list[ChangedFile],
+    settings: Settings | None = None,
+) -> LLMResult:
+    cfg = settings or get_settings()
+    api_key = cfg.api_key
+    base_url = cfg.base_url
+    model = cfg.model
 
     if not api_key:
         return LLMResult([], ["LLM step skipped: PR_GUARDIAN_API_KEY is not set."], False)
+    if not cfg.live_llm_enabled:
+        return LLMResult(
+            [], ["LLM step skipped: live model calls are disabled by public-mode policy."], False,
+        )
 
     try:
         resp = httpx.post(

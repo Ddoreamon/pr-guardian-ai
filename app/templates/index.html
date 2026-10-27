@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel" id="case-panel">
+  <div class="panel-head">
+    <h2>1 · Choose a demo change</h2>
+    <p class="hint">Three preset pull requests on a trusted, self-authored repository.</p>
+  </div>
+  <div class="case-grid" id="case-grid">
+    {% for c in cases %}
+    <button class="case-card" type="button" data-case-id="{{ c.case_id }}">
+      <span class="case-cat">{{ c.category }}</span>
+      <span class="case-title">{{ c.title }}</span>
+      <span class="case-exp">{{ c.expectation }}</span>
+      <span class="case-desc">{{ c.description }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" id="diff-panel">
+  <div class="panel-head">
+    <h2>2 · The change under review</h2>
+    <p class="hint" id="diff-hint">Git diff between <code>main</code> and the selected branch.</p>
+  </div>
+  <div id="diff-body" class="diff-body">
+    <p class="muted">Select a demo change above to load its diff.</p>
+  </div>
+</section>
+
+<section class="panel" id="run-panel">
+  <div class="panel-head">
+    <h2>3 · Run the review</h2>
+    <p class="hint">Runs Ruff, the trusted pytest suite, and the LLM step (when configured).</p>
+  </div>
+  <div class="run-row">
+    <button class="btn primary" id="run-btn" type="button" disabled>Run review</button>
+    <label class="check">
+      <input type="checkbox" id="run-tests" checked>
+      Run pytest evidence
+    </label>
+    <span class="run-status" id="run-status"></span>
+  </div>
+  <div id="error-banner" class="banner error hidden" role="alert"></div>
+  <div id="llm-banner" class="banner info hidden"></div>
+</section>
+
+<section class="panel hidden" id="results-panel">
+  <div class="panel-head">
+    <h2>4 · Results</h2>
+    <p class="hint" id="result-summary"></p>
+  </div>
+
+  <div class="result-grid">
+    <div class="result-card" id="card-ruff">
+      <h3>Static analysis <span class="badge src-ruff">Ruff</span></h3>
+      <div class="result-body" id="ruff-body"></div>
+    </div>
+    <div class="result-card" id="card-tests">
+      <h3>Test evidence <span class="badge src-pytest">pytest</span></h3>
+      <div class="result-body" id="tests-body"></div>
+    </div>
+    <div class="result-card" id="card-llm">
+      <h3>AI review <span class="badge src-llm">LLM</span></h3>
+      <div class="result-body" id="llm-body"></div>
+    </div>
+  </div>
+
+  <h3 class="findings-title">Findings for human review</h3>
+  <p class="hint">
+    <span class="badge st-confirmed">confirmed</span> backed by a deterministic tool ·
+    <span class="badge st-suspected">suspected</span> model hypothesis, unverified
+  </p>
+  <div id="findings-body" class="findings"></div>
+
+  <div class="export-row">
+    <label class="check">
+      <input type="checkbox" id="approved-only">
+      Export accepted findings only
+    </label>
+    <button class="btn" type="button" id="export-md">Export Markdown</button>
+    <button class="btn" type="button" id="export-json">Export JSON</button>
+    <span class="muted" id="approval-summary"></span>
+  </div>
+</section>
+
+<script>
+  window.PR_GUARDIAN_CONFIG = {{ config | tojson }};
+</script>
+{% endblock %}

@@ -28,3 +28,4 @@ packages = ["src/pr_guardian"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
