@@ -128,6 +128,7 @@ def run_review(
     tool_status = "disabled"
     tool_calls: list[ToolCallRecordModel] = []
     tool_model_calls = 0
+    tool_model_failures = 0
     tool_rounds = 0
     if not use_llm:
         llm_status, llm_note = "disabled_by_request", "LLM step disabled for this review."
@@ -142,6 +143,7 @@ def run_review(
         llm_note = tool_result.notes[0] if tool_result.notes else ""
         tool_status = tool_result.status
         tool_model_calls = tool_result.model_calls
+        tool_model_failures = tool_result.model_failures
         tool_rounds = tool_result.rounds
         tool_calls = [ToolCallRecordModel(**r.as_dict()) for r in tool_result.trace]
         if tool_result.status == "not_configured":
@@ -189,5 +191,6 @@ def run_review(
         tool_status=tool_status,
         tool_calls=tool_calls,
         tool_model_calls=tool_model_calls,
+        tool_model_failures=tool_model_failures,
         tool_rounds=tool_rounds,
     )

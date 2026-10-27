@@ -64,14 +64,21 @@ class SnapshotEntry:
 
 
 class GitSnapshot:
-    """Immutable view of the files tracked at one commit."""
+    """Immutable view of the files tracked at one commit.
+
+    The ref is resolved to a full commit SHA once, at construction. Every later
+    `ls-tree` / `show` uses that SHA, so the view cannot drift if a branch moves
+    while a review is running.
+    """
 
     def __init__(self, repo: Path, ref: str) -> None:
         self.repo = Path(repo).resolve()
         try:
-            self.ref = validate_ref(ref)
+            candidate = validate_ref(ref)
         except GitReaderError as exc:
             raise ToolError("bad_ref", f"invalid ref: {exc}") from exc
+        self.requested_ref = candidate
+        self.sha = self._resolve_sha(candidate)
         self._entries: dict[str, SnapshotEntry] | None = None
         self._content: dict[str, str] = {}
 
@@ -89,10 +96,22 @@ class GitSnapshot:
             raise ToolError("git_error", message[:200])
         return proc.stdout
 
+    def _resolve_sha(self, ref: str) -> str:
+        raw = self._git("rev-parse", "--verify", f"{ref}^{{commit}}")
+        sha = raw.decode("ascii", "replace").strip()
+        if len(sha) != 40 or any(c not in "0123456789abcdef" for c in sha):
+            raise ToolError("bad_ref", "ref did not resolve to a commit SHA")
+        return sha
+
+    @property
+    def ref(self) -> str:
+        """The pinned commit SHA every read is performed against."""
+        return self.sha
+
     def entries(self) -> dict[str, SnapshotEntry]:
         if self._entries is None:
             entries: dict[str, SnapshotEntry] = {}
-            raw = self._git("ls-tree", "-r", "-z", "--full-tree", self.ref)
+            raw = self._git("ls-tree", "-r", "-z", "--full-tree", self.sha)
             for record in raw.split(b"\x00"):
                 if not record:
                     continue
@@ -119,7 +138,7 @@ class GitSnapshot:
     def read(self, path: str) -> str:
         if path in self._content:
             return self._content[path]
-        raw = self._git("show", f"{self.ref}:{path}")
+        raw = self._git("show", f"{self.sha}:{path}")
         if len(raw) > MAX_FILE_BYTES:
             raise ToolError("too_large", "file exceeds the readable size limit")
         text = raw.decode("utf-8", "replace")

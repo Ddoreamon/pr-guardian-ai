@@ -115,9 +115,29 @@ def test_snapshot_ignores_checkout_of_another_branch(repo, head):
     assert "LIMIT_FEATURE_MARKER" in body
 
 
-def test_payload_reports_the_commit_under_review(head):
+def test_ref_is_pinned_to_a_full_commit_sha(repo, head):
+    """The ref is resolved once; every read uses that SHA."""
+    sha = head.snapshot.sha
+    assert len(sha) == 40 and all(c in "0123456789abcdef" for c in sha)
+    assert head.snapshot.requested_ref == "feature"
+    assert head.snapshot.ref == sha
+
     payload = head.read_code_context("src/app.py", 1, 2)
-    assert payload["ref"] == "feature"
+    assert payload["ref"] == sha
+
+    expected = subprocess.run(["git", "-C", str(repo), "rev-parse", "feature"],
+                              capture_output=True, text=True, check=True).stdout.strip()
+    assert sha == expected
+
+
+def test_pinned_sha_survives_the_branch_moving(repo, head):
+    """Move the branch after construction; the snapshot must not follow it."""
+    before = head.read_code_context("src/app.py", 1, 5)["content"]
+    (repo / "src" / "app.py").write_text("LIMIT_MOVED = 1\n", encoding="utf-8")
+    _git(repo, "commit", "-qam", "move branch")
+    after = head.read_code_context("src/app.py", 1, 5)["content"]
+    assert before == after
+    assert "LIMIT_MOVED" not in after
 
 
 # ---- readable scope: tracked src/**/*.py only ------------------------------

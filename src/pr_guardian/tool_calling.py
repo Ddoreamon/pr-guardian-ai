@@ -169,10 +169,17 @@ class ToolReviewResult:
     usage: dict[str, int] | None = None
     trace: list[ToolCallRecord] = field(default_factory=list)
     rounds: int = 0
-    model_calls: int = 0
+    model_attempts: int = 0
+    model_successes: int = 0
+    model_failures: int = 0
     # ok | not_configured | disabled | model_error | tool_limit | schema_invalid
     status: str = "ok"
     error: str = ""
+
+    @property
+    def model_calls(self) -> int:
+        """Total model requests attempted, failures included."""
+        return self.model_attempts
 
     @property
     def hits(self) -> int:
@@ -213,20 +220,37 @@ def _merge_usage(total: dict[str, int], raw: object) -> None:
 
 
 class _Session:
-    """Counts every real request so nothing is spent off the books."""
+    """Counts every request attempt, including the ones that fail.
+
+    A failed HTTP request still cost time (and may have been billed), so it must
+    appear in the totals instead of vanishing from the statistics.
+    """
 
     def __init__(self, url: str, headers: dict, model: str) -> None:
         self.url = url
         self.headers = headers
         self.model = model
-        self.calls = 0
+        self.attempts = 0
+        self.successes = 0
+        self.failures = 0
         self.usage: dict[str, int] = {}
 
+    @property
+    def calls(self) -> int:
+        """Total requests attempted (successes + failures)."""
+        return self.attempts
+
     def post(self, payload: dict) -> dict:
-        resp = httpx.post(self.url, headers=self.headers, json=payload, timeout=REQUEST_TIMEOUT_S)
-        resp.raise_for_status()
-        data = resp.json()
-        self.calls += 1
+        self.attempts += 1
+        try:
+            resp = httpx.post(self.url, headers=self.headers, json=payload,
+                              timeout=REQUEST_TIMEOUT_S)
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception:
+            self.failures += 1
+            raise
+        self.successes += 1
         _merge_usage(self.usage, data.get("usage"))
         return data
 
@@ -334,7 +358,8 @@ def review_with_tools(
     }
     notes = [
         f"LLM model: {model}",
-        f"model requests: {session.calls} (tool rounds: {rounds})",
+        (f"model requests: {session.attempts} (success {session.successes}, "
+         f"failed {session.failures}; tool rounds: {rounds})"),
         (f"tool calls: {len(trace)} (hit {outcome_counts[OUTCOME_HIT]}, "
          f"miss {outcome_counts[OUTCOME_MISS]}, error {outcome_counts[OUTCOME_ERROR]}, "
          f"budget {outcome_counts[OUTCOME_BUDGET]})"),
@@ -358,7 +383,9 @@ def _result(findings, notes, schema_valid, model, started, session, trace, round
         usage=session.usage or None,
         trace=trace,
         rounds=rounds,
-        model_calls=session.calls,
+        model_attempts=session.attempts,
+        model_successes=session.successes,
+        model_failures=session.failures,
         status=status,
         error=error,
     )

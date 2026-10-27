@@ -98,5 +98,6 @@ class ReviewReport(BaseModel):
     tool_status: str = "disabled"
     tool_calls: list[ToolCallRecordModel] = Field(default_factory=list)
     tool_model_calls: int = 0
+    tool_model_failures: int = 0
     tool_rounds: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

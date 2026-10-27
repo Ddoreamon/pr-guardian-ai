@@ -387,3 +387,25 @@ def test_budget_exhaustion_is_outcome_and_partial_status(queued, codebase):
     assert any(t.outcome == "budget_denied" for t in res.trace)
     assert res.status == "tool_limit"
     assert any("PARTIAL" in n for n in res.notes)
+
+def test_failed_request_is_counted_in_the_totals(monkeypatch, codebase):
+    """An HTTP failure must not disappear from the request statistics."""
+    def boom(*a, **k):
+        raise httpx.ConnectError("nope")
+
+    monkeypatch.setattr(tool_calling.httpx, "post", boom)
+    res = tool_calling.review_with_tools("diff", FILES, codebase, _settings())
+    assert res.status == "model_error"
+    assert res.model_attempts == 1
+    assert res.model_failures == 1
+    assert res.model_successes == 0
+    assert res.model_calls == 1
+
+
+def test_successful_run_has_no_failures(queued, codebase):
+    queued([_msg(content=FINDINGS_JSON)])
+    res = tool_calling.review_with_tools("diff", FILES, codebase, _settings())
+    assert res.model_attempts == 1
+    assert res.model_successes == 1
+    assert res.model_failures == 0
+    assert any("failed 0" in n for n in res.notes)
