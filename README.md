@@ -79,7 +79,7 @@ src/pr_guardian/   review engine (CLI + library)
   settings.py        env/.env configuration
 app/               FastAPI + Jinja2 web UI (templates, static, store, export)
 benchmark/         37 labelled PR cases, evaluator, ground-truth verifier
-tests/             86 pytest tests
+tests/             95 pytest tests
 scripts/           browser acceptance suite, real-LLM smoke test
 ```
 
@@ -155,6 +155,15 @@ Evaluation rules are fixed before measuring:
   counted as detecting a behavioural defect.
 * Undefined ratios (zero denominators) are reported as `n/a`, never as 0.
 
+Method definitions:
+
+| Method | What it is |
+|---|---|
+| `ruff-only` | Ruff static analysis only. |
+| `llm-only` | **Raw** model output. The validator is *not* applied, so this measures the model alone. |
+| `combined` | Ruff + model + validator — what the shipped pipeline actually reports. |
+| `combined+tests` | Combined plus pytest evidence. Reported separately because the test file is visible to the method in this condition. |
+
 ### Measured results
 
 ```bash
@@ -166,8 +175,8 @@ python -m benchmark.evaluate --split heldout --methods ruff-only
 |---|---|---|---|---|---|---|---|
 | Ruff-only | dev | 20 (17/3) | 0 | 0 | n/a | 0.00% | n/a |
 | Ruff-only | heldout | 17 (8/9) | 0 | 0 | n/a | 0.00% | n/a |
-| LLM-only | — | — | — | — | **Not Evaluated** | — | — |
-| Combined | — | — | — | — | **Not Evaluated** | — | — |
+| LLM-only | heldout | 17 (8/9) | *pending* | *pending* | **Not Evaluated** | — | — |
+| Combined | heldout | 17 (8/9) | *pending* | *pending* | **Not Evaluated** | — | — |
 
 **How to read this.** This dataset was built to test *behavioural* defects, which
 static linting is not designed to catch, so 0% recall here says "Ruff cannot find
@@ -179,24 +188,44 @@ Precision is `n/a` for Ruff-only because it raised no findings at all; a ratio
 with an empty denominator is undefined, and reporting 0% or 100% would be
 misleading.
 
-**LLM-only and Combined are Not Evaluated** because no API key was configured
-during development. No mock or fabricated numbers are used anywhere. To measure
-them:
+### Live model status
+
+The model path has been exercised against a real provider endpoint, but **only on
+a single case so far** — it is not yet a benchmark result:
+
+| Model | Case | Call | Schema valid | Defect located | False alarm |
+|---|---|---|---|---|---|
+| `deepseek-flash` | DISCOUNT-01 (boundary, dev) | ok | yes | yes (line 6, a changed line) | n/a (buggy case) |
+
+The finding it produced was: *"Threshold changed from inclusive (>=100) to
+exclusive (>100), so orders exactly at 100 no longer get a discount"* — which
+matches the injected defect. Raw detail is in
+[`docs/llm-smoke-results.json`](docs/llm-smoke-results.json).
+
+**LLM-only and Combined are Not Evaluated** on the held-out set: that run has not
+been performed yet. No mock or fabricated numbers are used anywhere. To complete
+it:
 
 ```bash
-# small, cost-capped smoke test (5 calls)
+# small, cost-capped smoke test (5 calls, dev split only)
 python scripts/llm_smoke_test.py --limit 5
 
-# then the full held-out evaluation
-python -m benchmark.evaluate --split heldout --methods llm-only,combined
+# then the full held-out evaluation (34 calls)
+python -m benchmark.evaluate --split heldout --methods llm-only,combined \
+    --out docs/benchmark-results/heldout-llm
 ```
+
+Token counts come from the provider's `usage` field and are always recorded. A
+USD figure is only produced when a price table is supplied
+(`PR_GUARDIAN_PRICE_INPUT_PER_M`, `PR_GUARDIAN_PRICE_OUTPUT_PER_M`); otherwise
+cost is reported as *not computed* rather than guessed.
 
 ---
 
 ## Testing
 
 ```bash
-python -m pytest -q                      # 86 tests
+python -m pytest -q                      # 95 tests
 ruff check src tests demo benchmark app scripts
 
 # browser acceptance suite (needs the server running)
@@ -206,11 +235,11 @@ python scripts/browser_test.py           # 37 checks, writes docs/screenshots/
 
 | Suite | Count | Covers |
 |---|---|---|
-| Unit — diff parser, validator, LLM (mocked), metrics, settings, test-runner | 63 | parsing, trust rules, zero-division, schema failures, cost policy |
+| Unit — diff parser, validator, LLM (mocked), metrics, settings, test-runner | 72 | parsing, trust rules, zero-division, schema failures, cost policy |
 | API — FastAPI endpoints | 23 | health, cases, diff, review, decisions, exports, error codes |
 | Browser — Playwright | 37 | real interactions, exports, mobile layout, error banner |
 
-Latest local run: **86 passed**, **37/37 browser checks passed**.
+Latest local run: **95 passed**, **37/37 browser checks passed**.
 
 ---
 
