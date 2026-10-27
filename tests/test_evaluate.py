@@ -1,0 +1,120 @@
+"""Unit tests for benchmark metric logic, using hand-computed expected values."""
+
+from benchmark.cases import Case
+from benchmark.evaluate import CaseOutcome, f1, match_findings, safe_div, summarise
+from pr_guardian.models import FindingSource, ReviewFinding, VerificationStatus
+
+
+def _case(has_bug: bool) -> Case:
+    return Case(case_id="T-01", category="boundary", title="t", module="m",
+                base_code="", pr_code="", test_code="", has_bug=has_bug,
+                bug_keyword="", dev_split=True)
+
+
+def _f(path: str, start: int, end: int | None = None) -> ReviewFinding:
+    return ReviewFinding(id="x", file_path=path, start_line=start, end_line=end or start,
+                         category="c", severity="low", summary="s",
+                         source=FindingSource.RUFF,
+                         verification_status=VerificationStatus.CONFIRMED)
+
+
+# ---- finding-level matching -------------------------------------------------
+
+def test_buggy_case_single_correct_finding_is_one_tp():
+    tp, fp, located = match_findings(_case(True), [_f("src/m.py", 5)], [5])
+    assert (tp, fp, located) == (1, 0, True)
+
+
+def test_buggy_case_wrong_line_is_fp_not_tp():
+    tp, fp, located = match_findings(_case(True), [_f("src/m.py", 99)], [5])
+    assert (tp, fp, located) == (0, 1, False)
+
+
+def test_buggy_case_duplicate_hits_count_one_tp_and_rest_fp():
+    tp, fp, located = match_findings(_case(True), [_f("src/m.py", 5), _f("src/m.py", 5)], [5])
+    assert (tp, fp, located) == (1, 1, True)
+
+
+def test_clean_case_any_finding_on_module_is_fp():
+    tp, fp, located = match_findings(_case(False), [_f("src/m.py", 5)], [5])
+    assert (tp, fp, located) == (0, 1, False)
+
+
+def test_finding_on_other_file_ignored():
+    tp, fp, located = match_findings(_case(True), [_f("src/other.py", 5)], [5])
+    assert (tp, fp, located) == (0, 0, False)
+
+
+# ---- ratios never divide by zero --------------------------------------------
+
+def test_safe_div_zero_denominator_is_none():
+    assert safe_div(0, 0) is None
+    assert safe_div(3, 0) is None
+
+
+def test_f1_undefined_when_no_precision_or_recall():
+    assert f1(None, 0.5) is None
+    assert f1(0.0, 0.0) is None
+    assert f1(0.5, 0.5) == 0.5
+
+
+# ---- summary metrics ---------------------------------------------------------
+
+def _o(has_bug, flagged, located=None, status="ok", tp=0, fp=0, split="dev"):
+    return CaseOutcome("c", split, "x", has_bug, flagged, 0, tp, fp, located, 0.1, status)
+
+
+def test_summary_pr_level_precision_recall_hand_computed():
+    cases = [_case(True)] * 4 + [_case(False)] * 2
+    outcomes = [
+        _o(True, True, True, tp=1),    # TP
+        _o(True, True, True, tp=1),    # TP
+        _o(True, False, False),        # FN
+        _o(True, False, False),        # FN
+        _o(False, True, tp=0, fp=1),   # FP
+        _o(False, False),              # TN
+    ]
+    s = summarise("m", cases, outcomes, [])
+    assert (s.pr_tp, s.pr_fp, s.pr_fn, s.pr_tn) == (2, 1, 2, 1)
+    assert s.pr_precision == round(2 / 3, 4)
+    assert s.pr_recall == 0.5
+    assert s.clean_false_alarm_rate == 0.5
+    assert s.bug_location_accuracy == 0.5
+
+
+def test_summary_zero_predictions_no_crash():
+    cases = [_case(True), _case(False)]
+    outcomes = [_o(True, False, False), _o(False, False)]
+    s = summarise("m", cases, outcomes, [])
+    assert s.pr_precision is None          # zero predicted positives
+    assert s.pr_recall == 0.0
+    assert s.pr_f1 is None
+    assert s.clean_false_alarm_rate == 0.0
+
+
+def test_summary_no_bug_cases_recall_undefined():
+    cases = [_case(False), _case(False)]
+    outcomes = [_o(False, True, fp=1), _o(False, False)]
+    s = summarise("m", cases, outcomes, [])
+    assert s.pr_recall is None
+    assert s.clean_false_alarm_rate == 0.5
+
+
+def test_not_evaluated_cases_are_excluded_from_metrics():
+    cases = [_case(True), _case(False)]
+    outcomes = [
+        CaseOutcome("c1", "dev", "x", True, False, 0, 0, 0, None, 0.0, "not_evaluated", "no key"),
+        _o(False, False),
+    ]
+    s = summarise("m", cases, outcomes, ["no key"])
+    assert s.status == "partial"
+    assert s.pr_tp + s.pr_fn == 0          # the bug case is not counted as a miss
+    assert s.n_cases == 2
+
+
+def test_all_not_evaluated_status_is_not_evaluated():
+    cases = [_case(True)]
+    outcomes = [CaseOutcome("c1", "dev", "x", True, False, 0, 0, 0, None, 0.0, "not_evaluated", "no key")]
+    s = summarise("llm-only", cases, outcomes, ["no key"])
+    assert s.status == "not_evaluated"
+    assert s.pr_precision is None and s.pr_recall is None
