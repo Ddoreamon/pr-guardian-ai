@@ -11,6 +11,7 @@ import tempfile
 import uuid
 from pathlib import Path
 
+from .agent_tools import TrustedCodebase
 from .git_reader import read_changed_files, validate_ref
 from .llm_reviewer import review_with_llm
 from .models import (
@@ -18,11 +19,13 @@ from .models import (
     ReviewFinding,
     ReviewReport,
     TestSummary,
+    ToolCallRecordModel,
     VerificationStatus,
 )
 from .settings import Settings, get_settings
 from .static_analysis import run_ruff
 from .test_runner import run_pytest_on_worktree
+from .tool_calling import review_with_tools
 from .validator import final_findings, validate_findings
 
 
@@ -122,8 +125,32 @@ def run_review(
     llm_findings: list[ReviewFinding] = []
     llm_status = cfg.llm_status()
     llm_note = ""
+    tool_status = "disabled"
+    tool_calls: list[ToolCallRecordModel] = []
     if not use_llm:
         llm_status, llm_note = "disabled_by_request", "LLM step disabled for this review."
+    elif cfg.tool_calls_enabled:
+        tool_result = review_with_tools(
+            diff_text, files, TrustedCodebase(repo), cfg,
+            max_rounds=cfg.max_tool_rounds, max_tool_calls=cfg.max_tool_calls,
+        )
+        llm_findings = tool_result.findings
+        notes += tool_result.notes
+        llm_note = tool_result.notes[0] if tool_result.notes else ""
+        tool_status = tool_result.status
+        tool_calls = [ToolCallRecordModel(**r.as_dict()) for r in tool_result.trace]
+        notes.append(f"tool calls: {len(tool_result.trace)} "
+                     f"(rounds used: {tool_result.rounds}, status: {tool_result.status})")
+        if tool_result.status == "not_configured":
+            llm_status = "not_configured"
+        elif tool_result.status == "disabled":
+            llm_status = "disabled_by_public_policy"
+        elif tool_result.schema_valid and tool_result.status in {"ok", "tool_limit"}:
+            llm_status = "ok"
+        else:
+            llm_status = "failed"
+            if tool_result.error:
+                llm_note = f"{llm_note} ({tool_result.error})"
     else:
         result = review_with_llm(diff_text, files, settings=cfg)
         llm_findings = result.findings
@@ -153,4 +180,6 @@ def run_review(
         test_summary=test_summary,
         llm_status=llm_status,
         llm_note=llm_note,
+        tool_status=tool_status,
+        tool_calls=tool_calls,
     )

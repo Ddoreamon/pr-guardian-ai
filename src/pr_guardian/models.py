@@ -63,6 +63,19 @@ class TestSummary(BaseModel):
     duration_seconds: float = 0.0
 
 
+class ToolCallRecordModel(BaseModel):
+    """Audit record of one tool call the model requested."""
+
+    round: int
+    name: str
+    arguments: dict = Field(default_factory=dict)
+    ok: bool
+    error_code: str = ""
+    error_message: str = ""
+    result_chars: int = 0
+    latency_s: float = 0.0
+
+
 class ReviewReport(BaseModel):
     review_id: str
     repository: str
@@ -78,4 +91,7 @@ class ReviewReport(BaseModel):
     # enabled | ok | failed | not_configured | disabled_by_public_policy | disabled_by_request
     llm_status: str = "not_configured"
     llm_note: str = ""
+    # V2: tool calling is opt-in; these stay empty/disabled when it is off.
+    tool_status: str = "disabled"
+    tool_calls: list[ToolCallRecordModel] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
