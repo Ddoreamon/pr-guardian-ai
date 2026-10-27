@@ -202,6 +202,7 @@ class FeedSummary:
     # model cannot improve its score by flagging every context-dependent case
     precision_strict: float | None = None
     clean_false_alarm_rate_strict: float | None = None
+    f1_strict: float | None = None
     location_accuracy: float | None = None
     semantic_accuracy: float | None = None
     pairs: int = 0
@@ -390,6 +391,7 @@ def summarise(method: str, split: str, outcomes: list[VariantOutcome],
         clean_false_alarm_rate=_div(fp, fp + tn),
         precision_strict=_div(tp, tp + fp + contested),
         clean_false_alarm_rate_strict=_div(fp + contested, len(cleans)),
+        f1_strict=_f1(_div(tp, tp + fp + contested), r),
         location_accuracy=_div(sum(1 for o in bugs if o.located), len(bugs)),
         semantic_accuracy=_div(sum(1 for o in ok if o.outcome_class in {"TP", "TN"}), decided),
         pairs=pair_count, pairs_decided=len(decided_pairs),

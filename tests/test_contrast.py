@@ -369,3 +369,19 @@ def test_materialise_produces_a_usable_git_repository(tmp_path):
     files, diff = read_changed_files(repo, "main", "pr")
     assert [f.file_path for f in files] == [pair.diff_file]
     assert diff.strip(), "diff must not be empty"
+
+def test_strict_f1_counts_contested_as_false_positives():
+    outcomes = [
+        _outcome("P1", "a", "bug", True, semantic=True),
+        _outcome("P1", "b", "clean", True, semantic=True, cls="context_dependent"),
+        _outcome("P2", "a", "bug", True, semantic=True),
+        _outcome("P2", "b", "clean", False),
+    ]
+    s = summarise("m", "dev", outcomes, 2)
+    # decided: TP 2, FP 0 -> 100%; strict: 2 TP against 1 contested -> 66.67%
+    assert s.precision == 1.0
+    assert s.precision_strict == round(2 / 3, 4)
+    assert s.recall == 1.0
+    assert s.f1 == 1.0
+    assert s.f1_strict == round(2 * (2 / 3) * 1.0 / ((2 / 3) + 1.0), 4)
+    assert s.f1_strict < s.f1
