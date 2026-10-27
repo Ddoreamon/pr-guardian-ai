@@ -79,7 +79,7 @@ src/pr_guardian/   review engine (CLI + library)
   settings.py        env/.env configuration
 app/               FastAPI + Jinja2 web UI (templates, static, store, export)
 benchmark/         37 labelled PR cases, evaluator, ground-truth verifier
-tests/             70 pytest tests
+tests/             78 pytest tests
 scripts/           browser acceptance suite, real-LLM smoke test
 ```
 
@@ -196,7 +196,7 @@ python -m benchmark.evaluate --split heldout --methods llm-only,combined
 ## Testing
 
 ```bash
-python -m pytest -q                      # 70 tests
+python -m pytest -q                      # 78 tests
 ruff check src tests demo benchmark app scripts
 
 # browser acceptance suite (needs the server running)
@@ -206,11 +206,11 @@ python scripts/browser_test.py           # 37 checks, writes docs/screenshots/
 
 | Suite | Count | Covers |
 |---|---|---|
-| Unit — diff parser, validator, LLM (mocked), metrics | 47 | parsing, trust rules, zero-division, schema failures |
+| Unit — diff parser, validator, LLM (mocked), metrics, settings | 55 | parsing, trust rules, zero-division, schema failures, cost policy |
 | API — FastAPI endpoints | 23 | health, cases, diff, review, decisions, exports, error codes |
 | Browser — Playwright | 37 | real interactions, exports, mobile layout, error banner |
 
-Latest local run: **70 passed**, **37/37 browser checks passed**.
+Latest local run: **78 passed**, **37/37 browser checks passed**.
 
 ---
 
