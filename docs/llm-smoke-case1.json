@@ -1,0 +1,48 @@
+{
+  "model": "deepseek-flash",
+  "base_url": "https://api.deepseek.com",
+  "calls_made": 1,
+  "calls_ok": 1,
+  "schema_valid_calls": 1,
+  "buggy_cases": 1,
+  "buggy_detected": 1,
+  "clean_cases": 0,
+  "clean_false_alarms": 0,
+  "prompt_tokens": 476,
+  "completion_tokens": 474,
+  "total_tokens": 950,
+  "cost_usd_estimate": null,
+  "cost_note": "not computed: no price table configured",
+  "cases": [
+    {
+      "case_id": "DISCOUNT-01",
+      "has_bug": true,
+      "category": "boundary",
+      "call_ok": true,
+      "error": "",
+      "schema_valid": true,
+      "raw_findings": 1,
+      "kept_findings": 1,
+      "merged_duplicates": 0,
+      "invalid_findings": [],
+      "detected_on_changed_line": true,
+      "false_alarm": false,
+      "prompt_tokens": 476,
+      "completion_tokens": 474,
+      "total_tokens": 950,
+      "latency_s": 3.312,
+      "findings": [
+        {
+          "file_path": "src/discount.py",
+          "start_line": 6,
+          "end_line": 6,
+          "severity": "medium",
+          "category": "boundary-condition",
+          "status": "suspected",
+          "summary": "Threshold comparison changed from inclusive to exclusive, so an order of exactly 100 no longer receives a discount",
+          "evidence": "-    if order_total >= 100:\n+    if order_total > 100:"
+        }
+      ]
+    }
+  ]
+}

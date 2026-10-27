@@ -160,3 +160,34 @@ def test_combined_applies_validator_but_llm_only_does_not(monkeypatch, tmp_path)
     assert len(combined.findings) == 1
     assert combined.prompt_tokens == 10 and combined.completion_tokens == 5
     assert combined.llm_called is True
+
+
+# ---- the diff must not leak or fake the ground-truth tests ------------------
+
+def test_non_test_methods_never_see_the_test_file(tmp_path):
+    """The diff must contain only the module edit — no test file, no deletion."""
+    from benchmark.cases import build_cases
+    from benchmark.evaluate import materialise_case
+    from pr_guardian.git_reader import read_changed_files
+
+    case = build_cases()[0]
+    repo = materialise_case(case, tmp_path, include_tests=False)
+
+    files, diff = read_changed_files(repo, "main", "pr")
+    assert [f.file_path for f in files] == [f"src/{case.module}.py"]
+    assert "tests/" not in diff, "a deleted/added test file would be a spurious change"
+    assert not (repo / "tests").exists()
+
+
+def test_plus_tests_condition_has_tests_in_both_revisions(tmp_path):
+    """With +tests the tests exist and are unchanged, so they do not appear as a diff."""
+    from benchmark.cases import build_cases
+    from benchmark.evaluate import materialise_case
+    from pr_guardian.git_reader import read_changed_files
+
+    case = build_cases()[0]
+    repo = materialise_case(case, tmp_path, include_tests=True)
+
+    files, _diff = read_changed_files(repo, "main", "pr")
+    assert [f.file_path for f in files] == [f"src/{case.module}.py"]
+    assert (repo / "tests" / f"test_{case.module}.py").is_file()

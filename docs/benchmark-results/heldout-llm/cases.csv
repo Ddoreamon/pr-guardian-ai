@@ -1,0 +1,35 @@
+method,case_id,split,category,has_bug,flagged,findings,tp_findings,fp_findings,bug_located,latency_s,status,error,failure_note,prompt_tokens,completion_tokens,llm_latency_s,schema_valid,dropped_invalid,raw_findings,finding_notes
+llm-only,DISCOUNT-04,heldout,boundary,True,False,0,0,0,False,3.339,ok,,,308,353,2.984,True,0,0,
+llm-only,DISCOUNT-05,heldout,clean,False,False,0,0,0,,0.9824,ok,,,306,37,0.641,True,0,0,
+llm-only,USERS-04,heldout,null_handling,True,True,1,1,0,True,3.2802,ok,,,298,591,2.984,True,0,1,L6 Inverted None-guard breaks the None path of find_email
+llm-only,CART-03,heldout,data_filter,True,True,1,1,0,True,3.0605,ok,,,307,369,2.688,True,0,1,"L9 Negative quantities are no longer skipped, allowing invalid cart items to affect totals."
+llm-only,CART-04,heldout,clean,False,False,0,0,0,,2.0556,ok,,,305,144,1.718,True,0,0,
+llm-only,INVENTORY-03,heldout,api_validation,True,True,1,1,0,True,2.9436,ok,,,320,490,2.61,True,0,1,L10 Zero-quantity reservations are now accepted because the guard changed from `qty <= 0` to `qty < 0`.
+llm-only,INVENTORY-04,heldout,clean,False,True,1,0,1,,6.8241,ok,,,405,1005,6.469,True,0,1,L12 Availability check and reservation now perform two separate stock.get reads instead of reusing a single value
+llm-only,PAGINATION-03,heldout,api_validation,True,True,1,1,0,True,4.0678,ok,,,313,749,3.75,True,0,1,"L6 Removed validation for non-positive `size`, allowing invalid page sizes through"
+llm-only,PAGINATION-04,heldout,clean,False,False,0,0,0,,1.6545,ok,,,325,107,1.343,True,0,0,
+llm-only,COUPON-03,heldout,boundary,True,True,1,1,0,True,2.4038,ok,,,315,383,2.094,True,0,1,"L9 Expiration comparison is inverted, so expired coupons are treated as valid"
+llm-only,COUPON-04,heldout,clean,False,False,0,0,0,,2.007,ok,,,325,125,1.704,True,0,0,
+llm-only,PARSING-03,heldout,boundary,True,True,1,1,0,True,3.07,ok,,,318,422,2.75,True,0,1,L10 parse_port now accepts port 0 as valid
+llm-only,PARSING-04,heldout,clean,False,False,0,0,0,,2.2061,ok,,,318,159,1.828,True,0,0,
+llm-only,RETRY-03,heldout,exception_handling,True,True,1,1,0,True,1.9506,ok,,,313,302,1.625,True,0,1,"L9 Retry loop hard-coded to a single iteration, ignoring the attempts parameter"
+llm-only,RETRY-04,heldout,clean,False,False,0,0,0,,1.1975,ok,,,315,35,0.828,True,0,0,
+llm-only,RANKING-03,heldout,clean,False,False,0,0,0,,8.3936,ok,,,310,1508,8.031,True,0,0,
+llm-only,RANKING-04,heldout,clean,False,False,0,0,0,,1.5052,ok,,,322,137,1.172,True,0,0,
+combined,DISCOUNT-04,heldout,boundary,True,True,1,1,0,True,4.8418,ok,,,308,875,4.406,True,0,1,"L6 Discount threshold changed to >= 101 on a float value, excluding totals between 100 and 101"
+combined,DISCOUNT-05,heldout,clean,False,False,0,0,0,,1.2495,ok,,,306,71,0.875,True,0,0,
+combined,USERS-04,heldout,null_handling,True,True,1,1,0,True,4.9596,ok,,,298,764,4.547,True,0,1,"L6 The None guard is inverted, so a missing user no longer takes the None-handling path."
+combined,CART-03,heldout,data_filter,True,True,1,1,0,True,3.3171,ok,,,307,423,2.891,True,0,1,L9 Negative quantities are no longer filtered out in cart_total.
+combined,CART-04,heldout,clean,False,False,0,0,0,,1.8602,ok,,,305,173,1.453,True,0,0,
+combined,INVENTORY-03,heldout,api_validation,True,True,1,1,0,True,2.8455,ok,,,320,426,2.437,True,0,1,L10 Zero-quantity reservations are now accepted
+combined,INVENTORY-04,heldout,clean,False,False,0,0,0,,7.4439,ok,,,405,1453,7.032,True,0,0,
+combined,PAGINATION-03,heldout,api_validation,True,True,1,1,0,True,4.2926,ok,,,313,624,3.875,True,0,1,"L6 Page size validation was removed, allowing non-positive size values into pagination calculations."
+combined,PAGINATION-04,heldout,clean,False,False,0,0,0,,1.4461,ok,,,325,90,1.031,True,0,0,
+combined,COUPON-03,heldout,boundary,True,True,1,1,0,True,2.4048,ok,,,315,399,2.0,True,0,1,L9 Expiry comparison inverted: coupon_valid now accepts expired coupons and rejects still-valid ones.
+combined,COUPON-04,heldout,clean,False,False,0,0,0,,1.8679,ok,,,325,144,1.453,True,0,0,
+combined,PARSING-03,heldout,boundary,True,True,1,1,0,True,2.5668,ok,,,318,305,2.172,True,0,1,"L10 Port 0 is now accepted as valid, though it is not a usable port"
+combined,PARSING-04,heldout,clean,False,False,0,0,0,,1.4289,ok,,,318,110,1.016,True,0,0,
+combined,RETRY-03,heldout,exception_handling,True,True,1,1,0,True,2.6472,ok,,,313,361,2.235,True,0,1,"L9 Retry loop hardcoded to a single iteration, ignoring the `attempts` parameter"
+combined,RETRY-04,heldout,clean,False,False,0,0,0,,1.2335,ok,,,315,29,0.829,True,0,0,
+combined,RANKING-03,heldout,clean,False,True,1,0,1,,10.1662,ok,,,310,1826,9.765,True,0,1,L6 Zero request (n == 0) no longer hits the early-return guard in top_n
+combined,RANKING-04,heldout,clean,False,False,0,0,0,,3.185,ok,,,322,332,2.75,True,0,0,

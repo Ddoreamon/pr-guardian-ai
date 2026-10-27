@@ -1,0 +1,3 @@
+method,split,status,n_cases,n_bug,n_clean,pr_tp,pr_fp,pr_fn,pr_precision,pr_recall,pr_f1,clean_false_alarm_rate,finding_precision,bug_location_accuracy,mean_latency_s,note
+llm-only,heldout,ok,17,8,9,7,1,1,0.875,0.875,0.875,0.1111,0.875,0.875,2.9966,
+combined,heldout,ok,17,8,9,8,1,0,0.8889,1.0,0.9412,0.1111,0.8889,1.0,3.3974,

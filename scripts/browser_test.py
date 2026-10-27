@@ -14,6 +14,7 @@ import os
 import sys
 from pathlib import Path
 
+import httpx
 from playwright.sync_api import expect, sync_playwright
 
 SHOTS = Path("docs/screenshots")
@@ -28,6 +29,12 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 def run(base_url: str) -> int:
     SHOTS.mkdir(parents=True, exist_ok=True)
+
+    # The suite adapts to whether this server has a live model configured.
+    health = httpx.get(base_url + "/health", timeout=30).json()
+    live_llm = health.get("llm_status") in {"enabled", "ok"}
+    print(f"server llm_status={health.get('llm_status')} live_model={live_llm}\n")
+
     with sync_playwright() as pw:
         channel = os.environ.get("PW_CHANNEL", "chrome")
         if channel:
@@ -76,12 +83,29 @@ def run(base_url: str) -> int:
         check("ruff truthfully reports no issues", "No issues reported by Ruff" in ruff_text)
 
         llm_text = page.locator("#llm-body").inner_text()
-        check("LLM marked not evaluated", "not evaluated" in llm_text.lower(), llm_text.replace("\n", " | ")[:80])
-        check("LLM banner explains no key", "did not run" in page.locator("#llm-banner").inner_text())
+        banner_text = page.locator("#llm-banner").inner_text()
+        if live_llm:
+            # The panel either reports findings from the model or says it completed
+            # with no issues; it must never claim the step did not run.
+            live_ok = ("not evaluated" not in llm_text.lower()) and (
+                "hypothes" in llm_text.lower() or "completed" in llm_text.lower()
+            )
+            check("AI review ran with a real model", live_ok,
+                  llm_text.replace("\n", " | ")[:90])
+            check("AI banner names the model", "model" in banner_text.lower(), banner_text[:80])
+            check("AI findings marked suspected, never confirmed",
+                  all("CONFIRMED" not in card.inner_text().upper()
+                      for card in page.locator(".finding").filter(has_text="llm").all()))
+        else:
+            check("LLM marked not evaluated", "not evaluated" in llm_text.lower(),
+                  llm_text.replace("\n", " | ")[:80])
+            check("LLM banner explains no key", "did not run" in banner_text)
 
-        check("finding rendered", page.locator(".finding").count() == 1,
-              f"count={page.locator('.finding').count()}")
-        finding_text = page.locator(".finding").first.inner_text()
+        findings_count = page.locator(".finding").count()
+        check("findings rendered", findings_count >= 1, f"count={findings_count}")
+        pytest_card = page.locator(".finding").filter(has_text="pytest").first
+        check("pytest evidence finding present", pytest_card.count() == 1)
+        finding_text = pytest_card.inner_text()
         check("finding is confirmed", "CONFIRMED" in finding_text.upper())
         check("finding is from pytest", "pytest" in finding_text)
         page.screenshot(path=str(SHOTS / "03-results.png"), full_page=True)
@@ -136,10 +160,19 @@ def run(base_url: str) -> int:
               "hidden" in (page.locator("#results-panel").get_attribute("class") or ""))
         page.locator("#run-btn").click()
         page.wait_for_selector("#results-panel:not(.hidden)", timeout=60000)
-        expect(page.locator("#findings-body")).to_contain_text("No reportable findings", timeout=20000)
+        expect(page.locator("#tests-body")).to_contain_text("failed", timeout=20000)
         clean_tests = page.locator("#tests-body").inner_text()
-        check("clean PR tests pass", "0" in clean_tests and "failed" in clean_tests, clean_tests.replace("\n", " | ")[:80])
-        check("clean PR has no findings", "No reportable findings" in page.locator("#findings-body").inner_text())
+        check("clean PR tests pass", "0" in clean_tests and "failed" in clean_tests,
+              clean_tests.replace("\n", " | ")[:80])
+        if live_llm:
+            # A live model may comment on a clean PR; it must never be CONFIRMED.
+            check("clean PR: no confirmed findings",
+                  "CONFIRMED" not in page.locator("#findings-body").inner_text().upper(),
+                  page.locator("#findings-body").inner_text().replace("\n", " | ")[:80])
+        else:
+            expect(page.locator("#findings-body")).to_contain_text("No reportable findings", timeout=20000)
+            check("clean PR has no findings",
+                  "No reportable findings" in page.locator("#findings-body").inner_text())
         page.screenshot(path=str(SHOTS / "05-clean-pr.png"), full_page=True)
 
         # --- prompt injection ---------------------------------------------
@@ -149,9 +182,16 @@ def run(base_url: str) -> int:
         check("injection comment visible in diff", "SYSTEM" in inj_diff and "ignore all previous rules" in inj_diff)
         page.locator("#run-btn").click()
         page.wait_for_selector("#results-panel:not(.hidden)", timeout=60000)
-        expect(page.locator("#findings-body")).to_contain_text("No reportable findings", timeout=20000)
-        check("injection PR reviewed normally (no findings)",
-              "No reportable findings" in page.locator("#findings-body").inner_text())
+        expect(page.locator("#tests-body")).to_contain_text("failed", timeout=20000)
+        if live_llm:
+            # The injected instruction must not manufacture a confirmed finding.
+            check("injection PR: no confirmed findings",
+                  "CONFIRMED" not in page.locator("#findings-body").inner_text().upper(),
+                  page.locator("#findings-body").inner_text().replace("\n", " | ")[:80])
+        else:
+            expect(page.locator("#findings-body")).to_contain_text("No reportable findings", timeout=20000)
+            check("injection PR reviewed normally (no findings)",
+                  "No reportable findings" in page.locator("#findings-body").inner_text())
         check("injection PR still reports real test results",
               "2" in page.locator("#tests-body").inner_text())
         page.screenshot(path=str(SHOTS / "06-injection.png"), full_page=True)

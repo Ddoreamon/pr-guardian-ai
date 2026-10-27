@@ -55,6 +55,8 @@ class MethodRun:
     completion_tokens: int = 0
     llm_latency_s: float = 0.0
     llm_called: bool = False
+    dropped_invalid: int = 0
+    raw_findings: int = 0
 
 
 @dataclass
@@ -76,6 +78,9 @@ class CaseOutcome:
     completion_tokens: int = 0
     llm_latency_s: float = 0.0
     schema_valid: bool | None = None
+    dropped_invalid: int = 0
+    raw_findings: int = 0
+    finding_notes: str = ""
 
 
 @dataclass
@@ -107,6 +112,7 @@ class MethodSummary:
     total_tokens: int = 0
     llm_calls: int = 0
     schema_valid_rate: float | None = None
+    validator_dropped: int = 0
     note: str = ""
     cases: list[CaseOutcome] = field(default_factory=list)
 
@@ -133,26 +139,26 @@ def _git(repo: Path, *args: str) -> None:
 def materialise_case(case: Case, root: Path, include_tests: bool) -> Path:
     """Create a git repo: `main` = base, `pr` = base + PR edit.
 
-    The test file is committed only when include_tests=True, so ordinary methods
-    cannot see the ground truth in the diff or the working tree.
+    The ground-truth test file exists in BOTH revisions only when include_tests
+    is set. For every other method the repository simply never contains tests,
+    so the diff cannot show tests being deleted — that would be a spurious change
+    the model could comment on (and it did, before this was fixed).
     """
     # Each (case, method) gets its own directory so runs never collide.
     repo = root / f"{case.case_id}-{'tests' if include_tests else 'notests'}-{uuid.uuid4().hex[:8]}"
     (repo / "src").mkdir(parents=True)
-    (repo / "tests").mkdir()
     _git(repo, "init", "-q", "-b", "main")
     _git(repo, "config", "user.email", "bench@example.com")
     _git(repo, "config", "user.name", "bench")
     (repo / "src" / "__init__.py").write_text("", encoding="utf-8")
     (repo / "src" / f"{case.module}.py").write_text(case.base_code, encoding="utf-8")
-    (repo / "tests" / f"test_{case.module}.py").write_text(case.test_code, encoding="utf-8")
+    if include_tests:
+        (repo / "tests").mkdir()
+        (repo / "tests" / f"test_{case.module}.py").write_text(case.test_code, encoding="utf-8")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "base")
     _git(repo, "checkout", "-q", "-b", "pr")
     (repo / "src" / f"{case.module}.py").write_text(case.pr_code, encoding="utf-8")
-    if not include_tests:
-        # Ground-truth tests are removed from the PR diff for non-test methods.
-        (repo / "tests" / f"test_{case.module}.py").unlink()
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "pr")
     return repo
@@ -231,8 +237,22 @@ def run_method(method: str, case: Case, root: Path) -> MethodRun:
             ruff_findings, _ = run_ruff(repo, files)
             findings = ruff_findings + findings
             # the shipped pipeline validates before reporting
-            findings = validate_findings(findings, files)
-            findings = [f for f in findings if f.verification_status != VerificationStatus.INVALID]
+            validated = validate_findings(findings, files)
+            dropped = sum(1 for f in validated
+                          if f.verification_status == VerificationStatus.INVALID)
+            findings = [f for f in validated
+                        if f.verification_status != VerificationStatus.INVALID]
+            usage = res.usage or {}
+            return MethodRun(
+                findings=findings,
+                changed_lines=changed,
+                prompt_tokens=usage.get("prompt_tokens", 0),
+                completion_tokens=usage.get("completion_tokens", 0),
+                llm_latency_s=res.latency_s,
+                llm_called=res.error not in {"no_api_key", "disabled_by_policy"},
+                dropped_invalid=dropped,
+                raw_findings=len(ruff_findings) + len(res.findings),
+            )
         usage = res.usage or {}
         return MethodRun(
             findings=findings,
@@ -241,6 +261,7 @@ def run_method(method: str, case: Case, root: Path) -> MethodRun:
             completion_tokens=usage.get("completion_tokens", 0),
             llm_latency_s=res.latency_s,
             llm_called=res.error not in {"no_api_key", "disabled_by_policy"},
+            raw_findings=len(res.findings),
         )
 
     raise ValueError(f"unknown method {method}")
@@ -271,6 +292,11 @@ def evaluate_method(method: str, cases: list[Case], root: Path) -> MethodSummary
                 completion_tokens=run.completion_tokens,
                 llm_latency_s=run.llm_latency_s,
                 schema_valid=(True if run.llm_called else None),
+                dropped_invalid=run.dropped_invalid,
+                raw_findings=run.raw_findings,
+                finding_notes=" | ".join(
+                    f"L{f.start_line} {f.summary[:110]}" for f in run.findings
+                )[:600],
             ))
         except Exception as exc:  # noqa: BLE001 - record and continue, never crash the run
             outcomes.append(CaseOutcome(case.case_id, _split(case), case.category, case.has_bug,
@@ -325,6 +351,7 @@ def summarise(method: str, cases: list[Case], outcomes: list[CaseOutcome], notes
         total_tokens=prompt_tokens + completion_tokens,
         llm_calls=llm_calls,
         schema_valid_rate=safe_div(schema_ok, llm_calls),
+        validator_dropped=sum(o.dropped_invalid for o in ok),
         note="; ".join(sorted(set(notes))),
         cases=outcomes,
     )
@@ -401,8 +428,8 @@ def render_markdown(summaries: list[MethodSummary]) -> str:
 
     lines += ["", "## Model calls and tokens", "",
               "Provider-reported usage only. Cost is not inferred without a price table.", "",
-              "| Method | Split | LLM calls | Schema-valid rate | Prompt tokens | Completion tokens | Total tokens | LLM latency (s, mean) |",
-              "|---|---|---|---|---|---|---|---|"]
+              "| Method | Split | LLM calls | Schema-valid rate | Validator dropped | Prompt tokens | Completion tokens | Total tokens | LLM latency (s, mean) |",
+              "|---|---|---|---|---|---|---|---|---|"]
     for s in summaries:
         mean_llm_lat = None
         llm_latencies = [o.llm_latency_s for o in s.cases if o.llm_latency_s]
@@ -410,8 +437,21 @@ def render_markdown(summaries: list[MethodSummary]) -> str:
             mean_llm_lat = round(sum(llm_latencies) / len(llm_latencies), 3)
         lines.append(
             f"| {s.method} | {s.split} | {s.llm_calls} | {_fmt(s.schema_valid_rate)} | "
-            f"{s.prompt_tokens} | {s.completion_tokens} | {s.total_tokens} | {_fmt(mean_llm_lat, pct=False)} |"
+            f"{s.validator_dropped} | {s.prompt_tokens} | {s.completion_tokens} | "
+            f"{s.total_tokens} | {_fmt(mean_llm_lat, pct=False)} |"
         )
+
+    lines += ["", "## Per-case detail", "",
+              "| Method | Case | Split | Category | Has bug | Flagged | TP | FP | Raw | Dropped | Findings |",
+              "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for s in summaries:
+        for o in s.cases:
+            note = (o.finding_notes or "").replace("|", "/")
+            lines.append(
+                f"| {s.method} | {o.case_id} | {o.split} | {o.category} | {o.has_bug} | "
+                f"{o.flagged} | {o.tp_findings} | {o.fp_findings} | {o.raw_findings} | "
+                f"{o.dropped_invalid} | {note} |"
+            )
 
     notes = [f"- **{s.method}**: {s.note}" for s in summaries if s.note]
     if notes:

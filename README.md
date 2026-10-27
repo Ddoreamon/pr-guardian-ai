@@ -79,7 +79,7 @@ src/pr_guardian/   review engine (CLI + library)
   settings.py        env/.env configuration
 app/               FastAPI + Jinja2 web UI (templates, static, store, export)
 benchmark/         37 labelled PR cases, evaluator, ground-truth verifier
-tests/             95 pytest tests
+tests/             97 pytest tests
 scripts/           browser acceptance suite, real-LLM smoke test
 ```
 
@@ -166,80 +166,115 @@ Method definitions:
 
 ### Measured results
 
-```bash
-python -m benchmark.evaluate --split dev     --methods ruff-only
-python -m benchmark.evaluate --split heldout --methods ruff-only
-```
+Model: **`deepseek-flash`** via `https://api.deepseek.com`, `temperature=0`.
+Held-out evaluation (17 frozen cases, never used for prompt tuning):
 
-| Method | Split | Cases (bug/clean) | Detected | False alarms | Precision | Recall | F1 |
-|---|---|---|---|---|---|---|---|
-| Ruff-only | dev | 20 (17/3) | 0 | 0 | n/a | 0.00% | n/a |
-| Ruff-only | heldout | 17 (8/9) | 0 | 0 | n/a | 0.00% | n/a |
-| LLM-only | heldout | 17 (8/9) | *pending* | *pending* | **Not Evaluated** | — | — |
-| Combined | heldout | 17 (8/9) | *pending* | *pending* | **Not Evaluated** | — | — |
+| Method | Split | Cases (bug/clean) | TP | FP | FN | Precision | Recall | F1 | Clean false-alarm | Location accuracy |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Ruff-only | dev | 20 (17/3) | 0 | 0 | 17 | n/a | 0.00% | n/a | 0.00% | 0.00% |
+| Ruff-only | heldout | 17 (8/9) | 0 | 0 | 8 | n/a | 0.00% | n/a | 0.00% | 0.00% |
+| LLM-only | heldout | 17 (8/9) | 7 | 1 | 1 | 87.50% | 87.50% | 87.50% | 11.11% | 87.50% |
+| Combined | heldout | 17 (8/9) | 8 | 1 | 0 | 88.89% | 100.00% | 94.12% | 11.11% | 100.00% |
 
-**How to read this.** This dataset was built to test *behavioural* defects, which
-static linting is not designed to catch, so 0% recall here says "Ruff cannot find
-this class of bug" — not "Ruff is useless for code review". Ruff remains valuable
-for the style, import and hygiene problems it does catch; the two incidental lint
-hits found in the dev split were correctly excluded from detection scoring.
+Token usage (provider-reported) and schema validity for the held-out run:
+
+| Method | LLM calls | Schema-valid | Validator dropped | Prompt tokens | Completion tokens | Mean model latency |
+|---|---|---|---|---|---|---|
+| LLM-only | 17 | 17/17 (100%) | 0 | 5,423 | 6,916 | 3.00 s |
+| Combined | 17 | 17/17 (100%) | 0 | 5,423 | 8,405 | 3.40 s |
+
+Every detection was checked by hand against the injected defect, e.g. combined
+reported *"Discount threshold changed to >= 101 on a float value, excluding totals
+between 100 and 101"*, *"Port 0 is now accepted as valid"*, and *"Retry loop
+hardcoded to a single iteration, ignoring the `attempts` parameter"* — each
+matches its case's ground truth.
+
+**Cost** is not reported as a number: the provider returns tokens but not price,
+and no price table was configured. Set `PR_GUARDIAN_PRICE_INPUT_PER_M` and
+`PR_GUARDIAN_PRICE_OUTPUT_PER_M` to have the tool compute it. Guessing a price
+would make the figure unverifiable.
+
+### Failure cases (held-out)
+
+| Method | Case | Type | What happened |
+|---|---|---|---|
+| LLM-only | DISCOUNT-04 | miss | threshold moved to `>= 101` was not reported |
+| LLM-only | INVENTORY-04 | false alarm | flagged a refactor as "two separate `stock.get` reads" — style, not a defect |
+| Combined | RANKING-03 | false alarm | claimed the `n <= 0` → `n < 0` change "no longer hits the early-return guard", but `ordered[:0]` already returned `[]` for `n = 0`, so behaviour is identical |
+
+Dev smoke (5 cases, `scripts/llm_smoke_test.py`): 3 buggy cases → 2 detected;
+2 clean cases → 1 false alarm; schema valid 5/5; 4,891 tokens. The dev false
+alarm was a plausible-but-unverified concern about `casefold()` Unicode folding;
+the dev miss was a removed `None` guard.
+
+### Honest caveats about these numbers
+
+* **Run-to-run variance is real.** An earlier held-out run (before per-case
+  capture was added) measured LLM-only at TP 8 / FP 1 / FN 0 and Combined at
+  TP 8 / FP 1 / FN 0 — i.e. 88.89% precision, 100% recall. The difference between
+  the two runs is sampling noise, not a change in method. Treat ±1 case as the
+  noise band at this sample size.
+* **Ruff and the validator added nothing on held-out in these runs.** Ruff
+  produced zero findings on the behavioural defects, and the validator dropped
+  zero findings. So the gap between LLM-only and Combined here is not evidence
+  that validation improves precision — with n=17 and this noise level, it is not
+  measurable. The validator's value is demonstrated by unit tests (self-confirmation,
+  hallucinated files, forbidden fix advice), not by this benchmark.
+* **The same diff can produce different AI output across runs.** In one recorded
+  web-UI run on the demo boundary case the model flagged the defect; in another it
+  reported nothing. This is why model findings are labelled *suspected* and require
+  human acceptance.
+* **The dataset is small and synthetic** — 37 hand-written cases over small
+  modules. It measures behavioural-defect detection, nothing broader.
+
+**How to read the Ruff row.** This dataset was built to test *behavioural*
+defects, which static linting is not designed to catch, so 0% recall here says
+"Ruff cannot find this class of bug" — not "Ruff is useless for code review".
+Ruff remains valuable for the style, import and hygiene problems it does catch;
+the two incidental lint hits found in the dev split were correctly excluded from
+detection scoring.
 
 Precision is `n/a` for Ruff-only because it raised no findings at all; a ratio
 with an empty denominator is undefined, and reporting 0% or 100% would be
 misleading.
 
-### Live model status
-
-The model path has been exercised against a real provider endpoint, but **only on
-a single case so far** — it is not yet a benchmark result:
-
-| Model | Case | Call | Schema valid | Defect located | False alarm |
-|---|---|---|---|---|---|
-| `deepseek-flash` | DISCOUNT-01 (boundary, dev) | ok | yes | yes (line 6, a changed line) | n/a (buggy case) |
-
-The finding it produced was: *"Threshold changed from inclusive (>=100) to
-exclusive (>100), so orders exactly at 100 no longer get a discount"* — which
-matches the injected defect. Raw detail is in
-[`docs/llm-smoke-results.json`](docs/llm-smoke-results.json).
-
-**LLM-only and Combined are Not Evaluated** on the held-out set: that run has not
-been performed yet. No mock or fabricated numbers are used anywhere. To complete
-it:
+### Reproducing
 
 ```bash
-# small, cost-capped smoke test (5 calls, dev split only)
+# 1-case live check, then a cost-capped 5-case smoke on the dev split
+python scripts/llm_smoke_test.py --limit 1
 python scripts/llm_smoke_test.py --limit 5
 
-# then the full held-out evaluation (34 calls)
+# frozen held-out evaluation (34 model calls)
 python -m benchmark.evaluate --split heldout --methods llm-only,combined \
     --out docs/benchmark-results/heldout-llm
 ```
 
-Token counts come from the provider's `usage` field and are always recorded. A
-USD figure is only produced when a price table is supplied
-(`PR_GUARDIAN_PRICE_INPUT_PER_M`, `PR_GUARDIAN_PRICE_OUTPUT_PER_M`); otherwise
-cost is reported as *not computed* rather than guessed.
+Artefacts: [`docs/benchmark-results/heldout-llm/`](docs/benchmark-results/heldout-llm)
+(report, per-case CSV, raw JSON) and
+[`docs/llm-smoke-results.json`](docs/llm-smoke-results.json).
 
 ---
 
 ## Testing
 
 ```bash
-python -m pytest -q                      # 95 tests
+python -m pytest -q                      # 97 tests
 ruff check src tests demo benchmark app scripts
 
 # browser acceptance suite (needs the server running)
 python -m uvicorn app.main:app --port 8765 &
-python scripts/browser_test.py           # 37 checks, writes docs/screenshots/
+python scripts/browser_test.py           # 38 checks (39 with a live model)
 ```
 
 | Suite | Count | Covers |
 |---|---|---|
-| Unit — diff parser, validator, LLM (mocked), metrics, settings, test-runner | 72 | parsing, trust rules, zero-division, schema failures, cost policy |
+| Unit — diff parser, validator, LLM (mocked), metrics, settings, test-runner | 74 | parsing, trust rules, zero-division, schema failures, cost policy |
 | API — FastAPI endpoints | 23 | health, cases, diff, review, decisions, exports, error codes |
-| Browser — Playwright | 37 | real interactions, exports, mobile layout, error banner |
+| Browser — Playwright | 38–39 | real interactions, exports, mobile layout, error banner, live-model mode |
 
-Latest local run: **95 passed**, **37/37 browser checks passed**.
+Latest local run: **97 passed**; browser suite **38/38** (no API key) and
+**39/39** (live model configured) — the suite adapts to the server's mode.
 
 ---
 
@@ -269,10 +304,15 @@ Latest local run: **95 passed**, **37/37 browser checks passed**.
 
 ## Limitations
 
-* **The LLM path has not been run against a live model in this repository.** Only
-  mocked tests and the "no key" path are verified. Any claim about model quality
-  is therefore unmeasured.
-* The benchmark is small (37 cases, 17 held-out). Results are indicative.
+* **Measured on one model** (`deepseek-flash`) with 17 held-out cases. That is
+  enough to show the pipeline works end to end, not enough to compare models or
+  to claim state-of-the-art detection.
+* **Run-to-run variance of about one case** at this sample size; a single run's
+  precision/recall should not be read as a stable property of the system.
+* Cost is not reported as a figure, because no price table was configured.
+* The benchmark is small (37 cases). Results are indicative, and the dataset was
+  written by the same person who wrote the pipeline — an author bias that real
+  PR data would not have.
 * The dataset models behavioural defects in small modules; it is not a sample of
   real-world pull requests.
 * Reviews are held in memory and lost on restart; there is no database.

@@ -2,25 +2,45 @@
   "model": "deepseek-flash",
   "base_url": "https://api.deepseek.com",
   "calls_made": 5,
+  "calls_ok": 5,
+  "schema_valid_calls": 5,
+  "buggy_cases": 3,
+  "buggy_detected": 2,
+  "clean_cases": 2,
+  "clean_false_alarms": 1,
+  "prompt_tokens": 1538,
+  "completion_tokens": 3353,
+  "total_tokens": 4891,
+  "cost_usd_estimate": null,
+  "cost_note": "not computed: no price table configured",
   "cases": [
     {
       "case_id": "DISCOUNT-01",
       "has_bug": true,
       "category": "boundary",
+      "call_ok": true,
+      "error": "",
       "schema_valid": true,
       "raw_findings": 1,
       "kept_findings": 1,
-      "notes": [
-        "LLM model: deepseek-flash"
-      ],
+      "merged_duplicates": 0,
+      "invalid_findings": [],
       "detected_on_changed_line": true,
+      "false_alarm": false,
+      "prompt_tokens": 308,
+      "completion_tokens": 417,
+      "total_tokens": 725,
+      "latency_s": 3.047,
       "findings": [
         {
           "file_path": "src/discount.py",
           "start_line": 6,
-          "source": "llm",
+          "end_line": 6,
+          "severity": "medium",
+          "category": "boundary-condition",
           "status": "suspected",
-          "summary": "Threshold comparison changed from >= to >, so orders of exactly 100 no longer receive a discount"
+          "summary": "Discount eligibility boundary shifted: orders totaling exactly 100 no longer qualify",
+          "evidence": "-    if order_total >= 100:\n+    if order_total > 100:"
         }
       ]
     },
@@ -28,33 +48,48 @@
       "case_id": "DISCOUNT-03",
       "has_bug": false,
       "category": "clean",
+      "call_ok": true,
+      "error": "",
       "schema_valid": true,
-      "raw_findings": 1,
+      "raw_findings": 0,
       "kept_findings": 0,
-      "notes": [
-        "LLM model: deepseek-flash"
-      ],
+      "merged_duplicates": 0,
+      "invalid_findings": [],
       "detected_on_changed_line": false,
+      "false_alarm": false,
+      "prompt_tokens": 324,
+      "completion_tokens": 87,
+      "total_tokens": 411,
+      "latency_s": 1.5,
       "findings": []
     },
     {
       "case_id": "DISCOUNT-02",
       "has_bug": true,
       "category": "boundary",
+      "call_ok": true,
+      "error": "",
       "schema_valid": true,
       "raw_findings": 1,
       "kept_findings": 1,
-      "notes": [
-        "LLM model: deepseek-flash"
-      ],
+      "merged_duplicates": 0,
+      "invalid_findings": [],
       "detected_on_changed_line": true,
+      "false_alarm": false,
+      "prompt_tokens": 311,
+      "completion_tokens": 642,
+      "total_tokens": 953,
+      "latency_s": 4.734,
       "findings": [
         {
           "file_path": "src/discount.py",
           "start_line": 7,
-          "source": "llm",
+          "end_line": 7,
+          "severity": "high",
+          "category": "logic",
           "status": "suspected",
-          "summary": "Discount calculation changed from 10% to 1%"
+          "summary": "Discount multiplier changed from 0.10 (10%) to 0.01 (1%), a tenfold reduction",
+          "evidence": "return order_total * 0.01"
         }
       ]
     },
@@ -62,26 +97,55 @@
       "case_id": "USERS-03",
       "has_bug": false,
       "category": "clean",
+      "call_ok": true,
+      "error": "",
       "schema_valid": true,
-      "raw_findings": 0,
-      "kept_findings": 0,
-      "notes": [
-        "LLM model: deepseek-flash"
-      ],
-      "detected_on_changed_line": false,
-      "findings": []
+      "raw_findings": 1,
+      "kept_findings": 1,
+      "merged_duplicates": 0,
+      "invalid_findings": [],
+      "detected_on_changed_line": true,
+      "false_alarm": true,
+      "prompt_tokens": 300,
+      "completion_tokens": 1312,
+      "total_tokens": 1612,
+      "latency_s": 8.422,
+      "findings": [
+        {
+          "file_path": "src/users.py",
+          "start_line": 11,
+          "end_line": 11,
+          "severity": "medium",
+          "category": "data-handling",
+          "status": "suspected",
+          "summary": "Using casefold() for email normalization can alter characters and cause address collisions.",
+          "evidence": "return email.strip().casefold()"
+        }
+      ]
     },
     {
       "case_id": "USERS-01",
       "has_bug": true,
       "category": "null_handling",
+      "call_ok": true,
+      "error": "",
       "schema_valid": true,
       "raw_findings": 1,
       "kept_findings": 0,
-      "notes": [
-        "LLM model: deepseek-flash"
+      "merged_duplicates": 0,
+      "invalid_findings": [
+        {
+          "file_path": "src/users.py",
+          "start_line": 5,
+          "summary": "Removed None guard violates find_email's `dict | None` contract"
+        }
       ],
       "detected_on_changed_line": false,
+      "false_alarm": false,
+      "prompt_tokens": 295,
+      "completion_tokens": 895,
+      "total_tokens": 1190,
+      "latency_s": 5.968,
       "findings": []
     }
   ]
