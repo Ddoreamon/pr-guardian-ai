@@ -1,14 +1,30 @@
 """Contrast pairs: the same diff is a defect in one repository and correct in another.
 
-Each pair shares a byte-identical diff. Variant A's *context file* makes the
-change a real, test-visible defect; variant B's context file makes it neutral.
-The neutralising mechanism is executable code, never a comment or a flag nobody
-reads (see docs/v3-contrast-design.md for the mechanism table and the review that
-rejected the first design).
+REVIEW TARGET (single rule, applied everywhere)
+----------------------------------------------
+A variant counts as a defect when the change violates a **documented contract**:
+type annotations, docstrings, or the behaviour that the surrounding code in the
+same repository establishes. Passing tests is necessary but not sufficient — a
+green suite does not excuse breaking an annotation or a documented rule.
+
+Consequence for design: because the changed file is identical in both variants,
+any contract *inside* that file applies to both. If the diff contradicted it,
+variant B could not be clean. So every diff here violates only the **external**
+context (a different file), never the changed file's own documentation.
+
+Revision history
+----------------
+v1  initial 11 pairs. Audit found four pairs whose diff contradicted the changed
+    file's own docstring/annotation (P2 dollars-vs-cents in `tax_for`, P3
+    `-> list[dict]` returning None, P9 "missing key is a configuration error",
+    P11 "an empty list yields 0.0"). Under the rule above those B variants are
+    NOT clean, so they were redesigned rather than relabelled. P7's docstring was
+    neutralised for the same reason. See docs/v2.2-audit.md.
+v2  current. 11 pairs, unrun held-out.
 
 Invariants enforced by benchmark/verify_contrast.py before any model call:
   1. diff(A) == diff(B), same changed-file list
-  2. the rendered V1 prompt is identical for A and B
+  2. the rendered review prompt is identical for A and B (V1 and V2)
   3. base A and base B pass their tests
   4. PR A fails, PR B passes
   5. the hidden tests never appear in the diff or prompt
@@ -18,6 +34,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+VERSION = "v2"
+
 INIT = ""
 
 
@@ -26,7 +44,7 @@ class ContrastPair:
     pair_id: str
     split: str            # dev | heldout
     category: str
-    mechanism: str        # M1..M7, see the design doc
+    mechanism: str        # M1..M7, see docs/v3-contrast-design.md
     title: str
     diff_file: str
     base_code: str
@@ -35,7 +53,9 @@ class ContrastPair:
     context_b: dict[str, str]
     tests_a: str
     tests_b: str
-    defect_signature: tuple[tuple[str, ...], ...]  # groups; every group needs one term
+    # keyword-assisted signature: every group needs at least one term present in
+    # the finding text. Deliberately narrow; a human still adjudicates.
+    defect_signature: tuple[tuple[str, ...], ...]
     a_expected: str
     b_expected: str
 
@@ -95,7 +115,8 @@ def test_discount_applies():
 def test_zero_total():
     assert calculate(0) == 0.0
 ''',
-    defect_signature=(("strict", "argument", "keyword", "parameter", "typeerror", "signature"),),
+    defect_signature=(("strict",),
+                      ("keyword", "argument", "parameter", "signature", "typeerror", "unexpected")),
     a_expected="TypeError: apply_rate() got an unexpected keyword argument",
     b_expected="same value for every input",
 )
@@ -109,7 +130,7 @@ from src.money import convert, to_cents
 
 
 def tax_for(total: float) -> float:
-    """Return tax for a total expressed in dollars."""
+    """Return the tax for an amount, using this module's money unit."""
     return convert(total)
 '''
 
@@ -122,10 +143,12 @@ P2 = _pair(
 
 
 def to_cents(dollars: float) -> int:
+    """Convert dollars to integer cents."""
     return round(dollars * 100)
 
 
 def convert(dollars: float) -> float:
+    """Return 20% tax for an amount in dollars."""
     return round(dollars * 0.2, 2)
 '''},
     context_b={"src/money.py": '''"""Money helpers. Amounts in this service are integer cents already."""
@@ -137,6 +160,7 @@ def to_cents(amount: int) -> int:
 
 
 def convert(cents: int) -> float:
+    """Return 20% tax for an amount in cents."""
     return round(cents / 100 * 0.2, 2)
 '''},
     tests_a='''from src.tax import tax_for
@@ -159,70 +183,73 @@ def test_tax_on_hundred_cents():
 def test_tax_on_zero():
     assert tax_for(0) == 0.0
 ''',
-    defect_signature=(("cents", "100x", "hundred times", "units", "scale", "100"),),
+    defect_signature=(("cent", "100x", "hundred", "scale"),
+                      ("to_cents", "convert", "unit", "dollar")),
     a_expected="tax is 100x too large",
     b_expected="identical value (identity conversion)",
 )
 
 # ---------------------------------------------------------------------------
-# P3 · M3 · the consumer already handles the new return shape
+# P3 · M3 · the caller does not depend on the input list being untouched
 # ---------------------------------------------------------------------------
 
-P3_BASE = '''"""Search."""
+P3_BASE = '''"""Cart helpers."""
 
 
-def search(query: str) -> list[dict]:
-    """Return matching documents; an empty query matches nothing."""
-    if not query:
-        return []
-    return [{"id": 1, "score": 1.0}]
+def with_item(items: list[str], item: str) -> list[str]:
+    """Add the item and return the resulting list."""
+    result = list(items)
+    result.append(item)
+    return result
 '''
 
 P3 = _pair(
-    pair_id="P3", split="dev", category="null_handling", mechanism="M3",
-    title="empty result becomes None: unguarded consumer vs guarded consumer",
-    diff_file="src/search.py", base_code=P3_BASE,
-    pr_code=P3_BASE.replace("        return []", "        return None"),
-    context_a={"src/api.py": '''"""API layer."""
-from src.search import search
+    pair_id="P3", split="dev", category="state_update", mechanism="M3",
+    title="defensive copy removed: caller reads the original list vs snapshots it",
+    diff_file="src/cart.py", base_code=P3_BASE,
+    pr_code=P3_BASE.replace("    result = list(items)", "    result = items"),
+    context_a={"src/receipt.py": '''"""Receipt rendering."""
+from src.cart import with_item
 
 
-def handle(query: str) -> dict:
-    return {"hits": [hit["id"] for hit in search(query)]}
+def render(items: list[str]) -> dict:
+    updated = with_item(items, "apple")
+    return {"original": len(items), "updated": len(updated)}
 '''},
-    context_b={"src/api.py": '''"""API layer."""
-from src.search import search
+    context_b={"src/receipt.py": '''"""Receipt rendering."""
+from src.cart import with_item
 
 
-def handle(query: str) -> dict:
-    results = search(query)
-    if results is None:
-        return {"hits": []}
-    return {"hits": [hit["id"] for hit in results]}
+def render(items: list[str]) -> dict:
+    snapshot = len(items)
+    updated = with_item(items, "apple")
+    return {"original": snapshot, "updated": len(updated)}
 '''},
-    tests_a='''from src.api import handle
+    tests_a='''from src.receipt import render
 
 
-def test_empty_query_returns_no_hits():
-    assert handle("") == {"hits": []}
+def test_original_cart_is_unchanged():
+    assert render([]) == {"original": 0, "updated": 1}
 
 
-def test_matching_query_returns_hits():
-    assert handle("x") == {"hits": [1]}
+def test_existing_item_is_preserved():
+    assert render(["pear"]) == {"original": 1, "updated": 2}
 ''',
-    tests_b='''from src.api import handle
+    tests_b='''from src.receipt import render
 
 
-def test_empty_query_returns_no_hits():
-    assert handle("") == {"hits": []}
+def test_original_count_is_reported():
+    assert render([]) == {"original": 0, "updated": 1}
 
 
-def test_matching_query_returns_hits():
-    assert handle("x") == {"hits": [1]}
+def test_existing_item_is_preserved():
+    assert render(["pear"]) == {"original": 1, "updated": 2}
 ''',
-    defect_signature=(("none", "null", "empty", "iterat", "typeerror", "return"),),
-    a_expected="TypeError: 'NoneType' is not iterable",
-    b_expected="same response for the same query",
+    defect_signature=(("mutat", "in place", "in-place", "alias", "same list",
+                       "side effect", "original list"),
+                      ("item", "list", "cart", "caller")),
+    a_expected="the caller's list is mutated, so 'original' reports 1",
+    b_expected="the caller snapshots the count first",
 )
 
 # ---------------------------------------------------------------------------
@@ -300,7 +327,8 @@ def test_negative_is_rejected():
     with pytest.raises(ValueError):
         accept(-1, 10)
 ''',
-    defect_signature=(("boundary", "exclusive", "off-by-one", "equal", ">=", "<= "),),
+    defect_signature=(("boundary", "equal", "at the limit", "off-by-one", "exclusive"),
+                      ("limit", "qty", "accept", ">=", "<=")),
     a_expected="quantity exactly at the limit is wrongly rejected",
     b_expected="the boundary never reaches the changed branch",
 )
@@ -367,7 +395,8 @@ def test_insufficient_stock_maps_to_conflict():
 def test_sufficient_stock_succeeds():
     assert handle(5, 2) == {"status": 200, "left": 3}
 ''',
-    defect_signature=(("exception", "error", "valueerror", "lookuperror", "uncaught", "raise"),),
+    defect_signature=(("lookuperror", "exception type", "error type"),
+                      ("valueerror", "catch", "handler", "reserve", "insufficient")),
     a_expected="LookupError escapes the ValueError handler",
     b_expected="same 409 response",
 )
@@ -422,7 +451,7 @@ def test_all_active_users_listed():
 def test_quota_zero_lists_nothing():
     assert list_active() == []
 ''',
-    defect_signature=(("default", "none", "zero", "limit", "argument", "implicit"),),
+    defect_signature=(("default",), ("limit", "none", "zero", "implicit")),
     a_expected="unlimited becomes zero results",
     b_expected="default never used",
 )
@@ -436,7 +465,7 @@ from src.client import get
 
 
 def fetch(url: str) -> str:
-    """Fetch with the client's own retry policy."""
+    """Fetch the URL."""
     return get(url)
 '''
 
@@ -479,7 +508,8 @@ def test_transient_failure_is_retried():
 def test_fetch_returns_payload():
     assert fetch("https://example.test") == "ok"
 ''',
-    defect_signature=(("retry", "retries", "attempt", "transient"),),
+    defect_signature=(("retry", "retries", "attempt"),
+                      ("transient", "one attempt", "no retry", "gives up")),
     a_expected="RuntimeError: no retry left",
     b_expected="same payload",
 )
@@ -536,7 +566,7 @@ def test_whole_quantity_is_unchanged():
 def test_zero_quantity():
     assert line_units(0) == 0
 ''',
-    defect_signature=(("ceil", "floor", "round", "fractional", "rounding"),),
+    defect_signature=(("ceil", "floor"), ("round", "unit", "billable", "fraction")),
     a_expected="1.5 bills as 1 unit instead of 2",
     b_expected="integers: ceil equals floor",
 )
@@ -549,7 +579,7 @@ P9_BASE = '''"""Pricing from configuration."""
 
 
 def rate_for(cfg: dict) -> float:
-    """Return the configured rate; a missing key is a configuration error."""
+    """Return the configured rate."""
     return cfg["rate"]
 '''
 
@@ -562,7 +592,11 @@ P9 = _pair(
 
 
 def build(rate: float | None = None) -> dict:
-    """Build the settings dict; an unset rate stays absent."""
+    """Build the settings dict.
+
+    An unset rate is a configuration error: it must stay absent so callers fail
+    loudly instead of silently pricing everything at zero.
+    """
     cfg: dict = {}
     if rate is not None:
         cfg["rate"] = rate
@@ -603,7 +637,8 @@ def test_configured_rate_is_used():
 def test_default_rate_is_present():
     assert rate_for(build()) == 0.2
 ''',
-    defect_signature=(("missing", "key", "default", "silent", "zero", "config"),),
+    defect_signature=(("missing", "absent", "unset"),
+                      ("key", "rate", "config", "default", "zero")),
     a_expected="missing rate silently becomes 0.0 instead of raising",
     b_expected="key always present",
 )
@@ -666,7 +701,7 @@ def test_plain_http_is_rejected_by_the_feed_contract():
     with pytest.raises(ValueError):
         accepted(["http://a.example/x"])
 ''',
-    defect_signature=(("http", "https", "scheme", "url", "plain"),),
+    defect_signature=(("http", "https", "scheme"), ("url", "fetchable", "reject", "drop")),
     a_expected="a plain-http feed entry is dropped",
     b_expected="all inputs already https",
 )
@@ -679,7 +714,7 @@ P11_BASE = '''"""Statistics."""
 
 
 def average(items: list[float]) -> float:
-    """Return the arithmetic mean; an empty list yields 0.0."""
+    """Return the arithmetic mean."""
     if not items:
         return 0.0
     return sum(items) / len(items)
@@ -687,7 +722,7 @@ def average(items: list[float]) -> float:
 
 P11 = _pair(
     pair_id="P11", split="heldout", category="empty_input", mechanism="M7",
-    title="empty-guard narrowed to None: empty list caller vs guarded caller",
+    title="empty-guard narrowed to None: empty series caller vs guarded caller",
     diff_file="src/stats.py", base_code=P11_BASE,
     pr_code=P11_BASE.replace("if not items:", "if items is None:"),
     context_a={"src/report.py": '''"""Report building."""
@@ -695,13 +730,15 @@ from src.stats import average
 
 
 def summary(values: list[float]) -> dict:
+    """Summarise; an empty series reports an average of 0.0."""
     return {"avg": average(values)}
 '''},
-    context_b={"src/report.py": '''"""Report building: callers always supply at least one value."""
+    context_b={"src/report.py": '''"""Report building."""
 from src.stats import average
 
 
 def summary(values: list[float]) -> dict:
+    """Summarise; an empty series is rejected before averaging."""
     if not values:
         raise ValueError("values must not be empty")
     return {"avg": average(values)}
@@ -729,7 +766,8 @@ def test_empty_values_are_rejected_before_averaging():
     with pytest.raises(ValueError):
         summary([])
 ''',
-    defect_signature=(("zero division", "zerodivision", "empty", "guard", "none"),),
+    defect_signature=(("empty", "zero division", "zerodivision", "divide"),
+                      ("list", "items", "average", "mean", "guard")),
     a_expected="ZeroDivisionError on an empty report",
     b_expected="empty list never reaches the function",
 )
@@ -771,6 +809,8 @@ def build_index() -> list[ContrastPair]:
             raise ValueError(f"{pair.pair_id}: PR does not change the file")
         if pair.diff_file in pair.context_a or pair.diff_file in pair.context_b:
             raise ValueError(f"{pair.pair_id}: context overrides the changed file")
+        if len(pair.defect_signature) < 2:
+            raise ValueError(f"{pair.pair_id}: signature needs at least two groups")
         for variant in VARIANTS:
             if "def test_" not in tests_for(pair, variant):
                 raise ValueError(f"{pair.pair_id}: variant {variant} has no tests")

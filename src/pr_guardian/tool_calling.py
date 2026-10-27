@@ -30,6 +30,7 @@ from .agent_tools import (
     is_effective_hit,
     wrap_tool_output,
 )
+from .llm_reviewer import REVIEW_SCOPE
 from .models import ChangedFile, FindingSource, ReviewFinding, VerificationStatus
 from .settings import Settings
 
@@ -89,7 +90,7 @@ TOOLS: list[dict] = [
 
 TOOL_NAMES = {t["function"]["name"] for t in TOOLS}
 
-SYSTEM_PROMPT = """You are a strict Python code reviewer with read-only tools.
+SYSTEM_PROMPT = REVIEW_SCOPE + """You are a strict Python code reviewer with read-only tools.
 
 Work in two steps:
 1. Use the tools to gather evidence. Call read_code_context to see surrounding code in

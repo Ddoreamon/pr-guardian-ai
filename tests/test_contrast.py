@@ -17,6 +17,7 @@ from benchmark.contrast_cases import (
 )
 from benchmark.evaluate_contrast import (
     VariantOutcome,
+    _located,
     binomial_ge,
     semantic_match,
     summarise,
@@ -25,9 +26,9 @@ from benchmark.evaluate_contrast import (
 from pr_guardian.models import FindingSource, ReviewFinding, VerificationStatus
 
 
-def _finding(line: int, text: str = "s") -> ReviewFinding:
+def _finding(line: int, text: str = "s", path: str = "src/app.py") -> ReviewFinding:
     return ReviewFinding(
-        id="f", file_path="src/x.py", start_line=line, end_line=line, category="logic",
+        id="f", file_path=path, start_line=line, end_line=line, category="logic",
         severity="medium", summary=text, source=FindingSource.LLM,
         verification_status=VerificationStatus.SUSPECTED,
     )
@@ -88,11 +89,47 @@ def test_semantic_match_requires_the_signature_not_just_location():
     regions = touched_regions(pair)
     inside = regions[0][0]
     # located but says nothing about the defect
-    assert semantic_match(pair, [_finding(inside, "this looks odd")]) is False
+    assert semantic_match(pair, [_finding(inside, "this looks odd", pair.diff_file)]) is False
     # located and names the mechanism
-    assert semantic_match(pair, [_finding(inside, "passes an unexpected keyword argument")]) is True
+    assert semantic_match(
+        pair, [_finding(inside, "passes strict as an unexpected keyword argument", pair.diff_file)]) is True
     # correct words but outside the touched definition
-    assert semantic_match(pair, [_finding(10_000, "unexpected keyword argument")]) is False
+    assert semantic_match(
+        pair, [_finding(10_000, "unexpected keyword argument", pair.diff_file)]) is False
+
+
+def test_semantic_match_rejects_the_same_line_in_another_file():
+    """Counterexample: right line number and keywords, wrong file."""
+    pair = next(p for p in PAIRS if p.pair_id == "P1")
+    inside = touched_regions(pair)[0][0]
+    wrong_file = _finding(inside, "unexpected keyword argument strict", "src/other.py")
+    assert semantic_match(pair, [wrong_file]) is False
+
+
+def test_semantic_match_requires_every_signature_group():
+    """One keyword group is not enough: the signature is deliberately two-part."""
+    pair = next(p for p in PAIRS if p.pair_id == "P2")
+    inside = touched_regions(pair)[0][0]
+    only_units = _finding(inside, "the units look wrong", pair.diff_file)
+    assert semantic_match(pair, [only_units]) is False
+    both = _finding(inside, "cents are passed into convert, a 100x scale error", pair.diff_file)
+    assert semantic_match(pair, [both]) is True
+
+
+def test_located_must_be_in_the_changed_file():
+    """Location scoring must reject a finding in a different file."""
+    pair = next(p for p in PAIRS if p.pair_id == "P1")
+    inside = touched_regions(pair)[0][0]
+    assert _located(pair, [_finding(inside, "s", "src/other.py")]) is False
+    assert _located(pair, [_finding(inside, "s", pair.diff_file)]) is True
+
+
+def test_semantic_is_documented_as_keyword_assisted():
+    import inspect
+
+    doc = inspect.getdoc(semantic_match) or ""
+    assert "keyword" in doc.lower()
+    assert "not a full semantic judgement" in doc.lower() or "NOT a full semantic" in doc
 
 
 def test_binomial_p_values_match_the_design_document():
@@ -183,10 +220,21 @@ def _run(files: dict[str, str], test_code: str) -> bool:
         return proc.returncode == 0
 
 
-@pytest.mark.parametrize("pair_id", ["P1", "P5"])
+@pytest.mark.parametrize("pair_id", ["P1", "P3", "P5"])
 def test_labels_hold_end_to_end(pair_id):
     pair = next(p for p in PAIRS if p.pair_id == pair_id)
     assert _run(files_for(pair, "a", apply_pr=False), pair_tests(pair, "a")) is True
     assert _run(files_for(pair, "a", apply_pr=True), pair_tests(pair, "a")) is False
     assert _run(files_for(pair, "b", apply_pr=False), pair_tests(pair, "b")) is True
     assert _run(files_for(pair, "b", apply_pr=True), pair_tests(pair, "b")) is True
+
+def test_v1_and_v2_share_the_same_review_scope():
+    """The two methods must ask for the same review; only the tools differ."""
+    from pr_guardian.llm_reviewer import REVIEW_RULES, REVIEW_SCOPE
+    from pr_guardian.tool_calling import SYSTEM_PROMPT
+
+    assert REVIEW_RULES.startswith(REVIEW_SCOPE)
+    assert SYSTEM_PROMPT.startswith(REVIEW_SCOPE)
+    # the scope must state that green tests are not proof of correctness
+    assert "NOT proof" in REVIEW_SCOPE
+    assert "annotations" in REVIEW_SCOPE and "docstrings" in REVIEW_SCOPE

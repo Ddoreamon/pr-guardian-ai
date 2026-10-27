@@ -107,14 +107,24 @@ def _in_regions(finding: ReviewFinding, regions: list[tuple[int, int]]) -> bool:
                for f, l in regions)
 
 
-def semantic_match(pair: ContrastPair, findings: list[ReviewFinding]) -> bool:
-    """True only when a located finding names the actual defect.
+def _located(pair: ContrastPair, findings: list[ReviewFinding]) -> bool:
+    """True only when a finding is in the changed file AND inside a touched region."""
+    regions = touched_regions(pair)
+    return any(f.file_path == pair.diff_file and _in_regions(f, regions) for f in findings)
 
-    Each signature group must be satisfied by at least one term; the groups are
-    case-specific and written when the case is frozen, not after seeing output.
+
+def semantic_match(pair: ContrastPair, findings: list[ReviewFinding]) -> bool:
+    """Keyword-assisted match: a located finding on the changed file whose text
+    satisfies every signature group.
+
+    This is NOT a full semantic judgement of correctness. It is a narrow screen
+    that must be confirmed by a human reviewer; the raw text of every finding is
+    stored so the adjudication can be checked.
     """
     regions = touched_regions(pair)
     for finding in findings:
+        if finding.file_path != pair.diff_file:
+            continue
         if not _in_regions(finding, regions):
             continue
         text = f"{finding.summary} {finding.explanation} {finding.evidence}".lower()
@@ -149,6 +159,9 @@ class VariantOutcome:
     status: str = "ok"
     note: str = ""
     finding_text: str = ""
+    findings_detail: list = field(default_factory=list)
+    human_verdict: str = ""
+    human_note: str = ""
 
 
 @dataclass
@@ -253,8 +266,7 @@ def run_variant(method: str, pair: ContrastPair, variant: str, root: Path,
         status, note = res.status, res.error
 
     latency = round(time.perf_counter() - started, 3)
-    regions = touched_regions(pair)
-    located = any(_in_regions(f, regions) for f in findings)
+    located = _located(pair, findings)
     flagged = any(f.file_path == pair.diff_file for f in findings)
     semantic = semantic_match(pair, findings) if has_bug else False
 
@@ -279,6 +291,7 @@ def run_variant(method: str, pair: ContrastPair, variant: str, root: Path,
         status=status,
         note=note,
         finding_text=" | ".join(f"L{f.start_line} {f.summary[:90]}" for f in findings)[:400],
+        findings_detail=[f.model_dump(mode="json") for f in findings],
     )
 
 
@@ -349,7 +362,7 @@ def render(summaries: list[FeedSummary]) -> str:
         "",
         "## Detection",
         "",
-        "| Method | Split | Variants (bug/clean) | TP | FP | FN | Accuracy | Precision | Recall | F1 | Clean false alarm | Location acc. | Semantic acc. |",
+        "| Method | Split | Variants (bug/clean) | TP | FP | FN | Accuracy | Precision | Recall | F1 | Clean false alarm | Location acc. | Semantic acc. (keyword) |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for s in summaries:
@@ -359,7 +372,7 @@ def render(summaries: list[FeedSummary]) -> str:
             f"{_pct(s.clean_false_alarm_rate)} | {_pct(s.location_accuracy)} | {_pct(s.semantic_accuracy)} |"
         )
     lines += ["", "## Pair consistency (both variants correct)", "",
-              "| Method | Split | Pairs | Consistent (located) | Pair consistency | Semantic consistent | Semantic pair consistency | Binomial p (vs 50% coin flip) |",
+              "| Method | Split | Pairs | Consistent (located) | Pair consistency | Semantic consistent (keyword) | Semantic pair consistency | Binomial p (vs 50% coin flip) |",
               "|---|---|---|---|---|---|---|---|"]
     for s in summaries:
         lines.append(
@@ -379,7 +392,7 @@ def render(summaries: list[FeedSummary]) -> str:
             f"{s.cost_usd if s.cost_usd is not None else 'not computed'} |"
         )
     lines += ["", "## Per-variant detail", "",
-              "| Method | Pair | Var | Label | Flagged | Located | Semantic | Correct | Tools | Findings |",
+              "| Method | Pair | Var | Label | Flagged | Located | Semantic (keyword) | Correct | Tools | Findings |",
               "|---|---|---|---|---|---|---|---|---|---|"]
     for s in summaries:
         for o in s.outcomes:
@@ -410,12 +423,28 @@ def write_outputs(summaries: list[FeedSummary], out: Path) -> None:
                 w.writerow([s.method] + [getattr(o, f) for f in variant_fields])
     (out / "REPORT.md").write_text(render(summaries), encoding="utf-8")
 
+    # human adjudication sheet: automated flags are suggestions, not verdicts
+    with (out / "human-review.csv").open("w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["method", "pair_id", "variant", "label", "flagged", "located",
+                    "semantic_keyword", "auto_correct", "findings",
+                    "human_verdict (TP/FP/FN/TN/?)", "human_note"])
+        for s in summaries:
+            for o in s.outcomes:
+                w.writerow([
+                    s.method, o.pair_id, o.variant, o.label, o.flagged, o.located,
+                    o.semantic, o.correct_semantic,
+                    " || ".join(f"{f.get('file_path')}:{f.get('start_line')} {f.get('summary', '')}"
+                                for f in o.findings_detail),
+                    o.human_verdict, o.human_note,
+                ])
+
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", choices=["dev", "heldout", "all"], default="dev")
     ap.add_argument("--methods", default=f"{METHOD_V1},{METHOD_V2}")
-    ap.add_argument("--out", type=Path, default=Path("docs/benchmark-results/contrast-dev"))
+    ap.add_argument("--out", type=Path, default=Path("docs/benchmark-results/contrast-dev-v2"))
     args = ap.parse_args(argv)
 
     settings = get_settings()
