@@ -118,3 +118,45 @@ def test_all_not_evaluated_status_is_not_evaluated():
     s = summarise("llm-only", cases, outcomes, ["no key"])
     assert s.status == "not_evaluated"
     assert s.pr_precision is None and s.pr_recall is None
+
+
+# ---- method definitions: llm-only is raw, combined applies the validator ----
+
+def test_combined_applies_validator_but_llm_only_does_not(monkeypatch, tmp_path):
+    """A finding on a line outside the diff must survive llm-only but be dropped
+    by combined, because combined is the shipped pipeline."""
+    from benchmark import evaluate as ev
+    from benchmark.cases import build_cases
+    from pr_guardian.llm_reviewer import LLMResult
+    from pr_guardian.models import FindingSource, VerificationStatus
+
+    case = next(c for c in build_cases() if c.has_bug and c.dev_split)
+    changed_hint = None
+
+    def fake_review(diff_text, files, settings=None):
+        nonlocal changed_hint
+        changed_hint = min(files[0].added_lines)
+        good = ReviewFinding(id="a", file_path=f"src/{case.module}.py",
+                             start_line=changed_hint, end_line=changed_hint,
+                             category="boundary", severity="medium", summary="real",
+                             source=FindingSource.LLM,
+                             verification_status=VerificationStatus.SUSPECTED)
+        bad = ReviewFinding(id="b", file_path="src/nowhere.py", start_line=999,
+                            end_line=999, category="boundary", severity="medium",
+                            summary="hallucinated", source=FindingSource.LLM,
+                            verification_status=VerificationStatus.SUSPECTED)
+        return LLMResult([good, bad], ["LLM model: fake"], True, model="fake",
+                         latency_s=0.01, usage={"prompt_tokens": 10, "completion_tokens": 5})
+
+    monkeypatch.setenv("PR_GUARDIAN_API_KEY", "test-key")
+    monkeypatch.setattr("pr_guardian.llm_reviewer.review_with_llm", fake_review)
+
+    raw = ev.run_method(ev.METHOD_LLM, case, tmp_path)
+    combined = ev.run_method(ev.METHOD_COMBINED, case, tmp_path)
+
+    assert len(raw.findings) == 2, "llm-only must keep raw model output"
+    assert all(f.file_path == f"src/{case.module}.py" for f in combined.findings), \
+        "combined must drop findings that are not in the diff"
+    assert len(combined.findings) == 1
+    assert combined.prompt_tokens == 10 and combined.completion_tokens == 5
+    assert combined.llm_called is True

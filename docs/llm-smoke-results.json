@@ -1,0 +1,88 @@
+{
+  "model": "deepseek-flash",
+  "base_url": "https://api.deepseek.com",
+  "calls_made": 5,
+  "cases": [
+    {
+      "case_id": "DISCOUNT-01",
+      "has_bug": true,
+      "category": "boundary",
+      "schema_valid": true,
+      "raw_findings": 1,
+      "kept_findings": 1,
+      "notes": [
+        "LLM model: deepseek-flash"
+      ],
+      "detected_on_changed_line": true,
+      "findings": [
+        {
+          "file_path": "src/discount.py",
+          "start_line": 6,
+          "source": "llm",
+          "status": "suspected",
+          "summary": "Threshold comparison changed from >= to >, so orders of exactly 100 no longer receive a discount"
+        }
+      ]
+    },
+    {
+      "case_id": "DISCOUNT-03",
+      "has_bug": false,
+      "category": "clean",
+      "schema_valid": true,
+      "raw_findings": 1,
+      "kept_findings": 0,
+      "notes": [
+        "LLM model: deepseek-flash"
+      ],
+      "detected_on_changed_line": false,
+      "findings": []
+    },
+    {
+      "case_id": "DISCOUNT-02",
+      "has_bug": true,
+      "category": "boundary",
+      "schema_valid": true,
+      "raw_findings": 1,
+      "kept_findings": 1,
+      "notes": [
+        "LLM model: deepseek-flash"
+      ],
+      "detected_on_changed_line": true,
+      "findings": [
+        {
+          "file_path": "src/discount.py",
+          "start_line": 7,
+          "source": "llm",
+          "status": "suspected",
+          "summary": "Discount calculation changed from 10% to 1%"
+        }
+      ]
+    },
+    {
+      "case_id": "USERS-03",
+      "has_bug": false,
+      "category": "clean",
+      "schema_valid": true,
+      "raw_findings": 0,
+      "kept_findings": 0,
+      "notes": [
+        "LLM model: deepseek-flash"
+      ],
+      "detected_on_changed_line": false,
+      "findings": []
+    },
+    {
+      "case_id": "USERS-01",
+      "has_bug": true,
+      "category": "null_handling",
+      "schema_valid": true,
+      "raw_findings": 1,
+      "kept_findings": 0,
+      "notes": [
+        "LLM model: deepseek-flash"
+      ],
+      "detected_on_changed_line": false,
+      "findings": []
+    }
+  ]
+}

@@ -18,7 +18,12 @@
     "finding_fp": 0,
     "finding_precision": null,
     "bug_location_accuracy": 0.0,
-    "mean_latency_s": 0.4591,
+    "mean_latency_s": 0.4701,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "llm_calls": 0,
+    "schema_valid_rate": null,
     "note": "",
     "cases": [
       {
@@ -31,10 +36,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": false,
-        "latency_s": 0.4511,
+        "latency_s": 0.4534,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "DISCOUNT-05",
@@ -46,10 +55,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": null,
-        "latency_s": 0.4467,
+        "latency_s": 0.5097,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "USERS-04",
@@ -61,10 +74,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": false,
-        "latency_s": 0.4285,
+        "latency_s": 0.4071,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "CART-03",
@@ -76,10 +93,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": false,
-        "latency_s": 0.424,
+        "latency_s": 0.3944,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "CART-04",
@@ -91,10 +112,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": null,
-        "latency_s": 0.4721,
+        "latency_s": 0.3968,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "INVENTORY-03",
@@ -106,10 +131,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": false,
-        "latency_s": 0.4464,
+        "latency_s": 0.4421,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "INVENTORY-04",
@@ -121,10 +150,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": null,
-        "latency_s": 0.4528,
+        "latency_s": 0.4318,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "PAGINATION-03",
@@ -136,10 +169,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": false,
-        "latency_s": 0.4481,
+        "latency_s": 0.4336,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "PAGINATION-04",
@@ -151,10 +188,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": null,
-        "latency_s": 0.461,
+        "latency_s": 0.4359,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "COUPON-03",
@@ -166,10 +207,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": false,
-        "latency_s": 0.4874,
+        "latency_s": 0.5629,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "COUPON-04",
@@ -181,10 +226,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": null,
-        "latency_s": 0.4502,
+        "latency_s": 0.4611,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "PARSING-03",
@@ -196,10 +245,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": false,
-        "latency_s": 0.487,
+        "latency_s": 0.5183,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "PARSING-04",
@@ -211,10 +264,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": null,
-        "latency_s": 0.4581,
+        "latency_s": 0.4202,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "RETRY-03",
@@ -226,10 +283,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": false,
-        "latency_s": 0.485,
+        "latency_s": 0.5124,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "RETRY-04",
@@ -241,10 +302,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": null,
-        "latency_s": 0.4595,
+        "latency_s": 0.4679,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "RANKING-03",
@@ -256,10 +321,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": null,
-        "latency_s": 0.4946,
+        "latency_s": 0.5508,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       },
       {
         "case_id": "RANKING-04",
@@ -271,10 +340,14 @@
         "tp_findings": 0,
         "fp_findings": 0,
         "bug_located": null,
-        "latency_s": 0.4522,
+        "latency_s": 0.5937,
         "status": "ok",
         "error": "",
-        "failure_note": ""
+        "failure_note": "",
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "llm_latency_s": 0.0,
+        "schema_valid": null
       }
     ]
   }

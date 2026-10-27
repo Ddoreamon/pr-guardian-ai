@@ -34,13 +34,27 @@ from pathlib import Path
 
 from benchmark.cases import Case, build_cases
 from pr_guardian.git_reader import read_changed_files
-from pr_guardian.models import FindingSource, ReviewFinding
+from pr_guardian.models import FindingSource, ReviewFinding, VerificationStatus
 from pr_guardian.static_analysis import run_ruff
+from pr_guardian.validator import validate_findings
 
 METHOD_RUFF = "ruff-only"
-METHOD_LLM = "llm-only"
-METHOD_COMBINED = "combined"
-METHOD_COMBINED_TESTS = "combined+tests"  # pytest evidence allowed; reported separately
+METHOD_LLM = "llm-only"          # raw model output; validator NOT applied
+METHOD_COMBINED = "combined"     # ruff + llm + validator (the shipped pipeline)
+METHOD_COMBINED_TESTS = "combined+tests"  # combined + pytest evidence; reported separately
+
+
+@dataclass
+class MethodRun:
+    """What one method produced for one case."""
+
+    findings: list[ReviewFinding]
+    changed_lines: list[int]
+    note: str = ""
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    llm_latency_s: float = 0.0
+    llm_called: bool = False
 
 
 @dataclass
@@ -58,6 +72,10 @@ class CaseOutcome:
     status: str  # ok | not_evaluated | error
     error: str = ""
     failure_note: str = ""
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    llm_latency_s: float = 0.0
+    schema_valid: bool | None = None
 
 
 @dataclass
@@ -83,6 +101,12 @@ class MethodSummary:
     finding_precision: float | None = None
     bug_location_accuracy: float | None = None
     mean_latency_s: float | None = None
+    # Cost accounting (only from provider-reported usage; cost needs a price table)
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    llm_calls: int = 0
+    schema_valid_rate: float | None = None
     note: str = ""
     cases: list[CaseOutcome] = field(default_factory=list)
 
@@ -180,8 +204,12 @@ def match_findings(case: Case, findings: list[ReviewFinding], changed_lines: lis
 # Method runners
 # ---------------------------------------------------------------------------
 
-def run_method(method: str, case: Case, root: Path) -> tuple[list[ReviewFinding], list[int], str]:
-    """Run one method on one case. Returns (findings, changed_lines, note)."""
+def run_method(method: str, case: Case, root: Path) -> MethodRun:
+    """Run one method on one case.
+
+    `llm-only` is deliberately the RAW model output: it measures the model alone.
+    `combined` applies the validator, which is what the shipped pipeline does.
+    """
     include_tests = method == METHOD_COMBINED_TESTS
     repo = materialise_case(case, root, include_tests=include_tests)
     files, diff_text = read_changed_files(repo, "main", "pr")
@@ -189,20 +217,31 @@ def run_method(method: str, case: Case, root: Path) -> tuple[list[ReviewFinding]
 
     if method == METHOD_RUFF:
         findings, _ = run_ruff(repo, files)
-        return findings, changed, ""
+        return MethodRun(findings=findings, changed_lines=changed)
 
     if method in (METHOD_LLM, METHOD_COMBINED, METHOD_COMBINED_TESTS):
         import os
 
         from pr_guardian.llm_reviewer import review_with_llm
         if not os.environ.get("PR_GUARDIAN_API_KEY"):
-            return [], changed, "NOT_EVALUATED: no PR_GUARDIAN_API_KEY"
+            return MethodRun([], changed, "NOT_EVALUATED: no PR_GUARDIAN_API_KEY")
         res = review_with_llm(diff_text, files)
         findings = list(res.findings)
         if method != METHOD_LLM:
             ruff_findings, _ = run_ruff(repo, files)
             findings = ruff_findings + findings
-        return findings, changed, ""
+            # the shipped pipeline validates before reporting
+            findings = validate_findings(findings, files)
+            findings = [f for f in findings if f.verification_status != VerificationStatus.INVALID]
+        usage = res.usage or {}
+        return MethodRun(
+            findings=findings,
+            changed_lines=changed,
+            prompt_tokens=usage.get("prompt_tokens", 0),
+            completion_tokens=usage.get("completion_tokens", 0),
+            llm_latency_s=res.latency_s,
+            llm_called=res.error not in {"no_api_key", "disabled_by_policy"},
+        )
 
     raise ValueError(f"unknown method {method}")
 
@@ -213,20 +252,25 @@ def evaluate_method(method: str, cases: list[Case], root: Path) -> MethodSummary
     for case in cases:
         t0 = time.perf_counter()
         try:
-            findings, changed, note = run_method(method, case, root)
-            if note.startswith("NOT_EVALUATED"):
+            run = run_method(method, case, root)
+            if run.note.startswith("NOT_EVALUATED"):
                 outcomes.append(CaseOutcome(case.case_id, _split(case), case.category, case.has_bug,
-                                            False, 0, 0, 0, None, 0.0, "not_evaluated", note))
-                notes.append(note)
+                                            False, 0, 0, 0, None, 0.0, "not_evaluated", run.note))
+                notes.append(run.note)
                 continue
-            tp, fp, located = match_findings(case, findings, changed)
+            tp, fp, located = match_findings(case, run.findings, run.changed_lines)
             flagged = any(
-                f.file_path == f"src/{case.module}.py" and not _is_incidental(f) for f in findings
+                f.file_path == f"src/{case.module}.py" and not _is_incidental(f)
+                for f in run.findings
             )
             outcomes.append(CaseOutcome(
                 case.case_id, _split(case), case.category, case.has_bug, flagged,
-                len(findings), tp, fp, (located if case.has_bug else None),
+                len(run.findings), tp, fp, (located if case.has_bug else None),
                 round(time.perf_counter() - t0, 4), "ok",
+                prompt_tokens=run.prompt_tokens,
+                completion_tokens=run.completion_tokens,
+                llm_latency_s=run.llm_latency_s,
+                schema_valid=(True if run.llm_called else None),
             ))
         except Exception as exc:  # noqa: BLE001 - record and continue, never crash the run
             outcomes.append(CaseOutcome(case.case_id, _split(case), case.category, case.has_bug,
@@ -255,6 +299,10 @@ def summarise(method: str, cases: list[Case], outcomes: list[CaseOutcome], notes
     f_fp = sum(o.fp_findings for o in ok)
     lat = [o.latency_s for o in ok]
     located_n = sum(1 for o in bug_ok if o.bug_located)
+    prompt_tokens = sum(o.prompt_tokens for o in ok)
+    completion_tokens = sum(o.completion_tokens for o in ok)
+    llm_calls = sum(1 for o in ok if o.schema_valid is not None)
+    schema_ok = sum(1 for o in ok if o.schema_valid is True)
     return MethodSummary(
         method=method,
         split=_split_label(outcomes),
@@ -272,6 +320,11 @@ def summarise(method: str, cases: list[Case], outcomes: list[CaseOutcome], notes
         finding_precision=safe_div(f_tp, f_tp + f_fp),
         bug_location_accuracy=safe_div(located_n, len(bug_ok)),
         mean_latency_s=round(sum(lat) / len(lat), 4) if lat else None,
+        prompt_tokens=prompt_tokens,
+        completion_tokens=completion_tokens,
+        total_tokens=prompt_tokens + completion_tokens,
+        llm_calls=llm_calls,
+        schema_valid_rate=safe_div(schema_ok, llm_calls),
         note="; ".join(sorted(set(notes))),
         cases=outcomes,
     )
@@ -323,7 +376,13 @@ def _fmt(v, pct: bool = True) -> str:
 def render_markdown(summaries: list[MethodSummary]) -> str:
     lines = ["# Benchmark results", "",
              "Ground truth is applied only by the evaluator. Methods never see the test file",
-             "unless explicitly marked `+tests`. `n/a` = undefined (zero denominator) or not run.", ""]
+             "unless explicitly marked `+tests`. `n/a` = undefined (zero denominator) or not run.", "",
+             "Method definitions:", "",
+             "* `ruff-only` — Ruff static analysis only.",
+             "* `llm-only` — raw model output, validator NOT applied (measures the model alone).",
+             "* `combined` — Ruff + model + validator (what the shipped pipeline reports).",
+             "* `combined+tests` — combined plus pytest evidence; reported separately because",
+             "  the test file is visible to the method in that condition.", ""]
     lines += ["## PR-level bug detection", "",
               "| Method | Split | Status | Cases (bug/clean) | TP | FP | FN | Precision | Recall | F1 | Clean false-alarm | Mean latency (s) |",
               "|---|---|---|---|---|---|---|---|---|---|---|---|"]
@@ -339,6 +398,21 @@ def render_markdown(summaries: list[MethodSummary]) -> str:
     for s in summaries:
         lines.append(f"| {s.method} | {s.split} | {s.finding_tp} | {s.finding_fp} | "
                      f"{_fmt(s.finding_precision)} | {_fmt(s.bug_location_accuracy)} |")
+
+    lines += ["", "## Model calls and tokens", "",
+              "Provider-reported usage only. Cost is not inferred without a price table.", "",
+              "| Method | Split | LLM calls | Schema-valid rate | Prompt tokens | Completion tokens | Total tokens | LLM latency (s, mean) |",
+              "|---|---|---|---|---|---|---|---|"]
+    for s in summaries:
+        mean_llm_lat = None
+        llm_latencies = [o.llm_latency_s for o in s.cases if o.llm_latency_s]
+        if llm_latencies:
+            mean_llm_lat = round(sum(llm_latencies) / len(llm_latencies), 3)
+        lines.append(
+            f"| {s.method} | {s.split} | {s.llm_calls} | {_fmt(s.schema_valid_rate)} | "
+            f"{s.prompt_tokens} | {s.completion_tokens} | {s.total_tokens} | {_fmt(mean_llm_lat, pct=False)} |"
+        )
+
     notes = [f"- **{s.method}**: {s.note}" for s in summaries if s.note]
     if notes:
         lines += ["", "## Notes", ""] + notes
