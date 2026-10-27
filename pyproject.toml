@@ -14,6 +14,8 @@ dependencies = [
     # Needed at runtime: the demo runs the trusted suite to produce evidence.
     "pytest>=8",
     "pytest-json-report>=1.5",
+    # MCP server/client; pinned to the v2 SDK line that renamed FastMCP to MCPServer
+    "mcp==2.3.0",
 ]
 
 [project.optional-dependencies]

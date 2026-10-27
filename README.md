@@ -403,6 +403,49 @@ Adjudication and raw findings:
 Held-out has not been run; readiness conditions are in
 [`docs/v2.3-heldout-readiness.md`](docs/v2.3-heldout-readiness.md).
 
+### MCP server (optional transport, local stdio only)
+
+The same two read-only tools are also exposed over the Model Context Protocol, so
+an external MCP client can use them without the agent loop:
+
+```bash
+python -m pr_guardian.mcp_server --repo <trusted-repo> --ref <commit>
+```
+
+The repository and the **commit SHA** are bound at process start from the command
+line. Neither is a tool argument, so no model can change the repository, switch the
+commit, or reach another directory. Reads go through the existing
+`TrustedCodebase` / `GitSnapshot`, so the `src/**/*.py` allowlist, 40-line and
+4,000-char caps, 200 KB file limit, symlink refusal and read-only behaviour are the
+same code the in-process agent uses — there is no second filesystem implementation.
+
+The agent can use the same tools over MCP instead of in-process:
+
+```bash
+PR_GUARDIAN_TOOL_CALLS_ENABLED=1 PR_GUARDIAN_TOOL_BACKEND=mcp ...
+```
+
+`local` stays the default. Verified by real stdio round trips (no mocks):
+`list_tools` returns both schemas, `call_tool` reads the pinned commit, symbol
+lookup finds functions and constants, and unsafe paths, bad arguments, unknown
+symbols and unknown tools all return explicit results. stdout carries protocol
+frames only; diagnostics go to stderr, and a failed start writes nothing to stdout
+(`tests/test_mcp_protocol.py`, `tests/test_mcp_integration.py`).
+
+Measured on this machine against the demo repository
+(`scripts/mcp_trace.py --repo <demo> --ref feature/boundary-bug`):
+
+| | value |
+|---|---|
+| session start (once per review) | 0.93 s |
+| per-call median, MCP | 0.0150 s |
+| per-call median, in-process | 0.0220 s |
+| payloads identical to in-process | 4/4 |
+
+The MCP transport adds no measurable per-call cost once the session is warm; the
+one-off session start is the real price. The public Render deployment keeps
+`PR_GUARDIAN_TOOL_CALLS_ENABLED=0` and exposes no MCP endpoint.
+
 ### Corrections to earlier benchmark artefacts
 
 Committed reports are historical records and are not rewritten. Known defects in
