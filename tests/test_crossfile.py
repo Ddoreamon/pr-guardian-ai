@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from benchmark.crossfile_cases import FILES, build_cases, files_for
-from benchmark.evaluate_crossfile import match
+from benchmark.evaluate_crossfile import changed_regions, match
 from pr_guardian.models import FindingSource, ReviewFinding, VerificationStatus
 
 
@@ -44,12 +44,24 @@ def test_every_case_has_expected_text():
         assert case.test_code.strip()
 
 
-def test_matching_counts_only_changed_lines():
-    case = next(c for c in build_cases() if c.has_bug)
-    lines = [5]
-    assert match(case, [_finding(case.changed_file, 5)], lines) == (1, 0, True)
-    assert match(case, [_finding(case.changed_file, 9)], lines) == (0, 1, False)
-    assert match(case, [_finding("src/other.py", 5)], lines) == (0, 0, False)
+def test_matching_uses_changed_definition_region():
+    case = next(c for c in build_cases() if c.case_id == "XF-02")  # inside tax_for
+    regions = changed_regions(case, [25])  # the edited return line
+    first, last = regions[0]
+    assert first <= 25 <= last
+    assert match(case, [_finding(case.changed_file, first)], [25]) == (1, 0, True)
+    # a finding far outside every touched definition is not a detection
+    assert match(case, [_finding(case.changed_file, last + 100)], [25])[0] == 0
+
+
+def test_pure_deletion_maps_onto_the_touched_function():
+    """XF-03 removes two lines; there are no added lines to anchor to."""
+    case = next(c for c in build_cases() if c.case_id == "XF-03")
+    regions = changed_regions(case, [])
+    assert any(first <= 17 <= last for first, last in regions), regions
+    # the model's real answer in the V2 run pointed at line 16/17
+    assert match(case, [_finding(case.changed_file, 16)], [])[0] == 1
+    assert match(case, [_finding(case.changed_file, 17)], [])[0] == 1
 
 
 def test_clean_case_any_finding_on_changed_file_is_fp():

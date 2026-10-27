@@ -1,0 +1,13 @@
+method,case_id,split,category,has_bug,flagged,findings,tp,fp,located,tool_calls,tool_calls_ok,tool_rounds,prompt_tokens,completion_tokens,latency_s,status,error,tool_errors,finding_notes
+v1-no-tools,XF-05,heldout,cross_file_config,True,True,1,1,0,True,0,0,0,303,603,4.315,ok,,,"L5 TAX_RATE reduced by 10x from 0.20 to 0.02, likely a decimal typo"
+v1-no-tools,XF-06,heldout,cross_file_boundary,True,True,1,1,0,True,0,0,0,311,713,4.595,ok,,,L11 Discount threshold comparison changed from inclusive to exclusive
+v1-no-tools,XF-07,heldout,cross_file_caller,True,True,1,1,0,True,0,0,0,311,732,5.39,ok,,,L7 Discount calculation uses total divided by 100 instead of the original total
+v1-no-tools,XF-08,heldout,cross_file_validation_contract,True,True,1,1,0,True,0,0,0,337,631,4.304,ok,,,"L6 is_valid_quantity now accepts zero, changing the lower bound of valid quantities"
+v1-no-tools,XF-09,heldout,clean_new_constant,False,False,0,0,0,,0,0,0,292,68,0.971,ok,,,
+v1-no-tools,XF-10,heldout,clean_docstring,False,False,0,0,0,,0,0,0,310,23,0.89,ok,,,
+v2-tools,XF-05,heldout,cross_file_config,True,True,1,1,0,True,6,3,3,3850,1350,9.468,tool_limit,,read_code_context:not_found; read_code_context:budget_exceeded; read_code_context:budget_exceeded,"L5 TAX_RATE reduced tenfold from 0.20 to 0.02, changing all tax computations globally"
+v2-tools,XF-06,heldout,cross_file_boundary,True,True,1,1,0,True,4,4,3,4635,741,5.361,ok,,,"L11 Changing `>=` to `>` excludes orders exactly at DISCOUNT_THRESHOLD from receiving the discount, cont"
+v2-tools,XF-07,heldout,cross_file_caller,True,True,1,1,0,True,4,4,3,5753,813,7.151,tool_limit,,,"L7 Order total is divided by 100 before being passed to discount_for, computing the discount on the wro"
+v2-tools,XF-08,heldout,cross_file_validation_contract,True,True,1,1,0,True,2,2,2,2306,576,4.054,ok,,,"L5 The relaxation from `qty > 0` to `qty >= 0` now accepts zero, which contradicts the function's docum"
+v2-tools,XF-09,heldout,clean_new_constant,False,False,0,0,0,,2,2,2,2117,176,2.693,ok,,,
+v2-tools,XF-10,heldout,clean_docstring,False,False,0,0,0,,2,2,2,2512,169,2.066,ok,,,

@@ -14,6 +14,7 @@ Run:
 from __future__ import annotations
 
 import argparse
+import ast
 import csv
 import json
 import subprocess
@@ -55,6 +56,7 @@ class CaseOutcome:
     latency_s: float = 0.0
     status: str = "ok"
     error: str = ""
+    tool_errors: str = ""
     finding_notes: str = ""
 
 
@@ -119,13 +121,75 @@ def materialise(case: CrossFileCase, root: Path) -> Path:
     return repo
 
 
+def _definitions(text: str) -> list[tuple[str, int, int]]:
+    """Top-level and nested function/class spans: (name, first_line, last_line)."""
+    tree = ast.parse(text)
+    spans: list[tuple[str, int, int]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            end = getattr(node, "end_lineno", None)
+            if end:
+                spans.append((node.name, node.lineno, end))
+    return spans
+
+
+def changed_regions(case: CrossFileCase, added_lines: list[int]) -> list[tuple[int, int]]:
+    """Line regions a finding may point at to count as touching the change.
+
+    Rule (frozen before the held-out run): a finding matches if it falls inside a
+    definition that the change touched. For added lines this is the enclosing
+    definition in the new file; for a pure deletion there are no added lines, so
+    the enclosing definition is taken from the base file and located again by
+    name in the new file. If nothing can be resolved, the whole file is allowed.
+    """
+    base_text = files_for(case, apply_pr=False)[case.changed_file]
+    pr_text = case.content_pr
+    pr_defs = _definitions(pr_text)
+    regions: list[tuple[int, int]] = []
+
+    for _name, first, last in pr_defs:
+        if any(first <= line <= last for line in added_lines):
+            regions.append((first, last))
+
+    if not regions:
+        # pure deletion: map the old position onto the definition by name
+        base_defs = _definitions(base_text)
+        deleted = _deleted_old_lines(base_text, pr_text)
+        touched = {name for name, first, last in base_defs
+                   if any(first <= line <= last for line in deleted)}
+        for name, first, last in pr_defs:
+            if name in touched:
+                regions.append((first, last))
+
+    if not regions:
+        regions.append((1, max(len(pr_text.splitlines()), 1)))
+    return regions
+
+
+def _deleted_old_lines(base_text: str, pr_text: str) -> list[int]:
+    """Old-file line numbers that disappeared (small files: simple diff)."""
+    import difflib
+
+    base_lines = base_text.splitlines()
+    diff = difflib.SequenceMatcher(a=base_lines, b=pr_text.splitlines())
+    removed: list[int] = []
+    for tag, i1, _i2, _j1, _j2 in diff.get_opcodes():
+        if tag in ("delete", "replace"):
+            removed.extend(range(i1 + 1, i1 + (_i2 - i1) + 1))
+    return removed
+
+
 def match(case: CrossFileCase, findings: list[ReviewFinding],
           changed_lines: list[int]) -> tuple[int, int, bool]:
     on_target = [f for f in findings if f.file_path == case.changed_file]
-    changed = set(changed_lines)
+    regions = changed_regions(case, changed_lines)
 
     def hit(f: ReviewFinding) -> bool:
-        return any(line in changed for line in range(f.start_line, f.end_line + 1))
+        return any(
+            r_first <= line <= r_last
+            for line in range(f.start_line, f.end_line + 1)
+            for r_first, r_last in regions
+        )
 
     if not case.has_bug:
         return 0, len(on_target), False
@@ -183,6 +247,7 @@ def run_case(method: str, case: CrossFileCase, root: Path,
         latency_s=round(time.perf_counter() - started, 3),
         status=status if schema_valid else "schema_invalid",
         error=error,
+        tool_errors="; ".join(f"{t.name}:{t.error_code}" for t in trace if not t.ok)[:200],
         finding_notes=" | ".join(f"L{f.start_line} {f.summary[:100]}" for f in findings)[:500],
     )
 
@@ -250,14 +315,14 @@ def render(summaries: list[MethodSummary]) -> str:
             f"{s.completion_tokens} | {s.mean_latency_s if s.mean_latency_s is not None else 'n/a'} |"
         )
     lines += ["", "## Per-case detail", "",
-              "| Method | Case | Split | Bug? | Flagged | TP | FP | Tools | Findings |",
-              "|---|---|---|---|---|---|---|---|---|"]
+              "| Method | Case | Split | Bug? | Flagged | TP | FP | Tools | Tool errors | Findings |",
+              "|---|---|---|---|---|---|---|---|---|---|"]
     for s in summaries:
         for o in s.cases:
             note = (o.finding_notes or "").replace("|", "/")
             lines.append(
                 f"| {s.method} | {o.case_id} | {o.split} | {o.has_bug} | {o.flagged} | {o.tp} | "
-                f"{o.fp} | {o.tool_calls} | {note} |"
+                f"{o.fp} | {o.tool_calls} | {(o.tool_errors or '—').replace('|', '/')} | {note} |"
             )
     return "\n".join(lines) + "\n"
 

@@ -97,7 +97,7 @@ src/pr_guardian/   review engine (CLI + library)
   settings.py        env/.env configuration
 app/               FastAPI + Jinja2 web UI (templates, static, store, export)
 benchmark/         37 labelled PR cases, evaluator, ground-truth verifier
-tests/             99 pytest tests
+tests/            156 pytest tests
 scripts/           browser acceptance suite, real-LLM smoke test
 ```
 
@@ -274,10 +274,85 @@ Artefacts: [`docs/benchmark-results/heldout-llm/`](docs/benchmark-results/heldou
 
 ---
 
+## V2: read-only tool calling (opt-in, default off)
+
+On branch `feature/v2-function-calling` the reviewer can ask for evidence instead
+of guessing. It is behind one flag, so V1 behaviour is byte-for-byte unchanged
+unless you turn it on:
+
+```bash
+PR_GUARDIAN_TOOL_CALLS_ENABLED=1    # default 0
+PR_GUARDIAN_MAX_TOOL_ROUNDS=3       # model turns in the loop
+PR_GUARDIAN_MAX_TOOL_CALLS=4        # tool executions per review
+```
+
+The loop follows DeepSeek's Tool Calls protocol: send `tools`, receive
+`tool_calls`, execute, reply with one `{"role": "tool", "tool_call_id": ...}`
+message per call, repeat. When the conversation ends, a JSON-mode call turns the
+findings into the same schema V1 uses.
+
+| Tool | Input | Returns | Hard limits |
+|---|---|---|---|
+| `read_code_context` | `file_path`, `start_line`, `end_line` | numbered source lines | 40 lines, 4,000 chars, `.py` only |
+| `find_symbol_definition` | `symbol` | definition site + snippet | 3 matches, AST lookup |
+
+What a tool call is refused for (each becomes a recorded error, not a crash):
+absolute paths, `..` traversal, drive letters, null bytes, dotfiles, symlinks,
+non-Python files, `.env`, `tests/`, `docs/`, `benchmark/`, files over 200 KB,
+ranges over 40 lines, unknown tools, malformed arguments, and any call beyond
+the budget. Tool output is wrapped as *untrusted data*; instructions inside source
+comments are never treated as commands. Findings stay `suspected`.
+
+The report carries an auditable `tool_calls` trace (name, arguments, ok/error
+code, result size, latency) so a claim about tool use can be checked.
+
+### Cross-file benchmark: V1 vs V2
+
+Ten cases where the defect is only decidable by reading a **different** file
+(a config constant vs a caller's contract, a shared validator, caller scaling).
+7 bug / 3 clean; split 4 dev / 6 held-out; labels proven by executable tests
+(`python -m benchmark.verify_crossfile`, 0 mismatches).
+
+Matching rule, fixed **before** the held-out run: a finding matches only if it
+falls inside a definition the change touched (AST-based), which also covers
+pure-deletion changes. Same rule for both methods; hidden tests are never shown.
+
+Held-out result (one frozen run, `deepseek-flash`):
+
+| Method | Cases (bug/clean) | TP | FP | FN | Precision | Recall | F1 | Clean false alarms | Location accuracy |
+|---|---|---|---|---|---|---|---|---|---|
+| V1 no tools | 6 (4/2) | 4 | 0 | 0 | 100.00% | 100.00% | 100.00% | 0.00% | 100.00% |
+| V2 tools | 6 (4/2) | 4 | 0 | 0 | 100.00% | 100.00% | 100.00% | 0.00% | 100.00% |
+
+| Method | Tool calls | Succeeded | Tool success rate | Schema-valid | Prompt tokens | Completion tokens | Mean latency |
+|---|---|---|---|---|---|---|---|
+| V1 no tools | 0 | 0 | n/a | 100% | 1,864 | 2,770 | 3.41 s |
+| V2 tools | 20 | 17 | 85.00% | 100% | 21,173 | 3,825 | 5.13 s |
+
+### What this actually shows — and does not
+
+* **No measurable improvement on the held-out set.** V1 already solved all six
+  cases, so V2 had nothing to add there. On the four dev cases V2 caught a
+  config-change case that V1 missed in one run and missed it in another: at this
+  sample size the difference is variance, not a capability claim.
+* **V2 costs about 11× the prompt tokens** (21,173 vs 1,864) and is slower
+  (5.13 s vs 3.41 s). It is a hypothesis about better evidence, not a measured win.
+* **The tool protocol itself works**: 20 real calls, each parsed, budgeted and
+  replied to; 17 succeeded. The three failures were real: one `not_found` (the
+  model guessed a path that does not exist) and two `budget_exceeded` on the same
+  case — the budget did its job instead of looping.
+* One dev run hit the 4-call budget mid-investigation, which is why the caps are
+  configurable rather than fixed in code.
+
+The public Render instance keeps `PR_GUARDIAN_TOOL_CALLS_ENABLED=0` and live
+model calls off; V2 is exercised locally only.
+
+---
+
 ## Testing
 
 ```bash
-python -m pytest -q                      # 99 tests
+python -m pytest -q                      # 156 tests
 ruff check src tests demo benchmark app scripts
 
 # browser acceptance suite (needs the server running)
@@ -287,11 +362,11 @@ python scripts/browser_test.py           # 42 checks (43 with a live model)
 
 | Suite | Count | Covers |
 |---|---|---|
-| Unit — diff parser, validator, LLM (mocked), metrics, settings, test-runner | 74 | parsing, trust rules, zero-division, schema failures, cost policy |
+| Unit — diff parser, validator, LLM (mocked), metrics, settings, tools, protocol | 131 | parsing, trust rules, zero-division, schema failures, cost policy |
 | API — FastAPI endpoints | 25 | health, cases, diff, review, decisions, exports, error codes |
 | Browser — Playwright | 42–43 | real interactions, exports, mobile layout, error banner, live-model mode |
 
-Latest local run: **99 passed**; browser suite **42/42** (no API key) and
+Latest local run: **156 passed**; browser suite **42/42** (no API key) and
 **43/43** (live model configured) — the suite adapts to the server's mode.
 
 ---
