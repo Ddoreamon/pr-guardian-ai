@@ -21,16 +21,19 @@ import csv
 import json
 import math
 import os
+import platform
 import subprocess
 import sys
 import tempfile
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 from benchmark.contrast_cases import (
     UNCONTROVERSIAL,
+    VERSION,
     ContrastPair,
     build_index,
     clean_class_of,
@@ -169,6 +172,9 @@ class VariantOutcome:
     note: str = ""
     finding_text: str = ""
     findings_detail: list = field(default_factory=list)
+    tool_status: str = ""
+    partial: bool = False
+    tool_trace: list = field(default_factory=list)
     human_verdict: str = ""
     human_note: str = ""
 
@@ -274,6 +280,8 @@ def run_variant(method: str, pair: ContrastPair, variant: str, root: Path,
     note = ""
     usage: dict[str, int] = {}
     attempts = failures = 0
+    tool_status = "not_applicable"
+    partial = False
 
     if method == METHOD_V1:
         res = review_with_llm(diff_text, files, settings=settings)
@@ -291,6 +299,8 @@ def run_variant(method: str, pair: ContrastPair, variant: str, root: Path,
         attempts = res.model_attempts
         failures = res.model_failures
         status, note = res.status, res.error
+        tool_status = res.status
+        partial = res.status in {"tool_limit", "schema_invalid", "model_error"}
 
     latency = round(time.perf_counter() - started, 3)
     located = _located(pair, findings)
@@ -336,6 +346,9 @@ def run_variant(method: str, pair: ContrastPair, variant: str, root: Path,
         note=note,
         finding_text=" | ".join(f"L{f.start_line} {f.summary[:90]}" for f in findings)[:400],
         findings_detail=[f.model_dump(mode="json") for f in findings],
+        tool_status=tool_status,
+        partial=partial,
+        tool_trace=[t.as_dict() for t in trace],
     )
 
 
@@ -475,6 +488,66 @@ def render(summaries: list[FeedSummary]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _git(*args: str) -> str:
+    try:
+        proc = subprocess.run(["git", *args], capture_output=True, text=True,
+                              timeout=20, check=False)
+        return proc.stdout.strip() if proc.returncode == 0 else "unknown"
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+
+
+def experiment_record(args, settings: Settings, pairs: list[ContrastPair],
+                      methods: list[str], started: str, finished: str) -> dict:
+    """Everything needed to reproduce this run. The API key is never recorded."""
+    return {
+        "started_at": started,
+        "finished_at": finished,
+        "git_branch": _git("rev-parse", "--abbrev-ref", "HEAD"),
+        "git_sha": _git("rev-parse", "HEAD"),
+        "git_tree_clean": _git("status", "--porcelain") == "",
+        "dataset_version": VERSION,
+        "split": args.split,
+        "methods": methods,
+        "pairs": [
+            {"pair_id": p.pair_id, "split": p.split, "mechanism": p.mechanism,
+             "clean_class": clean_class_of(p.pair_id)}
+            for p in pairs
+        ],
+        "model": settings.model,
+        "base_url": settings.base_url,
+        "public_mode": settings.public_mode,
+        "allow_test_execution": settings.allow_test_execution,
+        "max_live_llm_calls": settings.max_live_llm_calls,
+        "tool_budget": {"max_rounds": settings.max_tool_rounds,
+                        "max_calls": settings.max_tool_calls},
+        "evaluator": ("benchmark/evaluate_contrast.py — label classes v3, "
+                      "strict and decided readings, exact McNemar"),
+        "python": sys.version.split()[0],
+        "platform": platform.platform(),
+        "api_key_recorded": False,
+    }
+
+
+def write_experiment(out: Path, record: dict) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "experiment.json").write_text(
+        json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
+    lines = ["# Experiment record", "",
+             "| Field | Value |", "|---|---|"]
+    for key in ("started_at", "finished_at", "git_branch", "git_sha",
+                "git_tree_clean", "dataset_version", "split", "methods",
+                "model", "base_url", "public_mode", "allow_test_execution",
+                "max_live_llm_calls", "tool_budget", "evaluator", "python",
+                "platform", "api_key_recorded"):
+        value = record.get(key)
+        lines.append(f"| `{key}` | `{json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value}` |")
+    lines += ["", "## Pairs", "", "| Pair | Split | Mechanism | Clean class |", "|---|---|---|---|"]
+    for p in record["pairs"]:
+        lines.append(f"| {p['pair_id']} | {p['split']} | {p['mechanism']} | {p['clean_class']} |")
+    (out / "EXPERIMENT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def compare_methods(first: FeedSummary, second: FeedSummary) -> str:
     """Paired comparison of two methods on the same variants (exact McNemar)."""
     key = lambda o: (o.pair_id, o.variant)
@@ -550,6 +623,7 @@ def main(argv: list[str] | None = None) -> int:
         pairs = [p for p in pairs if p.split == args.split]
     methods = [m.strip() for m in args.methods.split(",") if m]
 
+    started_at = datetime.now(UTC).isoformat(timespec="seconds")
     summaries: list[FeedSummary] = []
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -571,6 +645,9 @@ def main(argv: list[str] | None = None) -> int:
                             status="error", note=f"{type(exc).__name__}: {exc}"))
             summaries.append(summarise(method, args.split, outcomes, len(pairs)))
 
+    finished_at = datetime.now(UTC).isoformat(timespec="seconds")
+    write_experiment(args.out, experiment_record(args, settings, pairs, methods,
+                                                 started_at, finished_at))
     write_outputs(summaries, args.out)
     print(render(summaries))
     if len(summaries) >= 2:

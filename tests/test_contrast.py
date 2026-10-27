@@ -1,5 +1,6 @@
 """Tests for the contrast-pair set, its scoring layers and the statistics."""
 
+import json
 import subprocess
 import sys
 import tempfile
@@ -312,3 +313,45 @@ def test_v1_and_v2_share_the_same_review_scope():
     # the scope must state that green tests are not proof of correctness
     assert "NOT proof" in REVIEW_SCOPE
     assert "annotations" in REVIEW_SCOPE and "docstrings" in REVIEW_SCOPE
+
+def test_experiment_record_captures_the_freeze_and_never_the_key(tmp_path):
+    """The record must pin what was frozen, and must not leak the API key."""
+    from types import SimpleNamespace
+
+    from benchmark.contrast_cases import VERSION
+    from benchmark.evaluate_contrast import experiment_record, write_experiment
+    from pr_guardian.settings import Settings
+
+    settings = Settings(
+        api_key="sk-should-never-be-written", base_url="https://example.test",
+        model="fake-model", public_mode=False, allow_live_llm=True,
+        allow_test_execution=True, max_live_llm_calls=50,
+        tool_calls_enabled=True, max_tool_rounds=3, max_tool_calls=4,
+    )
+    args = SimpleNamespace(split="heldout")
+    record = experiment_record(args, settings, build_index(),
+                               ["v1-diff-only", "v2-tools"], "t0", "t1")
+    assert record["dataset_version"] == VERSION
+    assert record["model"] == "fake-model"
+    assert record["split"] == "heldout"
+    assert len(record["pairs"]) == 11
+    assert record["api_key_recorded"] is False
+    assert "sk-should-never-be-written" not in json.dumps(record)
+
+    write_experiment(tmp_path, record)
+    text = (tmp_path / "experiment.json").read_text(encoding="utf-8")
+    assert "sk-should-never-be-written" not in text
+    assert "dataset_version" in text
+    assert (tmp_path / "EXPERIMENT.md").is_file()
+
+
+def test_variant_outcome_records_tool_status_and_trace():
+    o = VariantOutcome(
+        pair_id="P1", variant="a", split="dev", mechanism="M1", label="bug",
+        flagged=True, located=True, semantic=True, correct_location=True,
+        correct_semantic=True, tool_status="tool_limit", partial=True,
+        tool_trace=[{"round": 1, "name": "read_code_context", "outcome": "hit"}],
+    )
+    assert o.partial is True
+    assert o.tool_status == "tool_limit"
+    assert o.tool_trace[0]["outcome"] == "hit"
