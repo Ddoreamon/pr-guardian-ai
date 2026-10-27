@@ -8,6 +8,7 @@ pytest results and states plainly that the LLM step did not run.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -29,7 +30,23 @@ APP_DIR = Path(__file__).resolve().parent
 
 load_dotenv()
 
-app = FastAPI(title="PR Guardian", version="0.2.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Build the trusted demo repository at startup.
+
+    This keeps the first review request fast and surfaces a broken environment
+    (e.g. no git binary) immediately in /health and the UI, instead of failing
+    on a visitor's first click.
+    """
+    try:
+        demo_repo.path()
+    except RuntimeError:
+        pass  # recorded on demo_repo.error; reported by /health and the page banner
+    yield
+
+
+app = FastAPI(title="PR Guardian", version="0.2.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 
