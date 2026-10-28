@@ -25,10 +25,13 @@ import httpx
 from pydantic import BaseModel, Field, ValidationError
 
 from .agent_tools import (
+    READ_CODE_CONTEXT,
     ToolError,
-    TrustedCodebase,
     is_effective_hit,
     wrap_tool_output,
+)
+from .agent_tools import (
+    TOOL_NAMES as AGENT_TOOL_NAMES,
 )
 from .llm_reviewer import REVIEW_SCOPE
 from .models import ChangedFile, FindingSource, ReviewFinding, VerificationStatus
@@ -88,7 +91,7 @@ TOOLS: list[dict] = [
     },
 ]
 
-TOOL_NAMES = {t["function"]["name"] for t in TOOLS}
+TOOL_NAMES = set(AGENT_TOOL_NAMES)
 
 SYSTEM_PROMPT = REVIEW_SCOPE + """You are a strict Python code reviewer with read-only tools.
 
@@ -144,6 +147,8 @@ class ToolCallRecord:
     result_chars: int = 0
     latency_s: float = 0.0
     matched: int = 0
+    # the provider's tool_call_id this result was sent back for
+    call_id: str = ""
 
     def as_dict(self) -> dict:
         return {
@@ -157,6 +162,7 @@ class ToolCallRecord:
             "result_chars": self.result_chars,
             "latency_s": self.latency_s,
             "matched": self.matched,
+            "call_id": self.call_id,
         }
 
 
@@ -259,7 +265,7 @@ class _Session:
 def review_with_tools(
     diff_text: str,
     files: list[ChangedFile],
-    codebase: TrustedCodebase,
+    codebase,  # anything with read_code_context / find_symbol_definition
     settings: Settings,
     max_rounds: int | None = None,
     max_tool_calls: int | None = None,
@@ -336,7 +342,8 @@ def review_with_tools(
                 status = "tool_limit"
                 continue
 
-            record, payload_out = _execute(name, arguments, codebase, round_index)
+            record, payload_out = _execute(name, arguments, codebase, round_index,
+                                       call_id=call_id)
             trace.append(record)
             messages.append({"role": "tool", "tool_call_id": call_id,
                              "content": wrap_tool_output(payload_out)})
@@ -423,8 +430,17 @@ def _parse_call(call: dict) -> tuple[str, dict]:
     return name, {"__parse_error__": "arguments were not a JSON object"}
 
 
-def _execute(name: str, arguments: dict, codebase: TrustedCodebase,
-             round_index: int) -> tuple[ToolCallRecord, dict]:
+def _execute(name: str, arguments: dict, codebase,
+             round_index: int,
+             call_id: str = "") -> tuple[ToolCallRecord, dict]:
+    """Execute one call and stamp it with the provider's tool_call_id."""
+    record, payload = _execute_inner(name, arguments, codebase, round_index)
+    record.call_id = call_id
+    return record, payload
+
+
+def _execute_inner(name: str, arguments: dict, codebase,
+                   round_index: int) -> tuple[ToolCallRecord, dict]:
     started = time.monotonic()
     elapsed = lambda: round(time.monotonic() - started, 4)
 
@@ -442,7 +458,7 @@ def _execute(name: str, arguments: dict, codebase: TrustedCodebase,
                                         "message": f"unknown tool: {name!r}"}})
 
     try:
-        if name == "read_code_context":
+        if name == READ_CODE_CONTEXT:
             payload = codebase.read_code_context(
                 arguments.get("file_path"), arguments.get("start_line"), arguments.get("end_line"))
         else:
@@ -455,6 +471,13 @@ def _execute(name: str, arguments: dict, codebase: TrustedCodebase,
                                "tool_crashed", type(exc).__name__, 0, elapsed()),
                 {"ok": False, "error": {"code": "tool_crashed",
                                         "message": type(exc).__name__}})
+
+    if not payload.get("ok", True):
+        error = payload.get("error") or {}
+        return (ToolCallRecord(round_index, name, _safe_args(arguments), False, OUTCOME_ERROR,
+                               str(error.get("code", "tool_error")),
+                               str(error.get("message", ""))[:200], 0, elapsed()),
+                payload)
 
     hit = is_effective_hit(name, payload)
     text = json.dumps(payload, ensure_ascii=False)

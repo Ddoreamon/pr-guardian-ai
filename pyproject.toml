@@ -14,10 +14,16 @@ dependencies = [
     # Needed at runtime: the demo runs the trusted suite to produce evidence.
     "pytest>=8",
     "pytest-json-report>=1.5",
+    # MCP server/client; pinned to the v2 SDK line that renamed FastMCP to MCPServer
+    "mcp==2.3.0",
 ]
 
 [project.optional-dependencies]
-dev = ["playwright>=1.45"]
+dev = [
+    "playwright>=1.45",
+    # test-only: proves MCP sessions leave no server child process behind
+    "psutil>=5.9",
+]
 
 [project.scripts]
 pr-guardian = "pr_guardian.cli:main"

@@ -1,0 +1,354 @@
+{
+  "cases": [
+    {
+      "case": "bug",
+      "branch": "dev/express-shipping",
+      "backend": "mcp",
+      "snapshot_sha": "8e45fc1ddc12c4b2b8bf91f460404de0dbd33dfe",
+      "llm_status": "ok",
+      "model_name": "deepseek-flash",
+      "llm_note": "LLM model: deepseek-flash",
+      "tool_status": "ok",
+      "tool_model_calls": 3,
+      "tool_model_failures": 0,
+      "tool_rounds": 3,
+      "prompt_tokens": 4772,
+      "completion_tokens": 932,
+      "wall_s": 7.302,
+      "tool_calls": [
+        {
+          "round": 1,
+          "call_id": "call_00_ET_dBh8gjVpBZv3pcENph1r7381",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/checkout.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "ok": true,
+          "outcome": "hit",
+          "matched": 0,
+          "error_code": "",
+          "result_chars": 846
+        },
+        {
+          "round": 1,
+          "call_id": "call_01_ET_OhUZwuqejfyvk7OOeVQQ1739",
+          "name": "find_symbol_definition",
+          "arguments": {
+            "symbol": "estimate"
+          },
+          "ok": true,
+          "outcome": "hit",
+          "matched": 1,
+          "error_code": "",
+          "result_chars": 573
+        },
+        {
+          "round": 2,
+          "call_id": "call_00_bUOIIU7er0kkLwGBIL9t7764",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shipping.py",
+            "start_line": 1,
+            "end_line": 30
+          },
+          "ok": true,
+          "outcome": "hit",
+          "matched": 0,
+          "error_code": "",
+          "result_chars": 563
+        }
+      ],
+      "llm_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/checkout.py",
+          "start_line": 10,
+          "end_line": 10,
+          "category": "API misuse / signature mismatch",
+          "severity": "high",
+          "summary": "total() passes an unsupported `express=True` keyword to shipping.estimate(), which only accepts `weight_kg`, so every call to total() raises TypeError.",
+          "explanation": "src/shipping.py defines `def estimate(weight_kg: float) -> float:` with a single positional parameter and no keyword arguments, and its docstring documents only \"the shipping cost in dollars for a parcel weight\". The changed line in src/checkout.py calls `estimate(weight_kg, express=True)`, which does not match that signature, so Python raises `TypeError: estimate() got an unexpected keyword argument 'express'` before any total can be computed. This breaks the documented behaviour of `total` (\"Return the order total including tax and shipping\"): the function can no longer return a value at all. It also makes `total` inconsistent with `describe` in the same module (line 15), which still calls `estimate(weight_kg)` with no express option, so the two functions would no longer price shipping the same way even if the keyword were supported.",
+          "evidence": "src/checkout.py:10 -> `return round(net + tax + estimate(weight_kg, express=True), 2)`; src/shipping.py:4-8 -> `def estimate(weight_kg: float) -> float:` ... `return round(4.5 + weight_kg * 1.25, 2)` (no `express` parameter, no **kwargs).",
+          "suggested_fix": "Either revert to `estimate(weight_kg)` in `total`, or first add the `express` parameter (with a documented default and the corresponding surcharge in the returned price) to `shipping.estimate`, keeping the signature and docstring of `estimate` consistent with its callers.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null
+        }
+      ],
+      "final_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/checkout.py",
+          "start_line": 10,
+          "end_line": 10,
+          "category": "API misuse / signature mismatch",
+          "severity": "high",
+          "summary": "total() passes an unsupported `express=True` keyword to shipping.estimate(), which only accepts `weight_kg`, so every call to total() raises TypeError.",
+          "explanation": "src/shipping.py defines `def estimate(weight_kg: float) -> float:` with a single positional parameter and no keyword arguments, and its docstring documents only \"the shipping cost in dollars for a parcel weight\". The changed line in src/checkout.py calls `estimate(weight_kg, express=True)`, which does not match that signature, so Python raises `TypeError: estimate() got an unexpected keyword argument 'express'` before any total can be computed. This breaks the documented behaviour of `total` (\"Return the order total including tax and shipping\"): the function can no longer return a value at all. It also makes `total` inconsistent with `describe` in the same module (line 15), which still calls `estimate(weight_kg)` with no express option, so the two functions would no longer price shipping the same way even if the keyword were supported.",
+          "evidence": "src/checkout.py:10 -> `return round(net + tax + estimate(weight_kg, express=True), 2)`; src/shipping.py:4-8 -> `def estimate(weight_kg: float) -> float:` ... `return round(4.5 + weight_kg * 1.25, 2)` (no `express` parameter, no **kwargs).",
+          "suggested_fix": "Either revert to `estimate(weight_kg)` in `total`, or first add the `express` parameter (with a documented default and the corresponding surcharge in the returned price) to `shipping.estimate`, keeping the signature and docstring of `estimate` consistent with its callers.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null
+        }
+      ],
+      "leaked_threads": []
+    },
+    {
+      "case": "bug",
+      "branch": "dev/express-shipping",
+      "backend": "local",
+      "snapshot_sha": "8e45fc1ddc12c4b2b8bf91f460404de0dbd33dfe",
+      "llm_status": "ok",
+      "model_name": "deepseek-flash",
+      "llm_note": "LLM model: deepseek-flash",
+      "tool_status": "ok",
+      "tool_model_calls": 3,
+      "tool_model_failures": 0,
+      "tool_rounds": 3,
+      "prompt_tokens": 4826,
+      "completion_tokens": 881,
+      "wall_s": 5.622,
+      "tool_calls": [
+        {
+          "round": 1,
+          "call_id": "call_00_ET_TUTuMrMZIfoaU1g2WJbf3967",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/checkout.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "ok": true,
+          "outcome": "hit",
+          "matched": 0,
+          "error_code": "",
+          "result_chars": 846
+        },
+        {
+          "round": 1,
+          "call_id": "call_01_ET_IzJFixhmH98lpD9fTdki6355",
+          "name": "find_symbol_definition",
+          "arguments": {
+            "symbol": "estimate"
+          },
+          "ok": true,
+          "outcome": "hit",
+          "matched": 1,
+          "error_code": "",
+          "result_chars": 573
+        },
+        {
+          "round": 2,
+          "call_id": "call_00_gyPxutMj86hwpEfnPsgS3749",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shipping.py",
+            "start_line": 1,
+            "end_line": 20
+          },
+          "ok": true,
+          "outcome": "hit",
+          "matched": 0,
+          "error_code": "",
+          "result_chars": 563
+        }
+      ],
+      "llm_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/checkout.py",
+          "start_line": 10,
+          "end_line": 10,
+          "category": "API usage / TypeError",
+          "severity": "high",
+          "summary": "total() now passes an unsupported keyword argument `express=True` to estimate(), which will raise TypeError on every call",
+          "explanation": "`estimate` is defined in src/shipping.py as `def estimate(weight_kg: float) -> float:` and accepts exactly one positional parameter. There is no `express` parameter, no `**kwargs`, and no alternate overload/definition of `estimate` in the repository (the only match is src/shipping.py:4). Calling `estimate(weight_kg, express=True)` therefore fails immediately with `TypeError: estimate() got an unexpected keyword argument 'express'`, so `total()` can no longer return a value at all. The docstring contract of `total` (\"Return the order total including tax and shipping\") also does not introduce any express-shipping concept, and the sibling function `describe` at line 15 still calls `estimate(weight_kg)` with the documented signature, so the two entry points would use inconsistent shipping semantics even if the call were valid.",
+          "evidence": "src/checkout.py:10 -> `return round(net + tax + estimate(weight_kg, express=True), 2)`; src/shipping.py:4-8 -> `def estimate(weight_kg: float) -> float: ... return round(4.5 + weight_kg * 1.25, 2)` (single parameter, no `express`, no **kwargs); src/checkout.py:15 -> `format_money(round(net + estimate(weight_kg), 2))`.",
+          "suggested_fix": "Revert to `estimate(weight_kg)`. If express shipping is genuinely required, first extend the shipping contract, e.g. `def estimate(weight_kg: float, express: bool = False) -> float:` in src/shipping.py (documenting the surcharge in its docstring and updating `describe`/`total` signatures and docstrings accordingly), then call it with the new parameter.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null
+        }
+      ],
+      "final_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/checkout.py",
+          "start_line": 10,
+          "end_line": 10,
+          "category": "API usage / TypeError",
+          "severity": "high",
+          "summary": "total() now passes an unsupported keyword argument `express=True` to estimate(), which will raise TypeError on every call",
+          "explanation": "`estimate` is defined in src/shipping.py as `def estimate(weight_kg: float) -> float:` and accepts exactly one positional parameter. There is no `express` parameter, no `**kwargs`, and no alternate overload/definition of `estimate` in the repository (the only match is src/shipping.py:4). Calling `estimate(weight_kg, express=True)` therefore fails immediately with `TypeError: estimate() got an unexpected keyword argument 'express'`, so `total()` can no longer return a value at all. The docstring contract of `total` (\"Return the order total including tax and shipping\") also does not introduce any express-shipping concept, and the sibling function `describe` at line 15 still calls `estimate(weight_kg)` with the documented signature, so the two entry points would use inconsistent shipping semantics even if the call were valid.",
+          "evidence": "src/checkout.py:10 -> `return round(net + tax + estimate(weight_kg, express=True), 2)`; src/shipping.py:4-8 -> `def estimate(weight_kg: float) -> float: ... return round(4.5 + weight_kg * 1.25, 2)` (single parameter, no `express`, no **kwargs); src/checkout.py:15 -> `format_money(round(net + estimate(weight_kg), 2))`.",
+          "suggested_fix": "Revert to `estimate(weight_kg)`. If express shipping is genuinely required, first extend the shipping contract, e.g. `def estimate(weight_kg: float, express: bool = False) -> float:` in src/shipping.py (documenting the surcharge in its docstring and updating `describe`/`total` signatures and docstrings accordingly), then call it with the new parameter.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null
+        }
+      ],
+      "leaked_threads": []
+    },
+    {
+      "case": "clean",
+      "branch": "dev/currency-arg",
+      "backend": "mcp",
+      "snapshot_sha": "c71ac357d5ad82dedc69996f05aad711b575273e",
+      "llm_status": "ok",
+      "model_name": "deepseek-flash",
+      "llm_note": "LLM model: deepseek-flash",
+      "tool_status": "ok",
+      "tool_model_calls": 2,
+      "tool_model_failures": 0,
+      "tool_rounds": 2,
+      "prompt_tokens": 2645,
+      "completion_tokens": 231,
+      "wall_s": 3.747,
+      "tool_calls": [
+        {
+          "round": 1,
+          "call_id": "call_00_ET_JAKo2uvi7bHyesKcMRf45869",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/checkout.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "ok": true,
+          "outcome": "hit",
+          "matched": 0,
+          "error_code": "",
+          "result_chars": 850
+        },
+        {
+          "round": 1,
+          "call_id": "call_01_ET_wfeOecflOukhup0oYm638431",
+          "name": "find_symbol_definition",
+          "arguments": {
+            "symbol": "format_money"
+          },
+          "ok": true,
+          "outcome": "hit",
+          "matched": 1,
+          "error_code": "",
+          "result_chars": 483
+        }
+      ],
+      "llm_findings": [],
+      "final_findings": [],
+      "leaked_threads": []
+    },
+    {
+      "case": "clean",
+      "branch": "dev/currency-arg",
+      "backend": "local",
+      "snapshot_sha": "c71ac357d5ad82dedc69996f05aad711b575273e",
+      "llm_status": "ok",
+      "model_name": "deepseek-flash",
+      "llm_note": "LLM model: deepseek-flash",
+      "tool_status": "ok",
+      "tool_model_calls": 2,
+      "tool_model_failures": 0,
+      "tool_rounds": 2,
+      "prompt_tokens": 2645,
+      "completion_tokens": 161,
+      "wall_s": 2.011,
+      "tool_calls": [
+        {
+          "round": 1,
+          "call_id": "call_00_ET_iMGLHDeCZWdUCjctwp1Z9370",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/checkout.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "ok": true,
+          "outcome": "hit",
+          "matched": 0,
+          "error_code": "",
+          "result_chars": 850
+        },
+        {
+          "round": 1,
+          "call_id": "call_01_ET_GXzl43MZIahxGUHiZoDY4342",
+          "name": "find_symbol_definition",
+          "arguments": {
+            "symbol": "format_money"
+          },
+          "ok": true,
+          "outcome": "hit",
+          "matched": 1,
+          "error_code": "",
+          "result_chars": 483
+        }
+      ],
+      "llm_findings": [],
+      "final_findings": [],
+      "leaked_threads": []
+    }
+  ],
+  "direct_comparison": {
+    "pinned_sha": "8e45fc1ddc12c4b2b8bf91f460404de0dbd33dfe",
+    "init_s": 0.9654,
+    "calls": [
+      {
+        "tool": "read_code_context",
+        "arguments": {
+          "file_path": "src/checkout.py",
+          "start_line": 1,
+          "end_line": 20
+        },
+        "mcp_latency_s": 0.1083,
+        "identical": true,
+        "ref": "8e45fc1ddc12c4b2b8bf91f460404de0dbd33dfe"
+      },
+      {
+        "tool": "read_code_context",
+        "arguments": {
+          "file_path": "src/shipping.py",
+          "start_line": 1,
+          "end_line": 8
+        },
+        "mcp_latency_s": 0.048,
+        "identical": true,
+        "ref": "8e45fc1ddc12c4b2b8bf91f460404de0dbd33dfe"
+      },
+      {
+        "tool": "find_symbol_definition",
+        "arguments": {
+          "symbol": "estimate"
+        },
+        "mcp_latency_s": 0.058,
+        "identical": true,
+        "ref": "8e45fc1ddc12c4b2b8bf91f460404de0dbd33dfe"
+      },
+      {
+        "tool": "find_symbol_definition",
+        "arguments": {
+          "symbol": "format_money"
+        },
+        "mcp_latency_s": 0.0015,
+        "identical": true,
+        "ref": "8e45fc1ddc12c4b2b8bf91f460404de0dbd33dfe"
+      }
+    ],
+    "all_identical": true,
+    "all_refs_match": true,
+    "worktree_edit_ignored": true,
+    "local_median_s": 0.0497,
+    "mcp_median_s": 0.053,
+    "session_closed": true,
+    "leaked_threads": [],
+    "audit_summary": {
+      "calls": 5,
+      "errors": 0,
+      "latency_median_s": 0.048,
+      "latency_max_s": 0.1083
+    }
+  },
+  "repo_label": "<dev-repo>"
+}

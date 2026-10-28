@@ -400,8 +400,70 @@ discordant variant (p = 1.0). **No capability advantage is established.**
 Adjudication and raw findings:
 [`docs/benchmark-results/contrast-dev-v2-rescored/`](docs/benchmark-results/contrast-dev-v2-rescored),
 [`ADJUDICATION.md`](docs/benchmark-results/contrast-dev-v2/ADJUDICATION.md).
-Held-out has not been run; readiness conditions are in
-[`docs/v2.3-heldout-readiness.md`](docs/v2.3-heldout-readiness.md).
+**Held-out is complete and frozen** (one run, code `bcae59d`, dataset v3,
+2026-10-27). Independent audit:
+[`docs/v2-heldout-independent-audit.md`](docs/v2-heldout-independent-audit.md).
+Adjudicated: V1 4 TP / 2 FN / 1 TN / 5 contested; V2 5 TP / 1 FN / 2 TN /
+4 contested. Decided F1 80.00% vs 90.91%; **strict F1 53.33% vs 66.67%**. P7 is
+the only variant where V2 clearly added a detection, and the paired McNemar over
+7 jointly decided variants is p = 1.0. No capability advantage is claimed.
+
+### MCP server (optional transport, local stdio only)
+
+The same two read-only tools are also exposed over the Model Context Protocol, so
+an external MCP client can use them without the agent loop:
+
+```bash
+python -m pr_guardian.mcp_server --repo <trusted-repo> --ref <commit>
+```
+
+The repository and the **commit SHA** are bound at process start from the command
+line. Neither is a tool argument, so no model can change the repository, switch the
+commit, or reach another directory. Reads go through the existing
+`TrustedCodebase` / `GitSnapshot`, so the `src/**/*.py` allowlist, 40-line and
+4,000-char caps, 200 KB file limit, symlink refusal and read-only behaviour are the
+same code the in-process agent uses — there is no second filesystem implementation.
+
+The agent can use the same tools over MCP instead of in-process:
+
+```bash
+PR_GUARDIAN_TOOL_CALLS_ENABLED=1 PR_GUARDIAN_TOOL_BACKEND=mcp ...
+```
+
+`local` stays the default. Verified by real stdio round trips (no mocks):
+`list_tools` returns both schemas, `call_tool` reads the pinned commit, symbol
+lookup finds functions and constants, and unsafe paths, bad arguments, unknown
+symbols and unknown tools all return explicit results. stdout carries protocol
+frames only; diagnostics go to stderr, and a failed start writes nothing to stdout
+(`tests/test_mcp_protocol.py`, `tests/test_mcp_integration.py`).
+
+Measured on this machine against the demo repository
+(`scripts/mcp_trace.py --repo <demo> --ref feature/boundary-bug`):
+
+| | value |
+|---|---|
+| session start (once per review) | 0.93 s |
+| per-call median, MCP | 0.0150 s |
+| per-call median, in-process | 0.0220 s |
+| payloads identical to in-process | 4/4 |
+
+The MCP transport adds no measurable per-call cost once the session is warm; the
+one-off session start is the real price. The public Render deployment keeps
+`PR_GUARDIAN_TOOL_CALLS_ENABLED=0` and exposes no MCP endpoint.
+
+The MCP work is covered by 45 tests (protocol 25, lifecycle 12, integration 8)
+inside a 245-test suite; `pytest -q` and `ruff check` are clean, and the browser
+suite still passes. `psutil` is a dev-only dependency, used to prove that a closed
+session leaves no server process behind.
+
+**MCP is a transport, not a smarter reviewer.** Nothing here improves detection;
+the frozen benchmark above is unchanged and was not re-run for MCP. Two further
+guarantees are enforced in code and tests: the server rejects undeclared,
+missing and mistyped parameters with structured errors (the low-level Server does
+not enforce the schema), and a protocol `is_error` is never counted as a
+successful tool call even if the payload claims `ok: true`. Sessions are reaped on
+startup timeout, early server exit and RPC timeout, with tests asserting no
+leftover thread or server process.
 
 ### Corrections to earlier benchmark artefacts
 

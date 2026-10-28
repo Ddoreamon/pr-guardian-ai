@@ -77,6 +77,7 @@ class ToolCallRecordModel(BaseModel):
     result_chars: int = 0
     latency_s: float = 0.0
     matched: int = 0
+    call_id: str = ""
 
 
 class ReviewReport(BaseModel):
@@ -97,6 +98,8 @@ class ReviewReport(BaseModel):
     # V2: tool calling is opt-in; these stay empty/disabled when it is off.
     tool_status: str = "disabled"
     tool_calls: list[ToolCallRecordModel] = Field(default_factory=list)
+    llm_prompt_tokens: int = 0
+    llm_completion_tokens: int = 0
     tool_model_calls: int = 0
     tool_model_failures: int = 0
     tool_rounds: int = 0

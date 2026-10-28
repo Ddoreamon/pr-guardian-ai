@@ -13,6 +13,7 @@ Supported variables:
   PR_GUARDIAN_TOOL_CALLS_ENABLED   1 = let the model call read-only tools (V2, default off)
   PR_GUARDIAN_MAX_TOOL_ROUNDS      max model turns in the tool loop (default 3, max 5)
   PR_GUARDIAN_MAX_TOOL_CALLS       max tool executions per review (default 4, max 8)
+  PR_GUARDIAN_TOOL_BACKEND         local (default) or mcp: transport for the tools
 """
 
 from __future__ import annotations
@@ -56,6 +57,9 @@ class Settings:
     tool_calls_enabled: bool = False
     max_tool_rounds: int = 3
     max_tool_calls: int = 4
+    # "local" (default) calls TrustedCodebase in-process; "mcp" goes through an
+    # MCP stdio session. Same tools, same safety code, different transport.
+    tool_backend: str = "local"
 
     @property
     def llm_configured(self) -> bool:
@@ -77,6 +81,11 @@ class Settings:
         return "enabled"
 
 
+def _tool_backend() -> str:
+    raw = (os.environ.get("PR_GUARDIAN_TOOL_BACKEND") or "local").strip().lower()
+    return raw if raw in {"local", "mcp"} else "local"
+
+
 def get_settings() -> Settings:
     return Settings(
         api_key=os.environ.get("PR_GUARDIAN_API_KEY", "").strip(),
@@ -94,4 +103,5 @@ def get_settings() -> Settings:
         tool_calls_enabled=_flag("PR_GUARDIAN_TOOL_CALLS_ENABLED", default=False),
         max_tool_rounds=max(1, min(int(os.environ.get("PR_GUARDIAN_MAX_TOOL_ROUNDS", "3") or 3), 5)),
         max_tool_calls=max(1, min(int(os.environ.get("PR_GUARDIAN_MAX_TOOL_CALLS", "4") or 4), 8)),
+        tool_backend=_tool_backend(),
     )
