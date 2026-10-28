@@ -15,14 +15,18 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import logging
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .agent_tools import ToolError
 from .evidence import EVIDENCE_VERIFIED, EvidenceRegistry, validate_ref
 from .models import EvidenceRef
 
-ASSESSMENT_VERSION = "v4.5.1"
+LOGGER = logging.getLogger("pr_guardian.sufficiency")
+
+ASSESSMENT_VERSION = "v4.5.2"
 
 MODIFIED_DEFINITION = "modified_definition"
 CALLEE_CONTRACT = "callee_contract"
@@ -112,15 +116,17 @@ def _signature(node: ast.AST) -> dict[str, Any]:
             elif isinstance(func, ast.Attribute):
                 raises.add(func.attr)
     returns = ast.unparse(node.returns) if getattr(node, "returns", None) else ""
-    # The return *shape* stands in for a contract change that has no annotation:
-    # a call returning a string and a list comprehension returning a list are
-    # different contracts even though both are plain `return` statements.
+    # Default values are part of the contract for callers that omit the argument.
+    defaults = [ast.unparse(d) for d in list(args.defaults) + [d for d in args.kw_defaults if d]]
+    # The return *shape* stands in for a contract change that has no annotation,
+    # but only when a container appears or disappears: str -> list is a contract
+    # change, int -> int * 3 is not.
     shapes = sorted({type(sub.value).__name__
                      for sub in ast.walk(node) if isinstance(sub, ast.Return)
                      and sub.value is not None})
     return {"args": names, "kwonly": kwonly, "vararg": bool(args.vararg),
             "kwarg": bool(args.kwarg), "raises": sorted(raises), "returns": returns,
-            "return_shapes": shapes}
+            "return_shapes": shapes, "defaults": defaults}
 
 
 def _changed_definitions(head_index, changed_files) -> list[tuple[Any, list[int]]]:
@@ -136,6 +142,96 @@ def _changed_definitions(head_index, changed_files) -> list[tuple[Any, list[int]
                    for line in changed.added_lines):
                 out.append((chunk, changed.added_lines))
     return out
+
+
+_CONTAINERS = {"ListComp", "List", "Dict", "DictComp", "Tuple", "Set", "SetComp"}
+
+
+def _container_changed(before: dict, after: dict) -> bool:
+    old = set(before.get("return_shapes") or [])
+    new = set(after.get("return_shapes") or [])
+    if old == new:
+        return False
+    return bool((old | new) & _CONTAINERS)
+
+
+def _aliases(tree: ast.AST) -> dict[str, str]:
+    """local name -> original name for `from x import y as z`."""
+    out: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.asname:
+                    out[alias.asname] = alias.name
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.asname:
+                    out[alias.asname] = alias.name.split(".")[-1]
+    return out
+
+
+def _import_origins(tree: ast.AST) -> dict[str, tuple[str, str]]:
+    """local name -> (module stem, original name), for import-aware matching."""
+    out: dict[str, tuple[str, str]] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            stem = node.module.split(".")[-1]
+            for alias in node.names:
+                out[alias.asname or alias.name] = (stem, alias.name)
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                stem = alias.name.split(".")[-1]
+                out[alias.asname or stem] = (stem, stem)
+    return out
+
+
+def _module_stem(path: str) -> str:
+    return path.rsplit("/", 1)[-1].removesuffix(".py")
+
+
+def _decorated(node: ast.AST) -> bool:
+    return bool(getattr(node, "decorator_list", []))
+
+
+def _registry_referenced(name: str, source: str) -> bool:
+    """Is the name stored in a module-level mapping (registry dispatch)?"""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Dict):
+            for value in node.values:
+                if isinstance(value, ast.Name) and value.id == name:
+                    return True
+                if isinstance(value, ast.Attribute) and value.attr == name:
+                    return True
+    return False
+
+
+def _removed_definitions(changed_files, head_index, base) -> list[tuple[str, str, list[int]]]:
+    """(file, qualname, deleted lines) for definitions the head no longer has."""
+    removed: list[tuple[str, str, list[int]]] = []
+    for changed in changed_files:
+        if not changed.deleted_lines:
+            continue
+        try:
+            base_source = base.read_source(changed.file_path)
+        except ToolError:  # the file does not exist at base; nothing to compare
+            LOGGER.debug("no base version for %s", changed.file_path)
+            continue
+        try:
+            base_nodes = _function_nodes(ast.parse(base_source))
+        except SyntaxError:
+            continue
+        head_chunks = [c for c in head_index.chunks if c.file_path == changed.file_path]
+        head_names = {c.qualname for c in head_chunks}
+        for qualname, node in base_nodes:
+            span = (getattr(node, "lineno", 0), getattr(node, "end_lineno", 0) or 0)
+            touched = any(span[0] <= line <= span[1] for line in changed.deleted_lines)
+            if touched and qualname not in head_names:
+                removed.append((changed.file_path, qualname, list(changed.deleted_lines)))
+    return removed
 
 
 def _is_dynamic(node: ast.AST) -> list[str]:
@@ -193,16 +289,25 @@ def derive_obligations(head, base, changed_files) -> list[EvidenceObligation]:
             except SyntaxError:
                 base_nodes = {}
             old = base_nodes.get(chunk.qualname)
-            if old is not None and _signature(old) != _signature(node):
-                contract_changed = True
+            if old is not None:
+                before, after = _signature(old), _signature(node)
+                for key in ("args", "kwonly", "vararg", "kwarg", "raises",
+                            "returns", "defaults"):
+                    if before.get(key) != after.get(key):
+                        contract_changed = True
+                        break
+                if not contract_changed and _container_changed(before, after):
+                    contract_changed = True
 
-        # callees reached from the changed definition
+        # callees reached from the changed definition; aliases are resolved first
+        aliases = _aliases(head_tree)
         for call in [n for n in ast.walk(node) if isinstance(n, ast.Call)]:
             func = call.func
             name = func.id if isinstance(func, ast.Name) else (
                 func.attr if isinstance(func, ast.Attribute) else "")
             if not name:
                 continue
+            name = aliases.get(name, name)
             for target in by_qualname.get(name, []):
                 if target.file_path == chunk.file_path:
                     continue
@@ -216,6 +321,18 @@ def derive_obligations(head, base, changed_files) -> list[EvidenceObligation]:
                     derivation_method="AST call name resolved through the index",
                     confidence="high", required=True))
 
+        # a decorator or a registry mapping hides the call sites
+        if _decorated(node) or _registry_referenced(chunk.name, source):
+            obligations.append(EvidenceObligation(
+                obligation_id=_oid("dispatch", chunk.qualname),
+                kind=UNKNOWN_DEPENDENCY, file_path=chunk.file_path,
+                qualname=chunk.qualname,
+                required_span=(chunk.start_line, chunk.end_line),
+                rationale=("the definition is registered or decorated, so its callers "
+                           "cannot be enumerated statically"),
+                derivation_method="AST decorator / module-level mapping scan",
+                confidence="low", required=False))
+
         # callers of a definition whose contract changed
         if contract_changed:
             for other in index.chunks:
@@ -223,17 +340,47 @@ def derive_obligations(head, base, changed_files) -> list[EvidenceObligation]:
                 if (other.file_path == chunk.file_path
                         and other.start_line == chunk.start_line):
                     continue
-                if chunk.name in (other.calls or []):
+                # a caller must actually import this definition, not just share a name
+                try:
+                    other_tree = ast.parse(head.read_source(other.file_path))
+                except (SyntaxError, ToolError):
+                    continue
+                origins = _import_origins(other_tree)
+                target_stem = _module_stem(chunk.file_path)
+                local_names = {local for local, origin in origins.items()
+                               if origin == (target_stem, chunk.name)}
+                # only a same-file bare call may fall back to the plain name;
+                # a cross-file caller that imports the same name from elsewhere is
+                # a different function
+                if (not local_names and other.file_path == chunk.file_path
+                        and chunk.name not in origins):
+                    local_names = {chunk.name}
+                if not (local_names & set(other.calls or [])):
+                    continue
+                obligations.append(EvidenceObligation(
+                    obligation_id=_oid("caller", chunk.qualname, other.file_path,
+                                      other.qualname),
+                    kind=CALLER_USAGE, file_path=other.file_path,
+                    qualname=other.qualname,
+                    required_span=(other.start_line, other.end_line),
+                    rationale=(f"{chunk.qualname} changes its signature or raised "
+                               f"exceptions, and {other.qualname} calls it"),
+                    derivation_method="signature diff + index call edge",
+                    confidence="medium", required=True))
+                # the changed contract may travel further than one hop
+                if any(other.qualname.split(".")[-1] in (deeper.calls or [])
+                       for deeper in index.chunks
+                       if deeper.qualname != other.qualname):
                     obligations.append(EvidenceObligation(
-                        obligation_id=_oid("caller", chunk.qualname, other.file_path,
+                        obligation_id=_oid("transitive", chunk.qualname,
                                           other.qualname),
-                        kind=CALLER_USAGE, file_path=other.file_path,
+                        kind=UNKNOWN_DEPENDENCY, file_path=other.file_path,
                         qualname=other.qualname,
                         required_span=(other.start_line, other.end_line),
-                        rationale=(f"{chunk.qualname} changes its signature or raised "
-                                   f"exceptions, and {other.qualname} calls it"),
-                        derivation_method="signature diff + index call edge",
-                        confidence="medium", required=True))
+                        rationale=("the changed contract propagates through this "
+                                   "caller to at least one more caller"),
+                        derivation_method="two-hop call edge from the index",
+                        confidence="low", required=False))
 
         # configuration constants read from another file
         for sub in ast.walk(node):
@@ -258,6 +405,41 @@ def derive_obligations(head, base, changed_files) -> list[EvidenceObligation]:
                 required_span=(chunk.start_line, chunk.end_line),
                 rationale=f"dynamic construct(s): {', '.join(dynamic)}",
                 derivation_method="AST scan for dynamic calls or unpacking",
+                confidence="low", required=False))
+
+    for file_path, qualname, _deleted in _removed_definitions(changed_files, index, base):
+        stem = _module_stem(file_path)
+        short = qualname.split(".")[-1]
+        callers = []
+        for candidate in index.chunks:
+            if candidate.file_path == file_path:
+                continue
+            try:
+                origins = _import_origins(ast.parse(head.read_source(candidate.file_path)))
+            except (SyntaxError, ToolError):
+                continue
+            locals_for_target = {local for local, origin in origins.items()
+                                 if origin == (stem, short)}
+            if locals_for_target & set(candidate.calls or []):
+                callers.append(candidate)
+        if callers:
+            for caller in callers:
+                obligations.append(EvidenceObligation(
+                    obligation_id=_oid("removed-caller", qualname, caller.file_path,
+                                      caller.qualname),
+                    kind=CALLER_USAGE, file_path=caller.file_path,
+                    qualname=caller.qualname,
+                    required_span=(caller.start_line, caller.end_line),
+                    rationale=(f"{qualname} is removed and {caller.qualname} calls it"),
+                    derivation_method="base AST diff + index call edge",
+                    confidence="medium", required=True))
+        else:
+            obligations.append(EvidenceObligation(
+                obligation_id=_oid("removed-unknown", file_path, qualname),
+                kind=UNKNOWN_DEPENDENCY, file_path=file_path, qualname=qualname,
+                rationale=(f"{qualname} is removed and no static caller was found; "
+                           f"its users cannot be enumerated"),
+                derivation_method="base AST diff + index search",
                 confidence="low", required=False))
 
     return _dedupe(obligations)

@@ -241,10 +241,15 @@ def summarise(rows: list[dict]) -> dict:
 
 
 def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out", type=Path, default=Path("docs/v4.5-eval"))
+    args = parser.parse_args()
     root = Path(tempfile.mkdtemp(prefix="pr-guardian-v45-"))
     rows = eval_dev(root) + eval_held(root)
     payload = {"summary": summarise(rows), "rows": rows}
-    out = Path("docs/v4.5-eval")
+    out = args.out
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False),
                                       encoding="utf-8")

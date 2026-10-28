@@ -212,3 +212,83 @@ def test_no_repo_access_is_opened(repos):
     assert "read_code_context" not in calls
     assert "read_source" not in calls
     assert "search_code" not in calls
+
+# ---- robustness: the deriver must not go silent or over-demand -------------
+
+from scripts.robustness_cases import CASES as ROB_CASES
+from scripts.robustness_cases import build_case as build_rob
+
+
+@pytest.fixture(scope="module")
+def rob_repos():
+    root = Path(tempfile.mkdtemp(prefix="v45-rob-"))
+    built = {}
+    for case in ROB_CASES:
+        repo = build_rob(root, case)
+        branch = "case/" + case["id"].lower()
+        head = TrustedCodebase.from_git(repo, branch)
+        base = TrustedCodebase.from_git(repo, "main")
+        files, _ = read_changed_files(repo, "main", branch)
+        built[case["id"]] = {
+            "head": head, "base": base, "files": files,
+            "obligations": derive_obligations(head, base, files),
+            "allowed": set(head.source_files()),
+        }
+    return built
+
+
+def _callers(obligations):
+    return [o for o in obligations if o.kind == CALLER_USAGE]
+
+
+def test_default_value_change_requires_the_callers(rob_repos):
+    assert _callers(rob_repos["R9-default"]["obligations"])
+
+
+def test_deleted_function_requires_its_importer(rob_repos):
+    callers = _callers(rob_repos["R2-delete-function"]["obligations"])
+    assert [c.file_path for c in callers] == ["src/report.py"]
+
+
+def test_deleted_file_requires_its_importer_not_a_same_named_function(rob_repos):
+    callers = _callers(rob_repos["R3-delete-file"]["obligations"])
+    assert {c.file_path for c in callers} == {"src/uses_other.py"}
+
+
+def test_alias_caller_is_found(rob_repos):
+    files = {c.file_path for c in _callers(rob_repos["R4-alias"]["obligations"])}
+    assert files == {"src/report.py", "src/alias_report.py"}
+
+
+def test_same_named_function_in_another_module_is_not_a_caller(rob_repos):
+    files = {c.file_path for c in _callers(rob_repos["R5-same-name"]["obligations"])}
+    assert "src/uses_other.py" not in files
+
+
+def test_registry_dispatch_is_unknown(rob_repos):
+    kinds = {o.kind for o in rob_repos["R10-registry"]["obligations"]}
+    assert UNKNOWN_DEPENDENCY in kinds
+
+
+def test_magnitude_change_does_not_demand_the_caller(rob_repos):
+    """A scalar return-shape change is not a contract change."""
+    kinds = {o.kind for o in rob_repos["R8-magnitude"]["obligations"]}
+    assert CALLER_USAGE not in kinds
+
+
+def test_deletion_with_unread_importer_is_insufficient(rob_repos):
+    case = rob_repos["R2-delete-function"]
+    registry = _read(case["head"], "src/fmt.py")
+    result = assess(registry, case["obligations"], case["head"].snapshot_sha,
+                    case["allowed"])
+    assert result.status == INSUFFICIENT
+
+
+def test_deletion_with_importer_read_is_sufficient(rob_repos):
+    case = rob_repos["R2-delete-function"]
+    registry = _read(case["head"], "src/fmt.py")
+    extra = _read(case["head"], "src/report.py")
+    registry.entries.extend(extra.entries)
+    result = assess(registry, case["obligations"], case["head"].snapshot_sha,
+                    case["allowed"])
+    assert result.status == SUFFICIENT
