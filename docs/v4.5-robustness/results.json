@@ -1,0 +1,417 @@
+{
+  "summary": {
+    "profiles": 16,
+    "cases": 10,
+    "status_accuracy": 1.0,
+    "false_sufficient": 0,
+    "false_sufficient_cases": [],
+    "false_insufficient": 0,
+    "false_insufficient_cases": [],
+    "unknown_rate": 0.125,
+    "kind_precision": 0.6154,
+    "kind_recall": 1.0,
+    "mean_derive_ms": 435.0,
+    "mean_assess_ms": 0.1
+  },
+  "rows": [
+    {
+      "case": "R1-delete-line",
+      "profile": "changed-file",
+      "delivered": [
+        "src/fmt.py"
+      ],
+      "status": "sufficient",
+      "expected": "sufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [],
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code",
+      "derive_ms": 428.9,
+      "assess_ms": 0.1
+    },
+    {
+      "case": "R1-delete-line",
+      "profile": "nothing",
+      "delivered": [],
+      "status": "insufficient",
+      "expected": "insufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-e2d42ff93e"
+      ],
+      "unknown": [],
+      "explanation": "required evidence was not delivered for: ob-e2d42ff93e",
+      "derive_ms": 428.9,
+      "assess_ms": 0.0
+    },
+    {
+      "case": "R2-delete-function",
+      "profile": "changed-file",
+      "delivered": [
+        "src/fmt.py"
+      ],
+      "status": "insufficient",
+      "expected": "insufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-31e347bc44"
+      ],
+      "unknown": [],
+      "explanation": "required evidence was not delivered for: ob-31e347bc44",
+      "derive_ms": 383.4,
+      "assess_ms": 0.0
+    },
+    {
+      "case": "R2-delete-function",
+      "profile": "plus-consumer",
+      "delivered": [
+        "src/fmt.py",
+        "src/report.py"
+      ],
+      "status": "sufficient",
+      "expected": "sufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [],
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code",
+      "derive_ms": 383.4,
+      "assess_ms": 0.0
+    },
+    {
+      "case": "R3-delete-file",
+      "profile": "importer",
+      "delivered": [
+        "src/uses_other.py"
+      ],
+      "status": "sufficient",
+      "expected": "sufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [],
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code",
+      "derive_ms": 362.6,
+      "assess_ms": 0.0
+    },
+    {
+      "case": "R3-delete-file",
+      "profile": "nothing",
+      "delivered": [],
+      "status": "insufficient",
+      "expected": "insufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-f58d55adc5"
+      ],
+      "unknown": [],
+      "explanation": "required evidence was not delivered for: ob-f58d55adc5",
+      "derive_ms": 362.6,
+      "assess_ms": 0.0
+    },
+    {
+      "case": "R4-alias",
+      "profile": "changed-file",
+      "delivered": [
+        "src/fmt.py"
+      ],
+      "status": "insufficient",
+      "expected": "insufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 3,
+      "missing": [
+        "ob-ae824bd3cf",
+        "ob-8122ce7f87"
+      ],
+      "unknown": [],
+      "explanation": "required evidence was not delivered for: ob-ae824bd3cf, ob-8122ce7f87",
+      "derive_ms": 525.0,
+      "assess_ms": 0.1
+    },
+    {
+      "case": "R4-alias",
+      "profile": "plus-callers",
+      "delivered": [
+        "src/fmt.py",
+        "src/report.py",
+        "src/alias_report.py"
+      ],
+      "status": "sufficient",
+      "expected": "sufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 3,
+      "missing": [],
+      "unknown": [],
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code",
+      "derive_ms": 525.0,
+      "assess_ms": 0.1
+    },
+    {
+      "case": "R5-same-name",
+      "profile": "changed-file",
+      "delivered": [
+        "src/fmt.py"
+      ],
+      "status": "insufficient",
+      "expected": "insufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 3,
+      "missing": [
+        "ob-ae824bd3cf",
+        "ob-8122ce7f87"
+      ],
+      "unknown": [],
+      "explanation": "required evidence was not delivered for: ob-ae824bd3cf, ob-8122ce7f87",
+      "derive_ms": 477.0,
+      "assess_ms": 0.1
+    },
+    {
+      "case": "R5-same-name",
+      "profile": "plus-callers",
+      "delivered": [
+        "src/fmt.py",
+        "src/report.py",
+        "src/alias_report.py"
+      ],
+      "status": "sufficient",
+      "expected": "sufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 3,
+      "missing": [],
+      "unknown": [],
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code",
+      "derive_ms": 477.0,
+      "assess_ms": 0.1
+    },
+    {
+      "case": "R6-method",
+      "profile": "changed-file",
+      "delivered": [
+        "src/cart.py"
+      ],
+      "status": "sufficient",
+      "expected": "sufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 5,
+      "missing": [],
+      "unknown": [],
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code",
+      "derive_ms": 442.4,
+      "assess_ms": 0.1
+    },
+    {
+      "case": "R7-indirect-raise",
+      "profile": "changed-file",
+      "delivered": [
+        "src/parser.py"
+      ],
+      "status": "unknown",
+      "expected": "unknown",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage",
+        "modified_definition",
+        "unknown_dependency"
+      ],
+      "expected_kinds": [
+        "unknown_dependency"
+      ],
+      "required": 2,
+      "missing": [],
+      "unknown": [
+        "ob-078e38c46f"
+      ],
+      "explanation": "required evidence is covered, but dynamic constructs mean the obligation set cannot be proven complete: ob-078e38c46f",
+      "derive_ms": 407.2,
+      "assess_ms": 0.1
+    },
+    {
+      "case": "R8-magnitude",
+      "profile": "changed-file",
+      "delivered": [
+        "src/cart.py"
+      ],
+      "status": "sufficient",
+      "expected": "sufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "modified_definition"
+      ],
+      "required": 2,
+      "missing": [],
+      "unknown": [],
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code",
+      "derive_ms": 416.5,
+      "assess_ms": 0.1
+    },
+    {
+      "case": "R9-default",
+      "profile": "changed-file",
+      "delivered": [
+        "src/fmt.py"
+      ],
+      "status": "insufficient",
+      "expected": "insufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 2,
+      "missing": [
+        "ob-74dde708f6"
+      ],
+      "unknown": [],
+      "explanation": "required evidence was not delivered for: ob-74dde708f6",
+      "derive_ms": 436.8,
+      "assess_ms": 0.1
+    },
+    {
+      "case": "R9-default",
+      "profile": "plus-callers",
+      "delivered": [
+        "src/fmt.py",
+        "src/report.py",
+        "src/alias_report.py"
+      ],
+      "status": "sufficient",
+      "expected": "sufficient",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage"
+      ],
+      "required": 2,
+      "missing": [],
+      "unknown": [],
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code",
+      "derive_ms": 436.8,
+      "assess_ms": 0.1
+    },
+    {
+      "case": "R10-registry",
+      "profile": "changed-file",
+      "delivered": [
+        "src/registry.py"
+      ],
+      "status": "unknown",
+      "expected": "unknown",
+      "false_sufficient": false,
+      "false_insufficient": false,
+      "kinds": [
+        "modified_definition",
+        "unknown_dependency"
+      ],
+      "expected_kinds": [
+        "unknown_dependency"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [
+        "ob-65cc18af5f"
+      ],
+      "explanation": "required evidence is covered, but dynamic constructs mean the obligation set cannot be proven complete: ob-65cc18af5f",
+      "derive_ms": 466.4,
+      "assess_ms": 0.1
+    }
+  ]
+}
