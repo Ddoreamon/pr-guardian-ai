@@ -51,11 +51,14 @@ No base of an existing PR was changed, nothing was merged or closed.
 
 | Scenario | Mode | Case | review_status | Findings | Source verified | Head SHA |
 |---|---|---|---|---|---|---|
-| A — bug PR | public mode (Ruff + pytest, no model) | `boundary-bug` | `not_run` | 1 (static) | 0 | `000d402836e0…` |
-| B — clean PR | public mode (Ruff + pytest, no model) | `clean` | `not_run` | 0 | 0 | `3ee4c4c8e2ce…` |
-| C — partial AI | local AI mode, real DeepSeek call, tool budget forced to 1 | `boundary-bug` | `partial` | 2 | 1 | `000d402836e0…` |
+| A — bug PR | public mode (Ruff + pytest, no model) | `boundary-bug` | `not_run` | 1 (static) | 0 | `f9052669230f…` |
+| B — clean PR | public mode (Ruff + pytest, no model) | `clean` | `not_run` | 0 | 0 | `8852c5248919…` |
+| C — partial AI | local AI mode, real DeepSeek call, tool budget forced to 1 | `boundary-bug` | `partial` | 2 | 1 | `f9052669230f…` |
 
-Each folder contains `report.json`, `report.md` and `NOTES.md` with the base/head SHAs,
+The demo repository is generated at startup, so its head SHAs are rebuilt on every
+run; the stable anchor for these artefacts is the product commit tagged
+`v1.0.0-rc1`, and each NOTES.md records the SHAs of its own run. Each folder
+contains `report.json`, `report.md` and `NOTES.md` with the base/head SHAs,
 the product version and an explicit mode line. C was produced by a real model call; if
 no key is available the script records the committed trace instead and says so — it
 never fabricates a model response. A and B are exactly what the public deployment can

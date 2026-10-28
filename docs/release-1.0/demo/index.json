@@ -7,7 +7,7 @@
       "status": "not_run",
       "findings": 1,
       "verified": 0,
-      "head": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+      "head": "f9052669230f38ccf7ced8f6642c87c793150c3c",
       "mode": "public mode: Ruff + pytest evidence, no model call"
     },
     {
@@ -16,7 +16,7 @@
       "status": "not_run",
       "findings": 0,
       "verified": 0,
-      "head": "3ee4c4c8e2ceacf55460a7e047cf9e27fc5c7a91",
+      "head": "8852c5248919bf76bbeb5403e7109798634c9dc5",
       "mode": "public mode: Ruff + pytest evidence, no model call"
     },
     {
@@ -25,7 +25,7 @@
       "status": "partial",
       "findings": 2,
       "verified": 1,
-      "head": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+      "head": "f9052669230f38ccf7ced8f6642c87c793150c3c",
       "mode": "local AI mode: real DeepSeek call, tool budget forced to 1 so the review stops early"
     }
   ]

@@ -1,5 +1,5 @@
 {
-  "review_id": "056818e92d46",
+  "review_id": "5c81d66326e4",
   "repository": "demo-repo",
   "base_ref": "main",
   "head_ref": "feature/clean",
@@ -36,7 +36,7 @@
     "errors": 0,
     "failed_tests": [],
     "timed_out": false,
-    "duration_seconds": 0.516
+    "duration_seconds": 0.5
   },
   "llm_status": "disabled_by_request",
   "llm_note": "LLM step disabled for this review.",
@@ -74,5 +74,5 @@
   "deterministic_findings": [],
   "source_verified_findings": [],
   "source_unverified_findings": [],
-  "created_at": "2026-10-28T15:28:23.493473Z"
+  "created_at": "2026-10-28T15:40:13.147536Z"
 }

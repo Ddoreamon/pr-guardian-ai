@@ -1,4 +1,4 @@
-# Review 1f091ece3e32
+# Review 0884713ba1ed
 
 - status: `partial`
 - model: `deepseek-flash`
@@ -8,7 +8,7 @@
 1 test(s) failing on head
 evidence: `deterministic` · verification: `VerificationStatus.CONFIRMED`
 
-## high src/discount.py:5-7
-Boundary change to `>` excludes orders of exactly 100 from the discount, contradicting the documented contract "Orders of 100 or more get 10% off".
+## medium src/discount.py:4-8
+Changing `>=` to `>` breaks the documented boundary: orders of exactly 100 now receive no discount.
 evidence: `source_verified` · verification: `VerificationStatus.SUSPECTED`
 

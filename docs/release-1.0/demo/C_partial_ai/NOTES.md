@@ -3,8 +3,8 @@
 - case: `boundary-bug` (Boundary defect in discount rule)
 - expectation: Defect expected
 - mode: local AI mode: real DeepSeek call, tool budget forced to 1 so the review stops early
-- base: `e3d4d1ba8b6e27e5989432fb2d8d0ba562a27b07`
-- head: `000d402836e074dc343d8771f6f7c24f8d2308fb`
+- base: `1499bd7a5eb515aa37693fd8cfaac7f71a9c98b1`
+- head: `f9052669230f38ccf7ced8f6642c87c793150c3c`
 - product version: 1.0.0
 - review_status: `partial`
 - findings: 2

@@ -1,5 +1,5 @@
 {
-  "review_id": "1f091ece3e32",
+  "review_id": "0884713ba1ed",
   "repository": "demo-repo",
   "base_ref": "main",
   "head_ref": "feature/boundary-bug",
@@ -42,24 +42,24 @@
     {
       "id": "llm-1",
       "file_path": "src/discount.py",
-      "start_line": 5,
-      "end_line": 7,
-      "category": "boundary_condition",
-      "severity": "high",
-      "summary": "Boundary change to `>` excludes orders of exactly 100 from the discount, contradicting the documented contract \"Orders of 100 or more get 10% off\".",
-      "explanation": "The docstring on line 5 of src/discount.py states: \"Return the discount amount. Orders of 100 or more get 10% off.\" The function's contract therefore requires order_total == 100 to yield order_total * 0.10 = 10.0. With the change from `>=` to `>` on line 6, an order_total of exactly 100.0 (float) now falls through to `return 0.0` on line 8, returning no discount. This is an off-by-one boundary regression between the function's documented behaviour and its implementation; any caller relying on the documented inclusive threshold (e.g. an order totalling exactly 100) silently loses the 10% discount.",
-      "evidence": "src/discount.py lines 4-8: `def calculate_discount(order_total: float) -> float:` / `\"\"\"Return the discount amount. Orders of 100 or more get 10% off.\"\"\"` / `if order_total > 100:` / `return order_total * 0.10` / `return 0.0`. The docstring says \"100 or more\" (inclusive) but the condition is exclusive.",
-      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:`. If the intended business rule really is strictly greater than 100, update the docstring accordingly and notify callers, but as written the code contradicts its documented contract.",
+      "start_line": 4,
+      "end_line": 8,
+      "category": "boundary condition",
+      "severity": "medium",
+      "summary": "Changing `>=` to `>` breaks the documented boundary: orders of exactly 100 now receive no discount.",
+      "explanation": "The function's docstring at line 5 explicitly states \"Orders of 100 or more get 10% off.\" The new comparison `if order_total > 100:` excludes order totals equal to 100, so `calculate_discount(100.0)` now returns `0.0` instead of `10.0`, contradicting the documented contract (inclusive lower bound). This is an off-by-one boundary regression on the threshold value.",
+      "evidence": "Line 5 docstring: \"Return the discount amount. Orders of 100 or more get 10% off.\" Line 6: `if order_total > 100:` — the `>=` was replaced by `>`, making 100 exclusive.",
+      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:` so that an order total of exactly 100 still qualifies for the 10% discount described in the docstring.",
       "source": "llm",
       "verification_status": "suspected",
       "rule": null,
       "evidence_refs": [
         {
-          "ref": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+          "ref": "f9052669230f38ccf7ced8f6642c87c793150c3c",
           "file_path": "src/discount.py",
-          "start_line": 4,
+          "start_line": 1,
           "end_line": 8,
-          "tool_call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516",
+          "tool_call_id": "call_00_ET_1Pn9v4gBCZWEzNtkRXPI2942",
           "tool_name": "read_code_context",
           "evidence_status": "source_verified",
           "snippet_sha256": ""
@@ -93,24 +93,24 @@
     {
       "id": "llm-1",
       "file_path": "src/discount.py",
-      "start_line": 5,
-      "end_line": 7,
-      "category": "boundary_condition",
-      "severity": "high",
-      "summary": "Boundary change to `>` excludes orders of exactly 100 from the discount, contradicting the documented contract \"Orders of 100 or more get 10% off\".",
-      "explanation": "The docstring on line 5 of src/discount.py states: \"Return the discount amount. Orders of 100 or more get 10% off.\" The function's contract therefore requires order_total == 100 to yield order_total * 0.10 = 10.0. With the change from `>=` to `>` on line 6, an order_total of exactly 100.0 (float) now falls through to `return 0.0` on line 8, returning no discount. This is an off-by-one boundary regression between the function's documented behaviour and its implementation; any caller relying on the documented inclusive threshold (e.g. an order totalling exactly 100) silently loses the 10% discount.",
-      "evidence": "src/discount.py lines 4-8: `def calculate_discount(order_total: float) -> float:` / `\"\"\"Return the discount amount. Orders of 100 or more get 10% off.\"\"\"` / `if order_total > 100:` / `return order_total * 0.10` / `return 0.0`. The docstring says \"100 or more\" (inclusive) but the condition is exclusive.",
-      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:`. If the intended business rule really is strictly greater than 100, update the docstring accordingly and notify callers, but as written the code contradicts its documented contract.",
+      "start_line": 4,
+      "end_line": 8,
+      "category": "boundary condition",
+      "severity": "medium",
+      "summary": "Changing `>=` to `>` breaks the documented boundary: orders of exactly 100 now receive no discount.",
+      "explanation": "The function's docstring at line 5 explicitly states \"Orders of 100 or more get 10% off.\" The new comparison `if order_total > 100:` excludes order totals equal to 100, so `calculate_discount(100.0)` now returns `0.0` instead of `10.0`, contradicting the documented contract (inclusive lower bound). This is an off-by-one boundary regression on the threshold value.",
+      "evidence": "Line 5 docstring: \"Return the discount amount. Orders of 100 or more get 10% off.\" Line 6: `if order_total > 100:` — the `>=` was replaced by `>`, making 100 exclusive.",
+      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:` so that an order total of exactly 100 still qualifies for the 10% discount described in the docstring.",
       "source": "llm",
       "verification_status": "suspected",
       "rule": null,
       "evidence_refs": [
         {
-          "ref": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+          "ref": "f9052669230f38ccf7ced8f6642c87c793150c3c",
           "file_path": "src/discount.py",
-          "start_line": 4,
+          "start_line": 1,
           "end_line": 8,
-          "tool_call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516",
+          "tool_call_id": "call_00_ET_1Pn9v4gBCZWEzNtkRXPI2942",
           "tool_name": "read_code_context",
           "evidence_status": "source_verified",
           "snippet_sha256": ""
@@ -138,7 +138,7 @@
       "tests/test_discount.py::test_threshold_order_gets_discount"
     ],
     "timed_out": false,
-    "duration_seconds": 0.562
+    "duration_seconds": 0.547
   },
   "llm_status": "partial",
   "llm_note": "LLM model: deepseek-flash",
@@ -150,16 +150,16 @@
       "arguments": {
         "file_path": "src/discount.py",
         "start_line": 1,
-        "end_line": 40
+        "end_line": 30
       },
       "ok": true,
       "outcome": "hit",
       "error_code": "",
       "error_message": "",
       "result_chars": 639,
-      "latency_s": 0.062,
+      "latency_s": 0.046,
       "matched": 0,
-      "call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516"
+      "call_id": "call_00_ET_1Pn9v4gBCZWEzNtkRXPI2942"
     },
     {
       "round": 1,
@@ -174,11 +174,11 @@
       "result_chars": 178,
       "latency_s": 0.0,
       "matched": 0,
-      "call_id": "call_01_ET_jaykyrqHGeCdLljpaMZU5891"
+      "call_id": "call_01_ET_t5Kk1LhwW0RUWyc791570117"
     }
   ],
-  "llm_prompt_tokens": 2439,
-  "llm_completion_tokens": 632,
+  "llm_prompt_tokens": 2437,
+  "llm_completion_tokens": 473,
   "tool_model_calls": 2,
   "tool_model_failures": 0,
   "tool_rounds": 1,
@@ -207,24 +207,24 @@
     {
       "id": "llm-1",
       "file_path": "src/discount.py",
-      "start_line": 5,
-      "end_line": 7,
-      "category": "boundary_condition",
-      "severity": "high",
-      "summary": "Boundary change to `>` excludes orders of exactly 100 from the discount, contradicting the documented contract \"Orders of 100 or more get 10% off\".",
-      "explanation": "The docstring on line 5 of src/discount.py states: \"Return the discount amount. Orders of 100 or more get 10% off.\" The function's contract therefore requires order_total == 100 to yield order_total * 0.10 = 10.0. With the change from `>=` to `>` on line 6, an order_total of exactly 100.0 (float) now falls through to `return 0.0` on line 8, returning no discount. This is an off-by-one boundary regression between the function's documented behaviour and its implementation; any caller relying on the documented inclusive threshold (e.g. an order totalling exactly 100) silently loses the 10% discount.",
-      "evidence": "src/discount.py lines 4-8: `def calculate_discount(order_total: float) -> float:` / `\"\"\"Return the discount amount. Orders of 100 or more get 10% off.\"\"\"` / `if order_total > 100:` / `return order_total * 0.10` / `return 0.0`. The docstring says \"100 or more\" (inclusive) but the condition is exclusive.",
-      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:`. If the intended business rule really is strictly greater than 100, update the docstring accordingly and notify callers, but as written the code contradicts its documented contract.",
+      "start_line": 4,
+      "end_line": 8,
+      "category": "boundary condition",
+      "severity": "medium",
+      "summary": "Changing `>=` to `>` breaks the documented boundary: orders of exactly 100 now receive no discount.",
+      "explanation": "The function's docstring at line 5 explicitly states \"Orders of 100 or more get 10% off.\" The new comparison `if order_total > 100:` excludes order totals equal to 100, so `calculate_discount(100.0)` now returns `0.0` instead of `10.0`, contradicting the documented contract (inclusive lower bound). This is an off-by-one boundary regression on the threshold value.",
+      "evidence": "Line 5 docstring: \"Return the discount amount. Orders of 100 or more get 10% off.\" Line 6: `if order_total > 100:` — the `>=` was replaced by `>`, making 100 exclusive.",
+      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:` so that an order total of exactly 100 still qualifies for the 10% discount described in the docstring.",
       "source": "llm",
       "verification_status": "suspected",
       "rule": null,
       "evidence_refs": [
         {
-          "ref": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+          "ref": "f9052669230f38ccf7ced8f6642c87c793150c3c",
           "file_path": "src/discount.py",
-          "start_line": 4,
+          "start_line": 1,
           "end_line": 8,
-          "tool_call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516",
+          "tool_call_id": "call_00_ET_1Pn9v4gBCZWEzNtkRXPI2942",
           "tool_name": "read_code_context",
           "evidence_status": "source_verified",
           "snippet_sha256": ""
@@ -237,9 +237,9 @@
   ],
   "evidence_sources": [
     {
-      "tool_call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516",
+      "tool_call_id": "call_00_ET_1Pn9v4gBCZWEzNtkRXPI2942",
       "tool_name": "read_code_context",
-      "ref": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+      "ref": "f9052669230f38ccf7ced8f6642c87c793150c3c",
       "file_path": "src/discount.py",
       "start_line": 1,
       "end_line": 8,
@@ -261,11 +261,11 @@
       "arguments": {
         "file_path": "src/discount.py",
         "start_line": 1,
-        "end_line": 40
+        "end_line": 30
       }
     }
   ],
-  "evidence_registry_fingerprint": "9a3fae73ffe1867f",
+  "evidence_registry_fingerprint": "2ef1a85e998bf106",
   "review_status": "partial",
   "completeness": {
     "status": "partial",
@@ -317,24 +317,24 @@
     {
       "id": "llm-1",
       "file_path": "src/discount.py",
-      "start_line": 5,
-      "end_line": 7,
-      "category": "boundary_condition",
-      "severity": "high",
-      "summary": "Boundary change to `>` excludes orders of exactly 100 from the discount, contradicting the documented contract \"Orders of 100 or more get 10% off\".",
-      "explanation": "The docstring on line 5 of src/discount.py states: \"Return the discount amount. Orders of 100 or more get 10% off.\" The function's contract therefore requires order_total == 100 to yield order_total * 0.10 = 10.0. With the change from `>=` to `>` on line 6, an order_total of exactly 100.0 (float) now falls through to `return 0.0` on line 8, returning no discount. This is an off-by-one boundary regression between the function's documented behaviour and its implementation; any caller relying on the documented inclusive threshold (e.g. an order totalling exactly 100) silently loses the 10% discount.",
-      "evidence": "src/discount.py lines 4-8: `def calculate_discount(order_total: float) -> float:` / `\"\"\"Return the discount amount. Orders of 100 or more get 10% off.\"\"\"` / `if order_total > 100:` / `return order_total * 0.10` / `return 0.0`. The docstring says \"100 or more\" (inclusive) but the condition is exclusive.",
-      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:`. If the intended business rule really is strictly greater than 100, update the docstring accordingly and notify callers, but as written the code contradicts its documented contract.",
+      "start_line": 4,
+      "end_line": 8,
+      "category": "boundary condition",
+      "severity": "medium",
+      "summary": "Changing `>=` to `>` breaks the documented boundary: orders of exactly 100 now receive no discount.",
+      "explanation": "The function's docstring at line 5 explicitly states \"Orders of 100 or more get 10% off.\" The new comparison `if order_total > 100:` excludes order totals equal to 100, so `calculate_discount(100.0)` now returns `0.0` instead of `10.0`, contradicting the documented contract (inclusive lower bound). This is an off-by-one boundary regression on the threshold value.",
+      "evidence": "Line 5 docstring: \"Return the discount amount. Orders of 100 or more get 10% off.\" Line 6: `if order_total > 100:` — the `>=` was replaced by `>`, making 100 exclusive.",
+      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:` so that an order total of exactly 100 still qualifies for the 10% discount described in the docstring.",
       "source": "llm",
       "verification_status": "suspected",
       "rule": null,
       "evidence_refs": [
         {
-          "ref": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+          "ref": "f9052669230f38ccf7ced8f6642c87c793150c3c",
           "file_path": "src/discount.py",
-          "start_line": 4,
+          "start_line": 1,
           "end_line": 8,
-          "tool_call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516",
+          "tool_call_id": "call_00_ET_1Pn9v4gBCZWEzNtkRXPI2942",
           "tool_name": "read_code_context",
           "evidence_status": "source_verified",
           "snippet_sha256": ""
@@ -346,5 +346,5 @@
     }
   ],
   "source_unverified_findings": [],
-  "created_at": "2026-10-28T15:28:28.744014Z"
+  "created_at": "2026-10-28T15:40:17.684483Z"
 }
