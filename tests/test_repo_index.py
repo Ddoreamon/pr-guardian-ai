@@ -161,10 +161,17 @@ def test_prompt_injection_in_source_and_query_is_inert(repo):
     assert "discounts.py" in " ".join(h["file_path"] for h in hostile["hits"])
 
 
+def _cache_file(sha: str) -> Path:
+    from pr_guardian.repo_index import INDEX_VERSION, _cache_path
+
+    assert INDEX_VERSION == 2
+    return _cache_path(sha)
+
+
 def test_index_cache_is_isolated_per_commit(repo):
     codebase = TrustedCodebase.from_git(repo, "main")
     first = build_index(codebase)
-    assert load_cached(first.sha) is not None
+    assert load_cached(codebase) is not None
 
     (repo / "src" / "rates.py").write_text(
         '"""Rate table."""\n\nDEFAULT_RATE = 0.9\n', encoding="utf-8")
@@ -173,10 +180,92 @@ def test_index_cache_is_isolated_per_commit(repo):
     index_two = build_index(second)
 
     assert index_two.sha != first.sha
-    assert load_cached(first.sha) is not None      # old index untouched
+    assert load_cached(codebase) is not None       # old index untouched
+    assert _cache_file(first.sha).is_file()
     assert "0.9" in " ".join(c.text for c in index_two.chunks)
     assert "0.9" not in " ".join(c.text for c in first.chunks)
     assert search_code(second, "DEFAULT_RATE", 2)["ref"] == second.snapshot.sha
+
+
+def _rewrite_cache(sha: str, mutate) -> None:
+    import json as _json
+
+    path = _cache_file(sha)
+    data = _json.loads(path.read_text(encoding="utf-8"))
+    mutate(data)
+    path.write_text(_json.dumps(data), encoding="utf-8")
+
+
+def test_corrupt_cache_json_is_discarded(repo):
+    codebase = TrustedCodebase.from_git(repo, "main")
+    build_index(codebase)
+    _cache_file(codebase.snapshot.sha).write_text("{not json", encoding="utf-8")
+    assert load_cached(codebase) is None
+    index = build_index(codebase)          # rebuilt, not crashed
+    assert index.chunks
+    assert load_cached(codebase) is not None
+
+
+def test_cache_missing_required_fields_is_discarded(repo):
+    codebase = TrustedCodebase.from_git(repo, "main")
+    build_index(codebase)
+    _rewrite_cache(codebase.snapshot.sha, lambda d: d.pop("files"))
+    assert load_cached(codebase) is None
+    assert build_index(codebase).chunks
+
+
+def test_cache_with_forged_path_outside_src_is_discarded(repo):
+    codebase = TrustedCodebase.from_git(repo, "main")
+    build_index(codebase)
+
+    def forge(data):
+        data["chunks"][0]["file_path"] = "tests/test_secret.py"
+        data["chunks"][0]["text"] = "def hidden_helper(): pass"
+
+    _rewrite_cache(codebase.snapshot.sha, forge)
+    assert load_cached(codebase) is None
+    index = build_index(codebase)
+    assert all(c.file_path.startswith("src/") for c in index.chunks)
+    assert "hidden_helper" not in " ".join(c.text for c in index.chunks)
+
+
+def test_cache_with_text_not_matching_the_commit_is_discarded(repo):
+    codebase = TrustedCodebase.from_git(repo, "main")
+    build_index(codebase)
+
+    def tamper(data):
+        data["chunks"][0]["text"] = "# tampered text\n"
+
+    _rewrite_cache(codebase.snapshot.sha, tamper)
+    assert load_cached(codebase) is None
+    index = build_index(codebase)
+    assert "# tampered text" not in " ".join(c.text for c in index.chunks)
+
+
+def test_cache_from_another_commit_is_never_used(repo):
+    codebase = TrustedCodebase.from_git(repo, "main")
+    first = build_index(codebase)
+    (repo / "src" / "rates.py").write_text(
+        '"""Rate table."""\n\nDEFAULT_RATE = 0.9\n', encoding="utf-8")
+    _git(repo, "commit", "-qam", "change rate")
+    second = TrustedCodebase.from_git(repo, "HEAD")
+
+    # copy the old cache under the new SHA: manifest and text must reject it
+    import shutil
+
+    shutil.copyfile(_cache_file(first.sha), _cache_file(second.snapshot.sha))
+    assert load_cached(second) is None
+    rebuilt = build_index(second)
+    assert "0.9" in " ".join(c.text for c in rebuilt.chunks)
+
+
+def test_cache_can_be_disabled(repo, monkeypatch):
+    codebase = TrustedCodebase.from_git(repo, "main")
+    build_index(codebase)
+    monkeypatch.setenv("PR_GUARDIAN_RAG_CACHE", "off")
+    assert load_cached(codebase) is None
+    index = build_index(codebase)
+    assert index.chunks
 
 
 def test_query_validation(repo):
@@ -186,3 +275,21 @@ def test_query_validation(repo):
     assert search_code(codebase, "rate", 0)["error"]["code"] == "bad_top_k"
     assert search_code(codebase, "rate", 99)["error"]["code"] == "bad_top_k"
     assert search_code(codebase, "rate", "3")["ok"] is True   # numeric string accepted
+
+def test_syntax_error_file_is_chunked_within_bounds(repo):
+    """A >200 line unparsable file still obeys the chunking contract."""
+    broken = "def broken(:\n" + "".join(f"line_{i} = {i}\n" for i in range(240))
+    (repo / "src" / "broken.py").write_text(broken, encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "broken module")
+
+    codebase = TrustedCodebase.from_git(repo, "HEAD")
+    chunks, _ = build_chunks(codebase)
+    parts = [c for c in chunks if c.file_path == "src/broken.py"]
+    assert len(parts) > 1, "an unparsable file must be split, not stored whole"
+    assert all(c.kind == "unparsed" for c in parts)
+    for part in parts:
+        assert part.end_line - part.start_line + 1 <= MAX_CHUNK_LINES
+        assert len(part.text) <= 4000
+        assert part.sha == codebase.snapshot.sha
+    assert parts[-1].end_line >= 240

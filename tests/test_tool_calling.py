@@ -409,3 +409,39 @@ def test_successful_run_has_no_failures(queued, codebase):
     assert res.model_successes == 1
     assert res.model_failures == 0
     assert any("failed 0" in n for n in res.notes)
+
+def test_search_output_respects_the_hard_cap():
+    """A big search result must be bounded, valid JSON, and say what it dropped."""
+    from pr_guardian.tool_calling import MAX_TOOL_OUTPUT_CHARS, _cap_payload
+
+    hits = [
+        {
+            "file_path": "src/" + ("very_long_directory_name/" * 6) + f"module_{i}.py",
+            "start_line": 10 + i, "end_line": 60 + i,
+            "kind": "function", "qualname": "some_quite_long_symbol_name_" + "x" * 60,
+            "part": 0, "parts": 1, "score": 9.5, "why": ["bm25=1.0", "exact_symbol"],
+            "snippet": "def f():\n" + "    value = compute()\n" * 40,
+            "ref": "a" * 40,
+        }
+        for i in range(10)
+    ]
+    payload = {"ok": True, "found": True, "query": "q", "ref": "a" * 40,
+               "hits": hits, "count": 10, "match_count": 10}
+    capped, text = _cap_payload(payload)
+    assert len(text) <= MAX_TOOL_OUTPUT_CHARS
+    assert json.loads(text) == capped          # still parseable
+    assert capped["truncated"] is True
+    assert len(capped["hits"]) <= 10
+    assert capped["count"] == len(capped["hits"])
+    if len(capped["hits"]) < 10:
+        assert capped["omitted"] == 10 - len(capped["hits"])
+
+
+def test_generic_output_is_capped_and_parseable():
+    from pr_guardian.tool_calling import MAX_TOOL_OUTPUT_CHARS, _cap_payload
+
+    payload = {"ok": True, "content": "x" * (MAX_TOOL_OUTPUT_CHARS * 3), "ref": "b" * 40}
+    capped, text = _cap_payload(payload)
+    assert len(text) <= MAX_TOOL_OUTPUT_CHARS
+    assert json.loads(text) == capped
+    assert capped["truncated"] is True

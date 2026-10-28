@@ -21,13 +21,14 @@ import hashlib
 import json
 import logging
 import math
+import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
 LOGGER = logging.getLogger("pr_guardian.repo_index")
 
-INDEX_VERSION = 1
+INDEX_VERSION = 2
 MAX_CHUNK_LINES = 60
 WINDOW_LINES = 40
 MAX_CHUNK_CHARS = 4000
@@ -182,10 +183,15 @@ def build_chunks(codebase) -> tuple[list[Chunk], dict[str, dict[str, str]]]:
         try:
             tree = ast.parse(source)
         except SyntaxError:
-            chunks.append(Chunk(sha=sha, file_path=path, start_line=1,
-                                end_line=max(1, len(lines)), kind="unparsed",
-                                name=Path(path).stem, qualname=Path(path).stem,
-                                text=_chunk_text(lines, 1, len(lines))))
+            total = max(1, len(lines))
+            windows = _split_span(1, total)
+            for index, (w_start, w_end) in enumerate(windows):
+                chunks.append(Chunk(
+                    sha=sha, file_path=path, start_line=w_start, end_line=w_end,
+                    kind="unparsed", name=Path(path).stem,
+                    qualname=Path(path).stem,
+                    text=_chunk_text(lines, w_start, w_end),
+                    part=index, parts=len(windows)))
             continue
 
         imports_by_file[path] = _module_imports(tree)
@@ -326,27 +332,113 @@ def _cache_path(sha: str) -> Path:
     return _cache_dir() / f"{sha}-v{INDEX_VERSION}.json"
 
 
-def load_cached(sha: str) -> RepoIndex | None:
+def cache_mode() -> str:
+    """'verified' (default) or 'off'. Only an explicit 'off' disables the cache."""
+    return "off" if (os.environ.get("PR_GUARDIAN_RAG_CACHE") or "").strip().lower() == "off" else "verified"
+
+
+def snapshot_manifest(codebase) -> dict[str, list]:
+    """Blob SHA and size for every file the index is allowed to include."""
+    entries = codebase.snapshot.entries()
+    manifest: dict[str, list] = {}
+    for path in codebase.source_files():
+        entry = entries.get(path)
+        if entry is None:
+            continue
+        manifest[path] = [entry.blob_sha, entry.size]
+    return manifest
+
+
+def _expected_text(codebase, chunk: Chunk) -> str | None:
+    try:
+        source = codebase.read_source(chunk.file_path)
+    except Exception:  # noqa: BLE001 - unreadable file means the cache is suspect
+        return None
+    lines = source.splitlines()
+    if chunk.end_line > len(lines) or chunk.start_line < 1:
+        return None
+    return _chunk_text(lines, chunk.start_line, chunk.end_line)
+
+
+def verify_cached(codebase, chunks: list[Chunk],
+                  manifest: dict[str, list]) -> tuple[bool, str]:
+    """Check that cached chunks really describe this commit.
+
+    The manifest binds file paths to git blob SHAs, and every chunk's text is
+    compared with the source read through `TrustedCodebase`. A cache that fails
+    any check is discarded and rebuilt; it is never returned to a model.
+    """
+    current = snapshot_manifest(codebase)
+    if set(current) != set(manifest):
+        return False, "manifest file set differs from the commit"
+    for path, (blob, size) in current.items():
+        cached = manifest.get(path)
+        if not cached or list(cached)[:2] != [blob, size]:
+            return False, f"blob mismatch for {path}"
+
+    allowed = set(current)
+    for chunk in chunks:
+        if chunk.file_path not in allowed:
+            return False, f"chunk path outside the allowlist: {chunk.file_path}"
+        if chunk.sha != codebase.snapshot.sha:
+            return False, "chunk sha does not match the pinned commit"
+        if not (1 <= chunk.start_line <= chunk.end_line):
+            return False, f"bad line range in {chunk.file_path}"
+        if chunk.end_line - chunk.start_line + 1 > MAX_CHUNK_LINES:
+            return False, f"chunk exceeds the line cap in {chunk.file_path}"
+        if len(chunk.text) > MAX_CHUNK_CHARS:
+            return False, f"chunk exceeds the char cap in {chunk.file_path}"
+        expected = _expected_text(codebase, chunk)
+        if expected is None:
+            return False, f"chunk line range outside {chunk.file_path}"
+        if expected != chunk.text:
+            return False, f"chunk text differs from the commit in {chunk.file_path}"
+    return True, "ok"
+
+
+def load_cached(codebase) -> RepoIndex | None:
+    """Load the cache only if it can be proven to belong to this commit."""
+    if cache_mode() == "off":
+        return None
+    sha = codebase.snapshot.sha
     path = _cache_path(sha)
     if not path.is_file():
         return None
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
+        LOGGER.warning("discarding unreadable index cache for %s", sha[:12])
+        return None
+    if not isinstance(data, dict):
         return None
     if data.get("version") != INDEX_VERSION or data.get("sha") != sha:
         return None
-    chunks = [Chunk.from_dict(item) for item in data.get("chunks", [])]
-    return RepoIndex(chunks, data.get("imports", {}), sha)
+    manifest = data.get("files")
+    raw_chunks = data.get("chunks")
+    imports = data.get("imports")
+    if not isinstance(manifest, dict) or not isinstance(raw_chunks, list) or not isinstance(imports, dict):
+        LOGGER.warning("discarding incomplete index cache for %s", sha[:12])
+        return None
+    try:
+        chunks = [Chunk.from_dict(item) for item in raw_chunks]
+    except (TypeError, KeyError):
+        LOGGER.warning("discarding malformed index cache for %s", sha[:12])
+        return None
+    ok, reason = verify_cached(codebase, chunks, manifest)
+    if not ok:
+        LOGGER.warning("discarding index cache for %s: %s", sha[:12], reason)
+        return None
+    return RepoIndex(chunks, imports, sha)
 
 
-def save_cached(index: RepoIndex) -> None:
+def save_cached(index: RepoIndex, manifest: dict[str, list]) -> None:
     path = _cache_path(index.sha)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "version": INDEX_VERSION,
             "sha": index.sha,
+            "files": manifest,
             "chunks": [chunk.as_dict() for chunk in index.chunks],
             "imports": index.imports,
         }
@@ -358,12 +450,13 @@ def save_cached(index: RepoIndex) -> None:
 
 
 def build_index(codebase) -> RepoIndex:
-    cached = load_cached(codebase.snapshot.sha)
+    cached = load_cached(codebase)
     if cached is not None:
         return cached
     chunks, imports = build_chunks(codebase)
     index = RepoIndex(chunks, imports, codebase.snapshot.sha)
-    save_cached(index)
+    if cache_mode() != "off":
+        save_cached(index, snapshot_manifest(codebase))
     return index
 
 

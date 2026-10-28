@@ -508,17 +508,68 @@ def _execute_inner(name: str, arguments: dict, codebase,
                 payload)
 
     hit = is_effective_hit(name, payload)
-    text = json.dumps(payload, ensure_ascii=False)
-    if len(text) > MAX_TOOL_OUTPUT_CHARS:
-        payload = {**payload, "content": str(payload.get("content", ""))[:MAX_TOOL_OUTPUT_CHARS],
-                   "truncated": True}
-        text = json.dumps(payload, ensure_ascii=False)
+    payload, text = _cap_payload(payload)
     record = ToolCallRecord(
         round_index, name, _safe_args(arguments), True,
         OUTCOME_HIT if hit else OUTCOME_MISS, "", "", len(text), elapsed(),
         int(payload.get("match_count", 0)),
     )
     return record, payload
+
+
+def _cap_payload(payload: dict) -> tuple[dict, str]:
+    """Return (payload, text) whose serialized size is within the hard cap.
+
+    Truncating a single `content` field is not enough: `search_code` puts its
+    evidence in `hits`, so the whole serialized object is bounded here. The
+    result stays valid JSON and says how much was dropped.
+    """
+    text = json.dumps(payload, ensure_ascii=False)
+    if len(text) <= MAX_TOOL_OUTPUT_CHARS:
+        return payload, text
+
+    capped = dict(payload)
+    capped["truncated"] = True
+
+    hits = capped.get("hits")
+    if isinstance(hits, list):
+        kept = list(hits)
+        omitted = 0
+        while kept and len(json.dumps({**capped, "hits": kept}, ensure_ascii=False)) > MAX_TOOL_OUTPUT_CHARS:
+            kept.pop()
+            omitted += 1
+        for size in (400, 240, 120, 60):
+            if len(json.dumps({**capped, "hits": kept}, ensure_ascii=False)) <= MAX_TOOL_OUTPUT_CHARS:
+                break
+            kept = [{**hit, "snippet": str(hit.get("snippet", ""))[:size]} for hit in kept]
+        if len(json.dumps({**capped, "hits": kept}, ensure_ascii=False)) > MAX_TOOL_OUTPUT_CHARS:
+            kept = [{**hit, "snippet": ""} for hit in kept]
+        capped["hits"] = kept
+        capped["count"] = len(kept)
+        if omitted:
+            capped["omitted"] = omitted
+        text = json.dumps(capped, ensure_ascii=False)
+        if len(text) <= MAX_TOOL_OUTPUT_CHARS:
+            return capped, text
+
+    # generic fallback: shrink the content field, then give up to a minimal object
+    for size in (MAX_TOOL_OUTPUT_CHARS // 2, 2000, 1000, 400, 120):
+        candidate = dict(capped)
+        if "content" in candidate:
+            candidate["content"] = str(candidate["content"])[:size]
+        for key in ("matches", "hits"):
+            if isinstance(candidate.get(key), list):
+                candidate[key] = []
+                candidate["omitted"] = len(payload.get(key) or [])
+                candidate["count"] = 0
+        text = json.dumps(candidate, ensure_ascii=False)
+        if len(text) <= MAX_TOOL_OUTPUT_CHARS:
+            return candidate, text
+
+    minimal = {"ok": payload.get("ok", True), "truncated": True,
+               "error": {"code": "output_truncated",
+                         "message": "result exceeded the tool output budget"}}
+    return minimal, json.dumps(minimal, ensure_ascii=False)
 
 
 def _safe_args(arguments: dict) -> dict:

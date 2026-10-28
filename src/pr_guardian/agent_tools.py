@@ -66,6 +66,7 @@ class SnapshotEntry:
     path: str
     mode: str
     size: int
+    blob_sha: str = ""
 
 
 class GitSnapshot:
@@ -124,9 +125,9 @@ class GitSnapshot:
                 parts = meta.split()
                 if len(parts) != 3:
                     continue
-                mode, _kind, _sha = (p.decode("ascii", "replace") for p in parts)
+                mode, _kind, blob = (p.decode("ascii", "replace") for p in parts)
                 rel = path.decode("utf-8", "replace")
-                entries[rel] = SnapshotEntry(rel, mode, 0)
+                entries[rel] = SnapshotEntry(rel, mode, 0, blob)
             self._entries = entries
         return self._entries
 
