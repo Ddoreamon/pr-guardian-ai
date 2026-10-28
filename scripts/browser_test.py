@@ -61,6 +61,10 @@ def run(base_url: str) -> int:
         # --- visitor notice + committed benchmark link ---------------------
         notice = page.locator("#demo-notice")
         check("demo notice shown", notice.count() == 1)
+        scope_text = page.locator("#trusted-scope").inner_text()
+        check("page states the tested scope",
+              "Tests run only against the trusted, bundled demo repository" in scope_text,
+              scope_text.replace("\n", " ")[:120])
         notice_text = notice.inner_text().lower()
         check("benchmark report link present",
               page.locator('#demo-notice a[href*="docs/benchmark-results/heldout-llm/REPORT.md"]').count() == 1)

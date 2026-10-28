@@ -27,7 +27,11 @@
 <section class="panel" id="case-panel">
   <div class="panel-head">
     <h2>1 · Choose a demo change</h2>
-    <p class="hint">Three preset pull requests on a trusted, self-authored repository.</p>
+    <p class="hint" id="trusted-scope">
+      Tests run only against the trusted, bundled demo repository.
+      Three preset pull requests, self-authored; no arbitrary repository is ever read
+      or executed.
+    </p>
   </div>
   <div class="case-grid" id="case-grid">
     {% for c in cases %}

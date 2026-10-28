@@ -239,3 +239,9 @@ def test_v1_review_has_no_tool_calls(boundary_review):
     assert report["tool_calls"] == []
     assert report["tool_model_calls"] == 0
     assert report["tool_rounds"] == 0
+
+def test_page_states_the_tested_scope():
+    """The public page must say which repository pytest is allowed to run against."""
+    client = TestClient(app)
+    html = client.get("/").text
+    assert "Tests run only against the trusted, bundled demo repository" in html
