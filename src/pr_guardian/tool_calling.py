@@ -34,6 +34,7 @@ from .agent_tools import (
 from .agent_tools import (
     TOOL_NAMES as AGENT_TOOL_NAMES,
 )
+from .evidence import EvidenceRegistry
 from .llm_reviewer import REVIEW_SCOPE
 from .models import ChangedFile, FindingSource, ReviewFinding, VerificationStatus
 from .settings import Settings
@@ -135,10 +136,19 @@ Rules you must follow:
 - If the evidence is insufficient, report nothing. A clean result is valid.
 - Cite the exact file and line you are reporting.
 
+For every finding, cite where you saw the code: the file path and the exact line
+range that a tool returned to you, plus the commit SHA you were told you are
+reviewing. A citation is checked against what was really returned to you in this
+review; an invented file or line range is marked unverified, and a finding with no
+citation is shown as unverified. Citing a real line does not by itself make your
+claim correct.
+
 Final answer must be JSON only, with this shape:
 {"findings": [{"file_path": str, "start_line": int, "end_line": int,
   "category": str, "severity": "low|medium|high", "summary": str,
-  "explanation": str, "evidence": str, "suggested_fix": str}]}
+  "explanation": str, "evidence": str, "suggested_fix": str,
+  "evidence_refs": [{"ref": str, "file_path": str, "start_line": int,
+    "end_line": int, "tool_name": str}]}]}
 """
 
 
@@ -152,6 +162,7 @@ class _RawFinding(BaseModel):
     explanation: str = ""
     evidence: str = ""
     suggested_fix: str = ""
+    evidence_refs: list[dict] = Field(default_factory=list)
 
 
 class _RawOutput(BaseModel):
@@ -207,6 +218,7 @@ class ToolReviewResult:
     # ok | not_configured | disabled | model_error | tool_limit | schema_invalid
     status: str = "ok"
     error: str = ""
+    registry: EvidenceRegistry | None = None
 
     @property
     def model_calls(self) -> int:
@@ -311,9 +323,11 @@ def review_with_tools(
 
     session = _Session(f"{settings.base_url.rstrip('/')}/chat/completions",
                        {"Authorization": f"Bearer {settings.api_key}"}, model)
+    registry = EvidenceRegistry(ref=_snapshot_sha(codebase))
     messages: list[dict] = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": _user_prompt(diff_text, files)},
+        {"role": "user", "content": _user_prompt(diff_text, files,
+                                                 _snapshot_sha(codebase))},
     ]
 
     budget = _Budget(max_rounds=max_rounds, max_calls=max_tool_calls)
@@ -372,6 +386,8 @@ def review_with_tools(
             record, payload_out = _execute(name, arguments, codebase, round_index,
                                        call_id=call_id)
             trace.append(record)
+            # record exactly what the model is about to receive
+            registry.record(record, payload_out)
             messages.append({"role": "tool", "tool_call_id": call_id,
                              "content": wrap_tool_output(payload_out)})
 
@@ -402,13 +418,12 @@ def review_with_tools(
     if status == "tool_limit":
         notes.append("PARTIAL: the tool budget ran out before the model finished investigating.")
 
-    result = _result(findings, notes, schema_valid, model, started, session, trace,
-                     rounds, status, error)
-    return result
+    return _result(findings, notes, schema_valid, model, started, session, trace,
+                   rounds, status, error, registry=registry)
 
 
 def _result(findings, notes, schema_valid, model, started, session, trace, rounds,
-            status, error) -> ToolReviewResult:
+            status, error, registry: EvidenceRegistry | None = None) -> ToolReviewResult:
     return ToolReviewResult(
         findings=findings,
         notes=notes if isinstance(notes, list) else [notes],
@@ -423,16 +438,18 @@ def _result(findings, notes, schema_valid, model, started, session, trace, round
         model_failures=session.failures,
         status=status,
         error=error,
+        registry=registry,
     )
 
 
-def _user_prompt(diff_text: str, files: list[ChangedFile]) -> str:
+def _user_prompt(diff_text: str, files: list[ChangedFile], ref: str = "") -> str:
     listing = "\n".join(
         f"- {f.file_path} ({f.change_type.value}); added lines: {f.added_lines[:60]}"
         for f in files
     ) or "- (no changed files)"
+    reviewed = f"Reviewed commit (cite this SHA): {ref}\n\n" if ref else ""
     return (
-        "Changed files in this pull request:\n"
+        f"{reviewed}Changed files in this pull request:\n"
         f"{listing}\n\n"
         "Unified diff (zero context; line numbers refer to the new file):\n"
         f"{diff_text}\n\n"
@@ -455,6 +472,14 @@ def _parse_call(call: dict) -> tuple[str, dict]:
         if isinstance(parsed, dict):
             return name, parsed
     return name, {"__parse_error__": "arguments were not a JSON object"}
+
+
+def _snapshot_sha(codebase) -> str:
+    """The commit the tools are pinned to, whatever backend is in use."""
+    sha = getattr(codebase, "snapshot_sha", "")
+    if not sha:
+        sha = getattr(getattr(codebase, "snapshot", None), "sha", "")
+    return str(sha)
 
 
 def _execute(name: str, arguments: dict, codebase,
@@ -624,10 +649,35 @@ def _finalise(session: _Session, messages: list[dict],
             suggested_fix=f.suggested_fix,
             source=FindingSource.LLM,
             verification_status=VerificationStatus.SUSPECTED,
+            evidence_refs=_parse_refs(f.evidence_refs),
         )
         for i, f in enumerate(parsed.findings, start=1)
     ]
     return findings, True, ""
+
+
+def _parse_refs(raw: object) -> list:
+    """Model-supplied citations, parsed defensively; validity is judged later."""
+    from .models import EvidenceRef
+
+    if not isinstance(raw, list):
+        return []
+    refs = []
+    for item in raw[:8]:
+        if not isinstance(item, dict):
+            continue
+        try:
+            refs.append(EvidenceRef(
+                ref=str(item.get("ref", ""))[:64],
+                file_path=str(item.get("file_path", ""))[:512],
+                start_line=int(item.get("start_line", 0) or 0),
+                end_line=int(item.get("end_line", 0) or 0),
+                tool_call_id=str(item.get("tool_call_id", ""))[:128],
+                tool_name=str(item.get("tool_name", ""))[:64],
+            ))
+        except (TypeError, ValueError):
+            continue
+    return refs
 
 
 def _try_parse(content: str | None) -> _RawOutput | None:

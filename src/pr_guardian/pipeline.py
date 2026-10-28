@@ -14,6 +14,18 @@ from pathlib import Path
 from .agent_tools import TrustedCodebase
 
 
+def _reported_model(cfg: Settings, llm_status: str, prompt_tokens: int,
+                    completion_tokens: int, tool_model_calls: int) -> str:
+    """Name the model only when a request was really made."""
+    made_a_call = (
+        tool_model_calls > 0
+        or prompt_tokens > 0
+        or completion_tokens > 0
+        or llm_status in {"ok", "failed", "partial"}
+    )
+    return cfg.model if made_a_call else "none"
+
+
 def _tool_backend(cfg: Settings, repo: Path, head: str):
     """Return (backend, needs_close). Local is the default; MCP is opt-in."""
     if cfg.tool_backend == "mcp":
@@ -21,6 +33,12 @@ def _tool_backend(cfg: Settings, repo: Path, head: str):
 
         return MCPToolBackend(repo, head), True
     return TrustedCodebase.from_git(repo, head), False
+from .evidence import (
+    EVIDENCE_DETERMINISTIC,
+    EVIDENCE_VERIFIED,
+    registry_fingerprint,
+    verify_findings,
+)
 from .git_reader import read_changed_files, validate_ref
 from .llm_reviewer import review_with_llm
 from .models import (
@@ -195,17 +213,40 @@ def run_review(
         else:
             llm_status = "failed"
 
-    validated = validate_findings(static + llm_findings, files)
+    # ---- evidence provenance ------------------------------------------------
+    # The allowlist and the pinned SHA come from the same trusted codebase the
+    # tools use, whatever backend served them (local or MCP).
+    scope = TrustedCodebase.from_git(repo, head)
+    snapshot_sha = scope.snapshot_sha
+    allowed_paths = set(scope.source_files())
+    registry = getattr(tool_result, "registry", None) if cfg.tool_calls_enabled else None
+    llm_findings = verify_findings(llm_findings, registry, snapshot_sha, allowed_paths)
+    static_verified = verify_findings(static, None, snapshot_sha, allowed_paths)
+
+    validated = validate_findings(static_verified + llm_findings, files)
+    final = final_findings(validated)
+    trusted = [f for f in final
+               if f.evidence_status in {EVIDENCE_VERIFIED, EVIDENCE_DETERMINISTIC}]
     return ReviewReport(
         review_id=uuid.uuid4().hex[:12],
         repository=repo.name,
         base_ref=base,
         head_ref=head,
-        model_name=cfg.model if llm_status in {"ok", "failed"} else "none",
+        # a partial run really did call the model: naming it "none" would hide
+        # that tokens were spent and that the review is incomplete
+        model_name=_reported_model(cfg, llm_status, prompt_tokens, completion_tokens,
+                                   tool_model_calls),
         changed_files=files,
         static_findings=static,
         llm_findings=llm_findings,
-        final_findings=final_findings(validated),
+        final_findings=final,
+        evidence_verified=sum(1 for f in final if f.evidence_status == EVIDENCE_VERIFIED),
+        evidence_unverified=sum(1 for f in final
+                                if f.evidence_status not in {EVIDENCE_VERIFIED,
+                                                             EVIDENCE_DETERMINISTIC}),
+        trusted_findings=trusted,
+        evidence_sources=registry.summary() if registry is not None else [],
+        evidence_registry_fingerprint=registry_fingerprint(registry) if registry else "",
         notes=notes,
         test_summary=test_summary,
         llm_status=llm_status,

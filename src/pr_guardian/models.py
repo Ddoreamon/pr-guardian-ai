@@ -34,6 +34,23 @@ class ChangedFile(BaseModel):
     language: str = "unknown"
 
 
+class EvidenceRef(BaseModel):
+    """A citation the model claims to have based a finding on.
+
+    Every field is checked against the evidence registry before it can be shown as
+    verified. `evidence_status` is set by the validator, never by the model.
+    """
+
+    ref: str = ""                 # commit SHA the model says it read
+    file_path: str = ""
+    start_line: int = 0
+    end_line: int = 0
+    tool_call_id: str = ""
+    tool_name: str = ""
+    evidence_status: str = "unverified"
+    snippet_sha256: str = ""
+
+
 class ReviewFinding(BaseModel):
     id: str
     file_path: str
@@ -48,6 +65,13 @@ class ReviewFinding(BaseModel):
     source: FindingSource
     verification_status: VerificationStatus
     rule: str | None = None  # e.g. Ruff rule code
+    # V4.1: provenance. Defaults keep older reports and frozen JSON parseable.
+    evidence_refs: list[EvidenceRef] = Field(default_factory=list)
+    # deterministic | source_verified | source_unverified | no_evidence_ref | not_evaluated
+    evidence_status: str = "not_evaluated"
+    # claim_unjudged (LLM) | deterministic (ruff / pytest)
+    claim_status: str = "claim_unjudged"
+    evidence_validation_notes: list[str] = Field(default_factory=list)
 
 
 class TestSummary(BaseModel):
@@ -103,4 +127,10 @@ class ReviewReport(BaseModel):
     tool_model_calls: int = 0
     tool_model_failures: int = 0
     tool_rounds: int = 0
+    # V4.1 provenance roll-up
+    evidence_verified: int = 0
+    evidence_unverified: int = 0
+    trusted_findings: list[ReviewFinding] = Field(default_factory=list)
+    evidence_sources: list[dict] = Field(default_factory=list)
+    evidence_registry_fingerprint: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

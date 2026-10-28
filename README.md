@@ -506,6 +506,32 @@ no accuracy claim is made.
 Design notes and the dense-retrieval evidence:
 [`docs/rag-stage-v2.md`](docs/rag-stage-v2.md).
 
+### Evidence provenance (V4.1)
+
+Every AI finding can now carry structured `evidence_refs`, and each one is checked
+against a per-review **Evidence Registry** that records only what the model was
+actually shown (post-truncation, hits only). A citation verifies when its file is
+inside the `src/**/*.py` allowlist, its line range was really delivered, and its
+commit is the one the review is pinned to.
+
+Crucially, **source verification is not a correctness verdict**:
+
+| Field | Meaning |
+|---|---|
+| `evidence_status` | `source_verified` / `source_unverified` / `no_evidence_ref` / `deterministic` |
+| `claim_status` | always `claim_unjudged` for LLM findings; `deterministic` for ruff/pytest |
+| `verification_status` | unchanged: `suspected`, upgraded only by deterministic tools |
+
+`trusted_findings` is the high-confidence view (source-verified or deterministic);
+unverified findings stay visible and flagged rather than disappearing. Reports
+written before V4.1 still parse, because every new field has a default.
+
+A real `deepseek-flash` run on a development case produced one correct finding with
+three verified citations, and one **false positive whose sources were nonetheless
+verified** — the distinction the design is meant to expose. See
+[`docs/v4.1-evidence.md`](docs/v4.1-evidence.md) and
+[`docs/v4-evidence-smoke/REPORT.md`](docs/v4-evidence-smoke/REPORT.md).
+
 ### Corrections to earlier benchmark artefacts
 
 Committed reports are historical records and are not rewritten. Known defects in

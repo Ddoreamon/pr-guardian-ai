@@ -1,0 +1,851 @@
+{
+  "corpus_label": "<evidence-dev-case>",
+  "runs": [
+    {
+      "case": "bug",
+      "backend": "mcp",
+      "branch": "dev/credit-cents",
+      "snapshot_sha": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+      "model_name": "deepseek-flash",
+      "llm_status": "partial",
+      "tool_status": "tool_limit",
+      "model_calls": 5,
+      "model_failures": 0,
+      "prompt_tokens": 19687,
+      "completion_tokens": 2153,
+      "wall_s": 13.298,
+      "evidence_verified": 1,
+      "evidence_unverified": 0,
+      "registry_fingerprint": "591386bff1582abf",
+      "evidence_sources": [
+        {
+          "tool_call_id": "call_00_ET_R8YhtufvwH1ri4ztTnDC3034",
+          "tool_name": "read_code_context",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 1,
+          "end_line": 9,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "ef90fd98014a9979"
+        },
+        {
+          "tool_call_id": "call_01_ET_96TgYlLUYtFXf1DafrNg1763",
+          "tool_name": "find_symbol_definition",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/invoices.py",
+          "start_line": 22,
+          "end_line": 26,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "ae817faf5d9d29b5"
+        },
+        {
+          "tool_call_id": "call_00_3ceL2eWoPaJAkzYb0DJH1796",
+          "tool_name": "read_code_context",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/invoices.py",
+          "start_line": 1,
+          "end_line": 26,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "6b450e27152d0b0e"
+        },
+        {
+          "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/orders.py",
+          "start_line": 10,
+          "end_line": 15,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "20c580e05e24fd41"
+        },
+        {
+          "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 6,
+          "end_line": 9,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "c32a2f14f0c7e9c4"
+        },
+        {
+          "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/money.py",
+          "start_line": 7,
+          "end_line": 9,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "9247baed65234ac7"
+        },
+        {
+          "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/orders.py",
+          "start_line": 6,
+          "end_line": 8,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "b138f5e75138967a"
+        },
+        {
+          "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/pricing.py",
+          "start_line": 8,
+          "end_line": 11,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "d5c56469295ac9f5"
+        },
+        {
+          "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/money.py",
+          "start_line": 11,
+          "end_line": 13,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "3d4e1fe40a5610a1"
+        },
+        {
+          "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/orders.py",
+          "start_line": 17,
+          "end_line": 19,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "0ea4a0d239b29478"
+        },
+        {
+          "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/refunds.py",
+          "start_line": 6,
+          "end_line": 8,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "e651ea1f4b015b30"
+        },
+        {
+          "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/orders.py",
+          "start_line": 21,
+          "end_line": 23,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "3ebb65be313c3d05"
+        },
+        {
+          "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/refunds.py",
+          "start_line": 10,
+          "end_line": 12,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "9a2612dab03b20b6"
+        },
+        {
+          "tool_call_id": "call_00_KWRfo4fOS3bGZNQ9ntrM5424",
+          "tool_name": "read_code_context",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/orders.py",
+          "start_line": 1,
+          "end_line": 23,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "4f2107fc064dd7c4"
+        },
+        {
+          "tool_call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 6,
+          "end_line": 9,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "c32a2f14f0c7e9c4"
+        },
+        {
+          "tool_call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/money.py",
+          "start_line": 7,
+          "end_line": 9,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "9247baed65234ac7"
+        },
+        {
+          "tool_call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/invoices.py",
+          "start_line": 23,
+          "end_line": 26,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "a4ba6f9c96c1d8bf"
+        },
+        {
+          "tool_call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/invoices.py",
+          "start_line": 6,
+          "end_line": 8,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "79ec715ffcbab794"
+        },
+        {
+          "tool_call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/money.py",
+          "start_line": 11,
+          "end_line": 13,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "3d4e1fe40a5610a1"
+        },
+        {
+          "tool_call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/invoices.py",
+          "start_line": 3,
+          "end_line": 3,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "7878166bd7c0ddb8"
+        },
+        {
+          "tool_call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/invoices.py",
+          "start_line": 10,
+          "end_line": 12,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "83c5c77a9f937e4a"
+        },
+        {
+          "tool_call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/pricing.py",
+          "start_line": 8,
+          "end_line": 11,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "d5c56469295ac9f5"
+        },
+        {
+          "tool_call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/orders.py",
+          "start_line": 10,
+          "end_line": 15,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "20c580e05e24fd41"
+        },
+        {
+          "tool_call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "tool_name": "search_code",
+          "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+          "file_path": "src/shop/orders.py",
+          "start_line": 6,
+          "end_line": 8,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "b138f5e75138967a"
+        }
+      ],
+      "tool_calls": [
+        {
+          "round": 1,
+          "call_id": "call_00_ET_R8YhtufvwH1ri4ztTnDC3034",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/checkout.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 1,
+          "call_id": "call_01_ET_96TgYlLUYtFXf1DafrNg1763",
+          "name": "find_symbol_definition",
+          "arguments": {
+            "symbol": "apply_credit"
+          },
+          "outcome": "hit",
+          "matched": 1
+        },
+        {
+          "round": 2,
+          "call_id": "call_00_3ceL2eWoPaJAkzYb0DJH1796",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/invoices.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 2,
+          "call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+          "name": "search_code",
+          "arguments": {
+            "query": "order[\"cents\"] amount order dict keys",
+            "top_k": 10
+          },
+          "outcome": "hit",
+          "matched": 10
+        },
+        {
+          "round": 3,
+          "call_id": "call_00_KWRfo4fOS3bGZNQ9ntrM5424",
+          "name": "read_code_context",
+          "arguments": {
+            "end_line": 25,
+            "file_path": "src/shop/orders.py",
+            "start_line": 1
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 3,
+          "call_id": "call_01_djShJnlGyMxN2pGIFRRO2934",
+          "name": "search_code",
+          "arguments": {
+            "query": "finalise order cents amount invoice tests",
+            "top_k": 10
+          },
+          "outcome": "hit",
+          "matched": 10
+        },
+        {
+          "round": 4,
+          "call_id": "call_00_v1xx95VH3lK9lkFMxisf3592",
+          "name": "read_code_context",
+          "arguments": {
+            "end_line": 13,
+            "file_path": "src/shop/money.py",
+            "start_line": 1
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        },
+        {
+          "round": 4,
+          "call_id": "call_01_v58bNTFyTfk3cPzabots1845",
+          "name": "search_code",
+          "arguments": {
+            "query": "cents minor units currency units conversion",
+            "top_k": 10
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        }
+      ],
+      "llm_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 8,
+          "end_line": 8,
+          "category": "data handling",
+          "severity": "high",
+          "summary": "finalise() now passes a minor-unit (cents) value into apply_credit, which is documented to take whole currency units, inflating the recorded credit by 100x.",
+          "explanation": "The changed line calls apply_credit(order[\"invoice\"], order[\"cents\"]). The callee's own contract, stated in its docstring, is explicit: \"Apply a credit given in whole currency units (not cents).\" The field name being passed is the cents/minor-unit field, so the invoice's credit is set to a value 100 times the intended amount (e.g. an order of 10.00 stores credit 1000 rather than 10). The previous argument, order[\"amount\"], matched the callee's units contract. Secondary concern from the same line: the repository's order-construction code (src/shop/orders.py:8, create_order) builds an order dict containing only the key \"total\" and no \"cents\" key, so order[\"cents\"] is not an established order field in this codebase and this indexing can raise KeyError instead of the intended credit application; the units contract violation alone is enough to reject the line.",
+          "evidence": "src/shop/checkout.py:8 -> `apply_credit(order[\"invoice\"], order[\"cents\"])`; src/shop/invoices.py:23-25 -> `def apply_credit(invoice, amount, note=\"\"):` / `\"\"\"Apply a credit given in whole currency units (not cents).\"\"\"` / `invoice[\"credit\"] = amount`; src/shop/orders.py:6-8 -> `def create_order(net, region):` / `\"\"\"Create an order.\"\"\"` / `return {\"total\": order_total(net, region)}`.",
+          "suggested_fix": "Pass a whole-currency-unit amount as apply_credit expects, e.g. convert first: `from .money import from_cents` then `apply_credit(order[\"invoice\"], from_cents(order[\"cents\"]))`, or keep/resolve an order field that is already in whole currency units (such as the order total) and pass that.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null,
+          "evidence_refs": [
+            {
+              "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+              "file_path": "src/shop/checkout.py",
+              "start_line": 6,
+              "end_line": 9,
+              "tool_call_id": "call_00_ET_R8YhtufvwH1ri4ztTnDC3034",
+              "tool_name": "read_code_context",
+              "evidence_status": "source_verified",
+              "snippet_sha256": ""
+            },
+            {
+              "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+              "file_path": "src/shop/invoices.py",
+              "start_line": 23,
+              "end_line": 26,
+              "tool_call_id": "call_01_ET_96TgYlLUYtFXf1DafrNg1763",
+              "tool_name": "find_symbol_definition",
+              "evidence_status": "source_verified",
+              "snippet_sha256": ""
+            },
+            {
+              "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+              "file_path": "src/shop/orders.py",
+              "start_line": 6,
+              "end_line": 8,
+              "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+              "tool_name": "search_code",
+              "evidence_status": "source_verified",
+              "snippet_sha256": ""
+            }
+          ],
+          "evidence_status": "source_verified",
+          "claim_status": "claim_unjudged",
+          "evidence_validation_notes": []
+        }
+      ],
+      "final_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 8,
+          "end_line": 8,
+          "category": "data handling",
+          "severity": "high",
+          "summary": "finalise() now passes a minor-unit (cents) value into apply_credit, which is documented to take whole currency units, inflating the recorded credit by 100x.",
+          "explanation": "The changed line calls apply_credit(order[\"invoice\"], order[\"cents\"]). The callee's own contract, stated in its docstring, is explicit: \"Apply a credit given in whole currency units (not cents).\" The field name being passed is the cents/minor-unit field, so the invoice's credit is set to a value 100 times the intended amount (e.g. an order of 10.00 stores credit 1000 rather than 10). The previous argument, order[\"amount\"], matched the callee's units contract. Secondary concern from the same line: the repository's order-construction code (src/shop/orders.py:8, create_order) builds an order dict containing only the key \"total\" and no \"cents\" key, so order[\"cents\"] is not an established order field in this codebase and this indexing can raise KeyError instead of the intended credit application; the units contract violation alone is enough to reject the line.",
+          "evidence": "src/shop/checkout.py:8 -> `apply_credit(order[\"invoice\"], order[\"cents\"])`; src/shop/invoices.py:23-25 -> `def apply_credit(invoice, amount, note=\"\"):` / `\"\"\"Apply a credit given in whole currency units (not cents).\"\"\"` / `invoice[\"credit\"] = amount`; src/shop/orders.py:6-8 -> `def create_order(net, region):` / `\"\"\"Create an order.\"\"\"` / `return {\"total\": order_total(net, region)}`.",
+          "suggested_fix": "Pass a whole-currency-unit amount as apply_credit expects, e.g. convert first: `from .money import from_cents` then `apply_credit(order[\"invoice\"], from_cents(order[\"cents\"]))`, or keep/resolve an order field that is already in whole currency units (such as the order total) and pass that.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null,
+          "evidence_refs": [
+            {
+              "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+              "file_path": "src/shop/checkout.py",
+              "start_line": 6,
+              "end_line": 9,
+              "tool_call_id": "call_00_ET_R8YhtufvwH1ri4ztTnDC3034",
+              "tool_name": "read_code_context",
+              "evidence_status": "source_verified",
+              "snippet_sha256": ""
+            },
+            {
+              "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+              "file_path": "src/shop/invoices.py",
+              "start_line": 23,
+              "end_line": 26,
+              "tool_call_id": "call_01_ET_96TgYlLUYtFXf1DafrNg1763",
+              "tool_name": "find_symbol_definition",
+              "evidence_status": "source_verified",
+              "snippet_sha256": ""
+            },
+            {
+              "ref": "e75690a175edd068b3003cf9e380343da4a8b0e4",
+              "file_path": "src/shop/orders.py",
+              "start_line": 6,
+              "end_line": 8,
+              "tool_call_id": "call_01_LMRQmaUdBcqnRdAqhhqo4188",
+              "tool_name": "search_code",
+              "evidence_status": "source_verified",
+              "snippet_sha256": ""
+            }
+          ],
+          "evidence_status": "source_verified",
+          "claim_status": "claim_unjudged",
+          "evidence_validation_notes": []
+        }
+      ],
+      "trusted_findings": [
+        "llm-1"
+      ]
+    },
+    {
+      "case": "clean",
+      "backend": "mcp",
+      "branch": "dev/credit-units",
+      "snapshot_sha": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+      "model_name": "deepseek-flash",
+      "llm_status": "partial",
+      "tool_status": "tool_limit",
+      "model_calls": 5,
+      "model_failures": 0,
+      "prompt_tokens": 15867,
+      "completion_tokens": 1680,
+      "wall_s": 11.37,
+      "evidence_verified": 1,
+      "evidence_unverified": 0,
+      "registry_fingerprint": "5bbe43b1c521e643",
+      "evidence_sources": [
+        {
+          "tool_call_id": "call_00_ET_yFwwLLaMEnNsmc86XbOe3744",
+          "tool_name": "read_code_context",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 1,
+          "end_line": 9,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "42d5a5bb8176bc3e"
+        },
+        {
+          "tool_call_id": "call_01_ET_NCGKKcuISyhmpX0Ir1he0551",
+          "tool_name": "find_symbol_definition",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/invoices.py",
+          "start_line": 22,
+          "end_line": 26,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "ae817faf5d9d29b5"
+        },
+        {
+          "tool_call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 6,
+          "end_line": 9,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "ebabefe8d3a15ffe"
+        },
+        {
+          "tool_call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/orders.py",
+          "start_line": 10,
+          "end_line": 15,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "20c580e05e24fd41"
+        },
+        {
+          "tool_call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/orders.py",
+          "start_line": 6,
+          "end_line": 8,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "b138f5e75138967a"
+        },
+        {
+          "tool_call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/orders.py",
+          "start_line": 17,
+          "end_line": 19,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "0ea4a0d239b29478"
+        },
+        {
+          "tool_call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/pricing.py",
+          "start_line": 8,
+          "end_line": 11,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "d5c56469295ac9f5"
+        },
+        {
+          "tool_call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/orders.py",
+          "start_line": 21,
+          "end_line": 23,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "3ebb65be313c3d05"
+        },
+        {
+          "tool_call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/notifications.py",
+          "start_line": 4,
+          "end_line": 6,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "3e34d80873d02cd0"
+        },
+        {
+          "tool_call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/analytics.py",
+          "start_line": 8,
+          "end_line": 10,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "400a67fac9f77322"
+        },
+        {
+          "tool_call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/refunds.py",
+          "start_line": 6,
+          "end_line": 8,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "e651ea1f4b015b30"
+        },
+        {
+          "tool_call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/refunds.py",
+          "start_line": 14,
+          "end_line": 16,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "c76a7fdbfd5e0b3f"
+        },
+        {
+          "tool_call_id": "call_00_88fM0wbPy9s6rKjsh8gy2795",
+          "tool_name": "read_code_context",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/invoices.py",
+          "start_line": 1,
+          "end_line": 26,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "6b450e27152d0b0e"
+        },
+        {
+          "tool_call_id": "call_00_wp41yVsW9XOZJ83Gnyrz4271",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/invoices.py",
+          "start_line": 23,
+          "end_line": 26,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "a4ba6f9c96c1d8bf"
+        },
+        {
+          "tool_call_id": "call_00_wp41yVsW9XOZJ83Gnyrz4271",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/ledger.py",
+          "start_line": 3,
+          "end_line": 3,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "2dd8d96ce5dd946c"
+        },
+        {
+          "tool_call_id": "call_00_wp41yVsW9XOZJ83Gnyrz4271",
+          "tool_name": "search_code",
+          "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 6,
+          "end_line": 9,
+          "hit": true,
+          "truncated": false,
+          "snippet_sha256": "ebabefe8d3a15ffe"
+        }
+      ],
+      "tool_calls": [
+        {
+          "round": 1,
+          "call_id": "call_00_ET_yFwwLLaMEnNsmc86XbOe3744",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/checkout.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 1,
+          "call_id": "call_01_ET_NCGKKcuISyhmpX0Ir1he0551",
+          "name": "find_symbol_definition",
+          "arguments": {
+            "symbol": "apply_credit"
+          },
+          "outcome": "hit",
+          "matched": 1
+        },
+        {
+          "round": 2,
+          "call_id": "call_00_uwpmEq6VdNC6FNJkzUrN7191",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/invoices.py",
+            "start_line": 1,
+            "end_line": 45
+          },
+          "outcome": "error",
+          "matched": 0
+        },
+        {
+          "round": 2,
+          "call_id": "call_01_bonHOGHd0EabZxMowSqU8378",
+          "name": "search_code",
+          "arguments": {
+            "query": "finalise order checkout",
+            "top_k": 10
+          },
+          "outcome": "hit",
+          "matched": 10
+        },
+        {
+          "round": 3,
+          "call_id": "call_00_88fM0wbPy9s6rKjsh8gy2795",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/invoices.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 4,
+          "call_id": "call_00_wp41yVsW9XOZJ83Gnyrz4271",
+          "name": "search_code",
+          "arguments": {
+            "query": "note credit ledger memo",
+            "top_k": 10
+          },
+          "outcome": "hit",
+          "matched": 3
+        },
+        {
+          "round": 4,
+          "call_id": "call_01_vrxkdU7XLfMFpEcG8Soo2870",
+          "name": "search_code",
+          "arguments": {
+            "query": "amount cents whole currency units conversion",
+            "top_k": 10
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        }
+      ],
+      "llm_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 8,
+          "end_line": 8,
+          "category": "logic",
+          "severity": "low",
+          "summary": "The newly passed note=\"web\" argument has no effect: apply_credit accepts a `note` parameter but never uses it, so the intended provenance tag is silently dropped.",
+          "explanation": "The diff changes the call from apply_credit(order[\"invoice\"], order[\"amount\"]) to apply_credit(order[\"invoice\"], order[\"amount\"], note=\"web\"). The call is signature-compatible (note is optional, default \"\"), so it does not raise; however the callee's documented behaviour contract is `def apply_credit(invoice, amount, note=\"\"): \"\"\"Apply a credit given in whole currency units (not cents).\"\"\" invoice[\"credit\"] = amount; return invoice`, i.e. it only assigns the amount and there is no other reference to `note` (the search for note/credit/memo returned only the definition itself). Passing a keyword argument that the implementation ignores gives the false impression that the credit is annotated as originating from the web channel, but no note is recorded anywhere, so downstream consumers of the invoice cannot distinguish this credit from an untagged one. The argument also gives no benefit over the previous call, making the change functionally a no-op that may mask the missing ledger/memo feature.",
+          "evidence": "checkout.py:8 -> `apply_credit(order[\"invoice\"], order[\"amount\"], note=\"web\")`; invoices.py:23-26 -> `def apply_credit(invoice, amount, note=\"\"):` docstring \"Apply a credit given in whole currency units (not cents).\" body only `invoice[\"credit\"] = amount` then `return invoice` - `note` is never read.",
+          "suggested_fix": "Either make apply_credit actually persist the note (e.g. `invoice[\"credit_note\"] = note` or append it to a credit ledger) before passing it from finalise, or drop the unused `note=\"web\"` argument from the call in checkout.py so the call reflects real behaviour.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null,
+          "evidence_refs": [
+            {
+              "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+              "file_path": "src/shop/checkout.py",
+              "start_line": 6,
+              "end_line": 9,
+              "tool_call_id": "call_00_ET_yFwwLLaMEnNsmc86XbOe3744",
+              "tool_name": "read_code_context",
+              "evidence_status": "source_verified",
+              "snippet_sha256": ""
+            },
+            {
+              "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+              "file_path": "src/shop/invoices.py",
+              "start_line": 23,
+              "end_line": 26,
+              "tool_call_id": "call_01_ET_NCGKKcuISyhmpX0Ir1he0551",
+              "tool_name": "find_symbol_definition",
+              "evidence_status": "source_verified",
+              "snippet_sha256": ""
+            }
+          ],
+          "evidence_status": "source_verified",
+          "claim_status": "claim_unjudged",
+          "evidence_validation_notes": []
+        }
+      ],
+      "final_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 8,
+          "end_line": 8,
+          "category": "logic",
+          "severity": "low",
+          "summary": "The newly passed note=\"web\" argument has no effect: apply_credit accepts a `note` parameter but never uses it, so the intended provenance tag is silently dropped.",
+          "explanation": "The diff changes the call from apply_credit(order[\"invoice\"], order[\"amount\"]) to apply_credit(order[\"invoice\"], order[\"amount\"], note=\"web\"). The call is signature-compatible (note is optional, default \"\"), so it does not raise; however the callee's documented behaviour contract is `def apply_credit(invoice, amount, note=\"\"): \"\"\"Apply a credit given in whole currency units (not cents).\"\"\" invoice[\"credit\"] = amount; return invoice`, i.e. it only assigns the amount and there is no other reference to `note` (the search for note/credit/memo returned only the definition itself). Passing a keyword argument that the implementation ignores gives the false impression that the credit is annotated as originating from the web channel, but no note is recorded anywhere, so downstream consumers of the invoice cannot distinguish this credit from an untagged one. The argument also gives no benefit over the previous call, making the change functionally a no-op that may mask the missing ledger/memo feature.",
+          "evidence": "checkout.py:8 -> `apply_credit(order[\"invoice\"], order[\"amount\"], note=\"web\")`; invoices.py:23-26 -> `def apply_credit(invoice, amount, note=\"\"):` docstring \"Apply a credit given in whole currency units (not cents).\" body only `invoice[\"credit\"] = amount` then `return invoice` - `note` is never read.",
+          "suggested_fix": "Either make apply_credit actually persist the note (e.g. `invoice[\"credit_note\"] = note` or append it to a credit ledger) before passing it from finalise, or drop the unused `note=\"web\"` argument from the call in checkout.py so the call reflects real behaviour.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null,
+          "evidence_refs": [
+            {
+              "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+              "file_path": "src/shop/checkout.py",
+              "start_line": 6,
+              "end_line": 9,
+              "tool_call_id": "call_00_ET_yFwwLLaMEnNsmc86XbOe3744",
+              "tool_name": "read_code_context",
+              "evidence_status": "source_verified",
+              "snippet_sha256": ""
+            },
+            {
+              "ref": "3ca5e0cb0088b37824c38bf6de71f8f9b503e8a3",
+              "file_path": "src/shop/invoices.py",
+              "start_line": 23,
+              "end_line": 26,
+              "tool_call_id": "call_01_ET_NCGKKcuISyhmpX0Ir1he0551",
+              "tool_name": "find_symbol_definition",
+              "evidence_status": "source_verified",
+              "snippet_sha256": ""
+            }
+          ],
+          "evidence_status": "source_verified",
+          "claim_status": "claim_unjudged",
+          "evidence_validation_notes": []
+        }
+      ],
+      "trusted_findings": [
+        "llm-1"
+      ]
+    }
+  ]
+}
