@@ -361,7 +361,8 @@ def _expected_text(codebase, chunk: Chunk) -> str | None:
 
 
 def verify_cached(codebase, chunks: list[Chunk],
-                  manifest: dict[str, list]) -> tuple[bool, str]:
+                  manifest: dict[str, list],
+                  imports: dict | None = None) -> tuple[bool, str]:
     """Check that cached chunks really describe this commit.
 
     The manifest binds file paths to git blob SHAs, and every chunk's text is
@@ -393,6 +394,15 @@ def verify_cached(codebase, chunks: list[Chunk],
             return False, f"chunk line range outside {chunk.file_path}"
         if expected != chunk.text:
             return False, f"chunk text differs from the commit in {chunk.file_path}"
+
+    # AST-derived fields steer ranking, so they are re-derived from the trusted
+    # snapshot rather than trusted from the cache. A digest stored in the cache
+    # would prove nothing: the same tampering could rewrite it.
+    fresh, fresh_imports = build_chunks(codebase)
+    if [c.as_dict() for c in chunks] != [c.as_dict() for c in fresh]:
+        return False, "cached chunks differ from a fresh AST derivation"
+    if imports is not None and imports != fresh_imports:
+        return False, "cached imports differ from a fresh AST derivation"
     return True, "ok"
 
 
@@ -424,11 +434,14 @@ def load_cached(codebase) -> RepoIndex | None:
     except (TypeError, KeyError):
         LOGGER.warning("discarding malformed index cache for %s", sha[:12])
         return None
-    ok, reason = verify_cached(codebase, chunks, manifest)
+    ok, reason = verify_cached(codebase, chunks, manifest, imports)
     if not ok:
         LOGGER.warning("discarding index cache for %s: %s", sha[:12], reason)
         return None
-    return RepoIndex(chunks, imports, sha)
+    # The freshly derived objects are authoritative; the cached file only proved
+    # that the two agree. Dense vectors are the artefact worth caching.
+    fresh, fresh_imports = build_chunks(codebase)
+    return RepoIndex(fresh, fresh_imports, sha)
 
 
 def save_cached(index: RepoIndex, manifest: dict[str, list]) -> None:

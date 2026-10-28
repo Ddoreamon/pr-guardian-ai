@@ -356,14 +356,16 @@ def review_with_tools(
             call_id = call.get("id") or f"call_{len(trace)}"
             name, arguments = _parse_call(call)
             if not budget.spend():
+                denial = {"ok": False,
+                          "error": {"code": "budget_exceeded",
+                                    "message": "tool call budget exhausted"}}
+                denial_text = wrap_tool_output(denial)
                 trace.append(ToolCallRecord(
                     round_index, name or "unknown", _safe_args(arguments), False,
-                    OUTCOME_BUDGET, "budget_exceeded", "tool call budget exhausted"))
+                    OUTCOME_BUDGET, "budget_exceeded", "tool call budget exhausted",
+                    len(denial_text), 0.0, 0, call_id))
                 messages.append({"role": "tool", "tool_call_id": call_id,
-                                 "content": wrap_tool_output(
-                                     {"ok": False,
-                                      "error": {"code": "budget_exceeded",
-                                                "message": "tool call budget exhausted"}})})
+                                 "content": denial_text})
                 status = "tool_limit"
                 continue
 
@@ -507,12 +509,14 @@ def _execute_inner(name: str, arguments: dict, codebase,
                                str(error.get("message", ""))[:200], 0, elapsed()),
                 payload)
 
+    payload, _text = _cap_payload(payload)
+    # after capping: a result whose hits were all dropped is a miss, not a hit
     hit = is_effective_hit(name, payload)
-    payload, text = _cap_payload(payload)
+    wrapped = wrap_tool_output(payload)
     record = ToolCallRecord(
         round_index, name, _safe_args(arguments), True,
-        OUTCOME_HIT if hit else OUTCOME_MISS, "", "", len(text), elapsed(),
-        int(payload.get("match_count", 0)),
+        OUTCOME_HIT if hit else OUTCOME_MISS, "", "", len(wrapped), elapsed(),
+        int(payload.get("match_count", len(payload.get("hits") or []))),
     )
     return record, payload
 

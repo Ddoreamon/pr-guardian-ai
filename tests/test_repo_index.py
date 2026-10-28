@@ -293,3 +293,46 @@ def test_syntax_error_file_is_chunked_within_bounds(repo):
         assert len(part.text) <= 4000
         assert part.sha == codebase.snapshot.sha
     assert parts[-1].end_line >= 240
+
+def test_cache_tampering_in_ast_fields_is_rejected(repo):
+    """calls/kind/qualname steer ranking, so they must be re-derived."""
+    import json as _json
+
+    codebase = TrustedCodebase.from_git(repo, "main")
+    build_index(codebase)
+
+    for field, value in (("calls", ["totally_made_up"]),
+                         ("kind", "class"),
+                         ("qualname", "forged.name"),
+                         ("part", 7)):
+        path = _cache_file(codebase.snapshot.sha)
+        data = _json.loads(path.read_text(encoding="utf-8"))
+        data["chunks"][0][field] = value
+        path.write_text(_json.dumps(data), encoding="utf-8")
+        assert load_cached(codebase) is None, f"{field} tampering was accepted"
+        assert build_index(codebase).chunks
+
+
+def test_cache_with_a_removed_chunk_is_rejected(repo):
+    import json as _json
+
+    codebase = TrustedCodebase.from_git(repo, "main")
+    build_index(codebase)
+    path = _cache_file(codebase.snapshot.sha)
+    data = _json.loads(path.read_text(encoding="utf-8"))
+    data["chunks"] = data["chunks"][:-1]
+    path.write_text(_json.dumps(data), encoding="utf-8")
+    assert load_cached(codebase) is None
+
+
+def test_cache_with_tampered_imports_is_rejected(repo):
+    import json as _json
+
+    codebase = TrustedCodebase.from_git(repo, "main")
+    build_index(codebase)
+    path = _cache_file(codebase.snapshot.sha)
+    data = _json.loads(path.read_text(encoding="utf-8"))
+    key = next(iter(data["imports"]))
+    data["imports"][key]["forged"] = "forged.module"
+    path.write_text(_json.dumps(data), encoding="utf-8")
+    assert load_cached(codebase) is None
