@@ -10,8 +10,8 @@
     "unknown_rate": 0.0222,
     "obligation_kind_precision": 1.0,
     "obligation_kind_recall": 1.0,
-    "mean_assessment_ms": 72.26,
-    "mean_derive_ms": 347.51,
+    "mean_assessment_ms": 69.82,
+    "mean_derive_ms": 329.48,
     "cases": 45
   },
   "rows": [
@@ -30,7 +30,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 3,
-      "assessment_ms": 291.49,
+      "assessment_ms": 242.9,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -48,7 +48,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 2,
-      "assessment_ms": 306.23,
+      "assessment_ms": 321.85,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -66,7 +66,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 2,
-      "assessment_ms": 266.78,
+      "assessment_ms": 292.6,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -83,7 +83,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 1,
-      "assessment_ms": 269.16,
+      "assessment_ms": 270.16,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -101,7 +101,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 2,
-      "assessment_ms": 303.59,
+      "assessment_ms": 258.02,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -118,7 +118,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 1,
-      "assessment_ms": 268.53,
+      "assessment_ms": 256.12,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -136,7 +136,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 3,
-      "assessment_ms": 257.84,
+      "assessment_ms": 252.42,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -154,7 +154,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 2,
-      "assessment_ms": 244.35,
+      "assessment_ms": 271.52,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -172,7 +172,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 2,
-      "assessment_ms": 247.85,
+      "assessment_ms": 225.32,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -189,7 +189,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 1,
-      "assessment_ms": 305.49,
+      "assessment_ms": 236.04,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -207,7 +207,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 2,
-      "assessment_ms": 256.14,
+      "assessment_ms": 271.02,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -224,7 +224,7 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 1,
-      "assessment_ms": 233.1,
+      "assessment_ms": 241.87,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -246,8 +246,8 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 3,
-      "assessment_ms": 0.08,
-      "derive_ms": 349.31,
+      "assessment_ms": 0.21,
+      "derive_ms": 332.57,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -272,8 +272,8 @@
       ],
       "unknown": [],
       "fulfilled": 1,
-      "assessment_ms": 0.07,
-      "derive_ms": 349.31,
+      "assessment_ms": 0.17,
+      "derive_ms": 332.57,
       "explanation": "required evidence was not delivered for: ob-8122ce7f87, ob-23634cf8f6"
     },
     {
@@ -295,7 +295,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 349.31,
+      "derive_ms": 332.57,
       "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
     },
     {
@@ -317,7 +317,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 349.31,
+      "derive_ms": 332.57,
       "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
     },
     {
@@ -339,7 +339,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 349.31,
+      "derive_ms": 332.57,
       "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
     },
     {
@@ -361,8 +361,8 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 3,
-      "assessment_ms": 0.1,
-      "derive_ms": 358.84,
+      "assessment_ms": 0.2,
+      "derive_ms": 341.91,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -387,8 +387,8 @@
       ],
       "unknown": [],
       "fulfilled": 1,
-      "assessment_ms": 0.06,
-      "derive_ms": 358.84,
+      "assessment_ms": 0.14,
+      "derive_ms": 341.91,
       "explanation": "required evidence was not delivered for: ob-8122ce7f87, ob-23634cf8f6"
     },
     {
@@ -410,7 +410,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 358.84,
+      "derive_ms": 341.91,
       "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
     },
     {
@@ -432,7 +432,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 358.84,
+      "derive_ms": 341.91,
       "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
     },
     {
@@ -454,7 +454,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 358.84,
+      "derive_ms": 341.91,
       "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
     },
     {
@@ -478,8 +478,8 @@
         "ob-c9656ce66b"
       ],
       "fulfilled": 1,
-      "assessment_ms": 0.1,
-      "derive_ms": 338.18,
+      "assessment_ms": 0.15,
+      "derive_ms": 296.1,
       "explanation": "required evidence is covered, but dynamic constructs mean the obligation set cannot be proven complete: ob-c9656ce66b"
     },
     {
@@ -499,7 +499,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 338.18,
+      "derive_ms": 296.1,
       "explanation": "required evidence was not delivered for: ob-f37ff538fc"
     },
     {
@@ -519,7 +519,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 338.18,
+      "derive_ms": 296.1,
       "explanation": "required evidence was not delivered for: ob-f37ff538fc"
     },
     {
@@ -539,7 +539,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 338.18,
+      "derive_ms": 296.1,
       "explanation": "required evidence was not delivered for: ob-f37ff538fc"
     },
     {
@@ -557,12 +557,12 @@
         "callee_contract",
         "modified_definition"
       ],
-      "required": 4,
+      "required": 3,
       "missing": [],
       "unknown": [],
-      "fulfilled": 4,
-      "assessment_ms": 0.1,
-      "derive_ms": 335.47,
+      "fulfilled": 3,
+      "assessment_ms": 0.21,
+      "derive_ms": 351.04,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -580,16 +580,15 @@
         "callee_contract",
         "modified_definition"
       ],
-      "required": 4,
+      "required": 3,
       "missing": [
-        "ob-519f1d0775",
-        "ob-b9f92e5e4e"
+        "ob-519f1d0775"
       ],
       "unknown": [],
       "fulfilled": 2,
-      "assessment_ms": 0.07,
-      "derive_ms": 335.47,
-      "explanation": "required evidence was not delivered for: ob-519f1d0775, ob-b9f92e5e4e"
+      "assessment_ms": 0.16,
+      "derive_ms": 351.04,
+      "explanation": "required evidence was not delivered for: ob-519f1d0775"
     },
     {
       "set": "negative",
@@ -605,14 +604,13 @@
       "missing": [
         "ob-cc5a682a3b",
         "ob-519f1d0775",
-        "ob-76c7de7cfb",
-        "ob-b9f92e5e4e"
+        "ob-76c7de7cfb"
       ],
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 335.47,
-      "explanation": "required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb, ob-b9f92e5e4e"
+      "derive_ms": 351.04,
+      "explanation": "required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb"
     },
     {
       "set": "negative",
@@ -628,14 +626,13 @@
       "missing": [
         "ob-cc5a682a3b",
         "ob-519f1d0775",
-        "ob-76c7de7cfb",
-        "ob-b9f92e5e4e"
+        "ob-76c7de7cfb"
       ],
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 335.47,
-      "explanation": "required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb, ob-b9f92e5e4e"
+      "derive_ms": 351.04,
+      "explanation": "required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb"
     },
     {
       "set": "negative",
@@ -651,14 +648,13 @@
       "missing": [
         "ob-cc5a682a3b",
         "ob-519f1d0775",
-        "ob-76c7de7cfb",
-        "ob-b9f92e5e4e"
+        "ob-76c7de7cfb"
       ],
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 335.47,
-      "explanation": "required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb, ob-b9f92e5e4e"
+      "derive_ms": 351.04,
+      "explanation": "required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb"
     },
     {
       "set": "held-out",
@@ -677,8 +673,8 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 1,
-      "assessment_ms": 0.09,
-      "derive_ms": 343.1,
+      "assessment_ms": 0.16,
+      "derive_ms": 340.56,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -697,7 +693,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 343.1,
+      "derive_ms": 340.56,
       "explanation": "required evidence was not delivered for: ob-72ca274f5a"
     },
     {
@@ -716,7 +712,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 343.1,
+      "derive_ms": 340.56,
       "explanation": "required evidence was not delivered for: ob-72ca274f5a"
     },
     {
@@ -735,7 +731,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 343.1,
+      "derive_ms": 340.56,
       "explanation": "required evidence was not delivered for: ob-72ca274f5a"
     },
     {
@@ -755,8 +751,8 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 1,
-      "assessment_ms": 0.12,
-      "derive_ms": 342.8,
+      "assessment_ms": 0.14,
+      "derive_ms": 311.52,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -778,8 +774,8 @@
       ],
       "unknown": [],
       "fulfilled": 0,
-      "assessment_ms": 0.05,
-      "derive_ms": 342.8,
+      "assessment_ms": 0.1,
+      "derive_ms": 311.52,
       "explanation": "required evidence was not delivered for: ob-cf1617404f"
     },
     {
@@ -798,7 +794,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 342.8,
+      "derive_ms": 311.52,
       "explanation": "required evidence was not delivered for: ob-cf1617404f"
     },
     {
@@ -817,7 +813,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 342.8,
+      "derive_ms": 311.52,
       "explanation": "required evidence was not delivered for: ob-cf1617404f"
     },
     {
@@ -836,7 +832,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 342.8,
+      "derive_ms": 311.52,
       "explanation": "required evidence was not delivered for: ob-cf1617404f"
     },
     {
@@ -858,8 +854,8 @@
       "missing": [],
       "unknown": [],
       "fulfilled": 2,
-      "assessment_ms": 0.1,
-      "derive_ms": 362.15,
+      "assessment_ms": 0.19,
+      "derive_ms": 328.17,
       "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
     },
     {
@@ -883,8 +879,8 @@
       ],
       "unknown": [],
       "fulfilled": 1,
-      "assessment_ms": 0.07,
-      "derive_ms": 362.15,
+      "assessment_ms": 0.14,
+      "derive_ms": 328.17,
       "explanation": "required evidence was not delivered for: ob-5dd067b9ab"
     },
     {
@@ -905,7 +901,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 362.15,
+      "derive_ms": 328.17,
       "explanation": "required evidence was not delivered for: ob-d81a39d8a0, ob-5dd067b9ab"
     },
     {
@@ -926,7 +922,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 362.15,
+      "derive_ms": 328.17,
       "explanation": "required evidence was not delivered for: ob-d81a39d8a0, ob-5dd067b9ab"
     },
     {
@@ -947,7 +943,7 @@
       "unknown": [],
       "fulfilled": 0,
       "assessment_ms": 0.0,
-      "derive_ms": 362.15,
+      "derive_ms": 328.17,
       "explanation": "required evidence was not delivered for: ob-d81a39d8a0, ob-5dd067b9ab"
     }
   ]

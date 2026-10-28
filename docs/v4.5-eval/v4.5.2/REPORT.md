@@ -1,9 +1,4 @@
-# V4.5.2 re-run of the sufficiency evaluation
-
-Re-run after the robustness fixes (defaults, deletions, import-provenance callers,
-dispatch unknown, container-shaped returns). Same 33 scored profiles; the numbers
-are unchanged, which is the point: the fixes did not regress the original set.
-The original v4.5.1 output is preserved at `docs/v4.5-eval/results.json`.
+# V4.5 sufficiency gate — offline evaluation
 
 Assessment version `v4.5.2`. No model calls: dev evidence
 comes from the recorded V4.4 traces, held-out evidence from scripted profiles.
@@ -19,8 +14,8 @@ comes from the recorded V4.4 traces, held-out evidence from scripted profiles.
 | unknown rate | 0.0222 |
 | obligation kind precision | 1.0 |
 | obligation kind recall | 1.0 |
-| mean assessment cost | 72.26 ms |
-| mean derivation cost | 347.51 ms |
+| mean assessment cost | 69.82 ms |
+| mean derivation cost | 329.48 ms |
 
 ## Per profile
 
@@ -52,11 +47,11 @@ comes from the recorded V4.4 traces, held-out evidence from scripted profiles.
 | negative | H3-dynamic | wrong-sha | insufficient | insufficient | modified_definition, unknown_dependency | 1 | 1 | 0 |
 | negative | H3-dynamic | truncated-read | insufficient | insufficient | modified_definition, unknown_dependency | 1 | 1 | 0 |
 | negative | H3-dynamic | search-only | insufficient | insufficient | modified_definition, unknown_dependency | 1 | 1 | 0 |
-| held-out | H4-multicaller | complete | sufficient | sufficient | callee_contract, modified_definition | 4 | 0 | 4 |
-| held-out | H4-multicaller | one-caller | insufficient | insufficient | callee_contract, modified_definition | 4 | 2 | 2 |
-| negative | H4-multicaller | wrong-sha | insufficient | insufficient | callee_contract, modified_definition | 1 | 4 | 0 |
-| negative | H4-multicaller | truncated-read | insufficient | insufficient | callee_contract, modified_definition | 1 | 4 | 0 |
-| negative | H4-multicaller | search-only | insufficient | insufficient | callee_contract, modified_definition | 1 | 4 | 0 |
+| held-out | H4-multicaller | complete | sufficient | sufficient | callee_contract, modified_definition | 3 | 0 | 3 |
+| held-out | H4-multicaller | one-caller | insufficient | insufficient | callee_contract, modified_definition | 3 | 1 | 2 |
+| negative | H4-multicaller | wrong-sha | insufficient | insufficient | callee_contract, modified_definition | 1 | 3 | 0 |
+| negative | H4-multicaller | truncated-read | insufficient | insufficient | callee_contract, modified_definition | 1 | 3 | 0 |
+| negative | H4-multicaller | search-only | insufficient | insufficient | callee_contract, modified_definition | 1 | 3 | 0 |
 | held-out | H5-config | complete | sufficient | sufficient | modified_definition | 1 | 0 | 1 |
 | negative | H5-config | wrong-sha | insufficient | insufficient | modified_definition | 1 | 1 | 0 |
 | negative | H5-config | truncated-read | insufficient | insufficient | modified_definition | 1 | 1 | 0 |
@@ -86,10 +81,10 @@ comes from the recorded V4.4 traces, held-out evidence from scripted profiles.
 * **negative/H3-dynamic/wrong-sha** — required evidence was not delivered for: ob-f37ff538fc
 * **negative/H3-dynamic/truncated-read** — required evidence was not delivered for: ob-f37ff538fc
 * **negative/H3-dynamic/search-only** — required evidence was not delivered for: ob-f37ff538fc
-* **held-out/H4-multicaller/one-caller** — required evidence was not delivered for: ob-519f1d0775, ob-b9f92e5e4e
-* **negative/H4-multicaller/wrong-sha** — required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb, ob-b9f92e5e4e
-* **negative/H4-multicaller/truncated-read** — required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb, ob-b9f92e5e4e
-* **negative/H4-multicaller/search-only** — required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb, ob-b9f92e5e4e
+* **held-out/H4-multicaller/one-caller** — required evidence was not delivered for: ob-519f1d0775
+* **negative/H4-multicaller/wrong-sha** — required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb
+* **negative/H4-multicaller/truncated-read** — required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb
+* **negative/H4-multicaller/search-only** — required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb
 * **negative/H5-config/wrong-sha** — required evidence was not delivered for: ob-72ca274f5a
 * **negative/H5-config/truncated-read** — required evidence was not delivered for: ob-72ca274f5a
 * **negative/H5-config/search-only** — required evidence was not delivered for: ob-72ca274f5a

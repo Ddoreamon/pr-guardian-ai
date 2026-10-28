@@ -13,7 +13,7 @@ through `TrustedCodebase`; no model call, no gold path in the derivation.
 | false insufficient | 0 [] |
 | unknown rate | 12.50% |
 | obligation kind precision / recall | 0.6154 / 1.0 |
-| derivation / assessment cost | 356.0 ms / 0.1 ms |
+| derivation / assessment cost | 435.0 ms / 0.1 ms |
 
 ## Per profile
 

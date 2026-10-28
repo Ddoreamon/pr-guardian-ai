@@ -69,6 +69,8 @@ class EvidenceObligation(BaseModel):
 class EvidenceSufficiencyResult(BaseModel):
     status: str
     snapshot_sha: str
+    # empty | analysable | unanalysable: an empty diff is not a failed analysis
+    diff_state: str = "analysable"
     assessment_version: str = ASSESSMENT_VERSION
     obligations: list[EvidenceObligation] = Field(default_factory=list)
     fulfilled_obligations: list[str] = Field(default_factory=list)
@@ -153,6 +155,24 @@ def _container_changed(before: dict, after: dict) -> bool:
     if old == new:
         return False
     return bool((old | new) & _CONTAINERS)
+
+
+def _executable(node: ast.AST) -> str:
+    """The AST text of a body without docstrings; comments never survive parsing."""
+    body = list(getattr(node, "body", []) or [])
+    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) \
+            and isinstance(body[0].value.value, str):
+        body = body[1:]
+    return ast.unparse(ast.Module(body=body, type_ignores=[]))
+
+
+def _module_executable(tree: ast.AST) -> str:
+    """Module-level statements only: definition removal is handled separately."""
+    body = [node for node in getattr(tree, "body", [])
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and not (isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant)
+                     and isinstance(node.value.value, str))]
+    return ast.unparse(ast.Module(body=body, type_ignores=[]))
 
 
 def _aliases(tree: ast.AST) -> dict[str, str]:
@@ -407,7 +427,33 @@ def derive_obligations(head, base, changed_files) -> list[EvidenceObligation]:
                 derivation_method="AST scan for dynamic calls or unpacking",
                 confidence="low", required=False))
 
-    for file_path, qualname, _deleted in _removed_definitions(changed_files, index, base):
+    deleted_obligations, deletion_states = _deleted_obligations(
+        head, base, changed_files, index)
+    obligations.extend(deleted_obligations)
+
+    removed = _removed_definitions(changed_files, index, base)
+    removed_files = {file_path for file_path, _q, _l in removed}
+    attributed = {(o.file_path, o.kind) for o in obligations}
+    for changed in changed_files:
+        if not (changed.added_lines or changed.deleted_lines):
+            continue
+        if deletion_states.get(changed.file_path) == "comment_only":
+            continue
+        if changed.file_path in removed_files:
+            continue
+        if (changed.file_path, MODIFIED_DEFINITION) in attributed:
+            continue
+        if (changed.file_path, CALLEE_CONTRACT) in attributed:
+            continue
+        obligations.append(EvidenceObligation(
+            obligation_id=_oid("unanalysable", changed.file_path),
+            kind=UNKNOWN_DEPENDENCY, file_path=changed.file_path, qualname="",
+            rationale=("the change lies outside the indexed definitions, so no "
+                       "evidence duty could be attributed to it"),
+            derivation_method="diff present, no enclosing definition matched",
+            confidence="low", required=False))
+
+    for file_path, qualname, _deleted in removed:
         stem = _module_stem(file_path)
         short = qualname.split(".")[-1]
         callers = []
@@ -445,13 +491,94 @@ def derive_obligations(head, base, changed_files) -> list[EvidenceObligation]:
     return _dedupe(obligations)
 
 
+def _deleted_obligations(head, base, changed_files, index) -> tuple[
+        list[EvidenceObligation], dict[str, str]]:
+    """Obligations created by removed lines, including guard/return/handler removal."""
+    from .repo_index import build_index  # noqa: F401 - index is passed in
+
+    head_chunks = {(c.file_path, c.qualname): c for c in index.chunks}
+    out: list[EvidenceObligation] = []
+    states: dict[str, str] = {}
+    for changed in changed_files:
+        if not changed.deleted_lines:
+            continue
+        try:
+            base_tree = ast.parse(base.read_source(changed.file_path))
+        except (SyntaxError, ToolError):
+            continue
+        base_nodes = dict(_function_nodes(base_tree))
+        try:
+            head_tree = ast.parse(head.read_source(changed.file_path))
+            head_nodes = dict(_function_nodes(head_tree))
+        except (SyntaxError, ToolError):
+            head_tree, head_nodes = None, {}
+
+        covered: set[int] = set()
+        for qualname, node in base_nodes.items():
+            span = (getattr(node, "lineno", 0), getattr(node, "end_lineno", 0) or 0)
+            touched = [line for line in changed.deleted_lines
+                       if span[0] <= line <= span[1]]
+            if not touched:
+                continue
+            covered.update(touched)
+            current = head_nodes.get(qualname)
+            if current is None:
+                continue  # removal is handled by _removed_definitions
+            if _executable(node) == _executable(current):
+                states[changed.file_path] = "comment_only"
+                continue  # comment or docstring only: no behaviour obligation
+            span_head = (getattr(current, "lineno", 0), getattr(current, "end_lineno", 0) or 0)
+            chunk = head_chunks.get((changed.file_path, qualname))
+            required_span = span_head if span_head[0] else (
+                (chunk.start_line, chunk.end_line) if chunk else (0, 0))
+            states[changed.file_path] = "analysed"
+            out.append(EvidenceObligation(
+                obligation_id=_oid("deleted-lines", changed.file_path, qualname),
+                kind=MODIFIED_DEFINITION, file_path=changed.file_path,
+                qualname=qualname,
+                required_span=required_span,
+                rationale="lines were removed from this definition and its behaviour changed",
+                derivation_method="base/head AST body comparison over deleted lines",
+                confidence="high", required=True))
+
+        if not covered and not changed.added_lines:
+            states.setdefault(changed.file_path, "comment_only")
+        for line in changed.deleted_lines:
+            for chunk in index.chunks:
+                if chunk.file_path == changed.file_path and \
+                        chunk.start_line <= line <= chunk.end_line:
+                    covered.add(line)
+                    break
+        leftover = [line for line in changed.deleted_lines if line not in covered]
+        if leftover and head_tree is not None:
+            try:
+                base_module = _module_executable(base_tree)
+                head_module = _module_executable(head_tree)
+            except SyntaxError:
+                base_module = head_module = ""
+            if base_module != head_module:
+                out.append(EvidenceObligation(
+                    obligation_id=_oid("module-deletion", changed.file_path),
+                    kind=UNKNOWN_DEPENDENCY, file_path=changed.file_path,
+                    qualname="",
+                    rationale=("module-level code was removed outside any indexed "
+                               "definition; its effect cannot be attributed"),
+                    derivation_method="module AST comparison over deleted lines",
+                    confidence="low", required=False))
+    return out, states
+
+
 def _dedupe(obligations: list[EvidenceObligation]) -> list[EvidenceObligation]:
-    seen: set[str] = set()
+    """One duty per (kind, file, symbol); different unknowns stay separate."""
+    seen: set[tuple] = set()
     out = []
     for obligation in obligations:
-        if obligation.obligation_id in seen:
+        key: tuple = (obligation.kind, obligation.file_path, obligation.qualname)
+        if obligation.kind == UNKNOWN_DEPENDENCY:
+            key = (*key, obligation.obligation_id)
+        if key in seen:
             continue
-        seen.add(obligation.obligation_id)
+        seen.add(key)
         out.append(obligation)
     return out
 
@@ -470,8 +597,47 @@ def _covered(obligation: EvidenceObligation, registry: EvidenceRegistry,
     return True, (entry.tool_call_id if entry else "ok")
 
 
+def classify_diff(head, base, changed_files) -> str:
+    """empty | comment_only | unanalysable | analysable.
+
+    An empty diff is not a failed analysis, and a comment-only deletion is not an
+    unattributable change. Keeping them apart is what lets `assess` explain itself.
+    """
+    touched = [c for c in changed_files if c.added_lines or c.deleted_lines]
+    if not touched:
+        return "empty"
+    every_file_comment_only = True
+    for changed in touched:
+        if changed.added_lines:
+            every_file_comment_only = False
+            continue
+        try:
+            base_tree = ast.parse(base.read_source(changed.file_path))
+            head_tree = ast.parse(head.read_source(changed.file_path))
+        except (SyntaxError, ToolError):
+            every_file_comment_only = False
+            continue
+        base_nodes = dict(_function_nodes(base_tree))
+        head_nodes = dict(_function_nodes(head_tree))
+        explained = False
+        for qualname, node in base_nodes.items():
+            span = (getattr(node, "lineno", 0), getattr(node, "end_lineno", 0) or 0)
+            if not any(span[0] <= line <= span[1] for line in changed.deleted_lines):
+                continue
+            current = head_nodes.get(qualname)
+            if current is not None and _executable(node) == _executable(current):
+                explained = True
+        if not explained:
+            every_file_comment_only = False
+    if every_file_comment_only:
+        return "comment_only"
+    obligations = derive_obligations(head, base, changed_files)
+    return "analysable" if obligations else "unanalysable"
+
+
 def assess(registry: EvidenceRegistry, obligations: list[EvidenceObligation],
-           snapshot_sha: str, allowed_paths: set[str]) -> EvidenceSufficiencyResult:
+           snapshot_sha: str, allowed_paths: set[str],
+           diff_state: str = "analysable") -> EvidenceSufficiencyResult:
     """Decide whether the derived obligations are covered by delivered evidence."""
     fulfilled: list[str] = []
     missing: list[str] = []
@@ -498,6 +664,23 @@ def assess(registry: EvidenceRegistry, obligations: list[EvidenceObligation],
         else:
             assessed.append(obligation.model_copy(update={"status": STATUS_OPTIONAL}))
 
+    if diff_state == "empty":
+        return EvidenceSufficiencyResult(
+            status=SUFFICIENT, snapshot_sha=snapshot_sha, diff_state="empty",
+            obligations=[], fulfilled_obligations=[], missing_obligations=[],
+            unknown_obligations=[], evidence_refs=[],
+            explanation=("the diff is empty: there is nothing to review, and no claim "
+                         "is made about the code"))
+
+    if diff_state == "comment_only":
+        return EvidenceSufficiencyResult(
+            status=SUFFICIENT, snapshot_sha=snapshot_sha, diff_state="comment_only",
+            obligations=[], fulfilled_obligations=[], missing_obligations=[],
+            unknown_obligations=[], evidence_refs=[],
+            explanation=("only comments or docstrings were removed; the parsed code of "
+                         "every affected definition is unchanged, so there is no "
+                         "evidence duty"))
+
     if missing:
         status = INSUFFICIENT
         explanation = ("required evidence was not delivered for: " +
@@ -511,7 +694,13 @@ def assess(registry: EvidenceRegistry, obligations: list[EvidenceObligation],
         explanation = ("every derived obligation was covered by delivered source lines; "
                        "this proves coverage of the duties, not correctness of the code")
 
+    if not obligations:
+        status = UNKNOWN
+        explanation = ("the diff is not empty but no evidence duty could be derived; "
+                       "treating it as sufficient would be unsafe")
+
     return EvidenceSufficiencyResult(
-        status=status, snapshot_sha=snapshot_sha, obligations=assessed,
+        status=status, snapshot_sha=snapshot_sha, diff_state=diff_state,
+        obligations=assessed,
         fulfilled_obligations=fulfilled, missing_obligations=missing,
         unknown_obligations=unknown, evidence_refs=refs, explanation=explanation)

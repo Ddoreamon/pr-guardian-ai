@@ -35,6 +35,11 @@ _NUMBERED_LINE = re.compile(r"^\s*(\d+)\s*\|\s?(.*)$")
 _FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
+def _snippet_hash(text: str) -> str:
+    """The short digest persisted with an evidence entry."""
+    return _sha256(text)
+
+
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()[:16]
 
@@ -74,6 +79,8 @@ class EvidenceEntry:
     # "read" and "symbol" are citable; "candidate" (a search hit) is not
     kind: str = "read"
     complete_lines: list[int] = field(default_factory=list)
+    # the call that produced this evidence, so a saved report can be replayed
+    arguments: dict = field(default_factory=dict)
 
     @property
     def citable(self) -> bool:
@@ -100,7 +107,10 @@ class EvidenceEntry:
             "truncated": self.truncated,
             "snippet_sha256": self.snippet_sha256,
             "kind": self.kind,
+            # the count is kept for older readers; the list is what replay verifies
             "complete_lines": len(self.complete_lines),
+            "complete_lines_list": sorted(self.complete_lines),
+            "arguments": dict(self.arguments),
         }
 
 
@@ -142,8 +152,9 @@ class EvidenceRegistry:
             self.entries.append(EvidenceEntry(
                 tool_call_id=call_id, tool_name=record.name, ref=payload_ref,
                 file_path=file_path, start_line=start, end_line=end, hit=True,
-                truncated=truncated, snippet_sha256=_sha256(snippet), kind=kind,
+                truncated=truncated, snippet_sha256=_snippet_hash(snippet), kind=kind,
                 complete_lines=numbers,
+                arguments=dict(getattr(record, "arguments", {}) or {}),
             ))
 
     @staticmethod

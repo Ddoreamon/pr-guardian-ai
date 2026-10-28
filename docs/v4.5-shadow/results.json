@@ -1,0 +1,337 @@
+{
+  "results": [
+    {
+      "sufficiency": {
+        "status": "sufficient",
+        "snapshot_sha": "1c47089073c41969f91dbc8fa1a520660e18b701",
+        "diff_state": "analysable",
+        "assessment_version": "v4.5.2",
+        "obligations": [
+          {
+            "obligation_id": "ob-e2d42ff93e",
+            "kind": "modified_definition",
+            "file_path": "src/fmt.py",
+            "qualname": "render",
+            "required_span": [
+              4,
+              6
+            ],
+            "rationale": "the diff changes this definition",
+            "derivation_method": "diff line inside the AST span at head",
+            "confidence": "high",
+            "required": true,
+            "status": "fulfilled"
+          },
+          {
+            "obligation_id": "ob-ae824bd3cf",
+            "kind": "caller_usage",
+            "file_path": "src/alias_report.py",
+            "qualname": "build",
+            "required_span": [
+              6,
+              8
+            ],
+            "rationale": "render changes its signature or raised exceptions, and build calls it",
+            "derivation_method": "signature diff + index call edge",
+            "confidence": "medium",
+            "required": true,
+            "status": "fulfilled"
+          },
+          {
+            "obligation_id": "ob-8122ce7f87",
+            "kind": "caller_usage",
+            "file_path": "src/report.py",
+            "qualname": "build",
+            "required_span": [
+              6,
+              8
+            ],
+            "rationale": "render changes its signature or raised exceptions, and build calls it",
+            "derivation_method": "signature diff + index call edge",
+            "confidence": "medium",
+            "required": true,
+            "status": "fulfilled"
+          }
+        ],
+        "fulfilled_obligations": [
+          "ob-e2d42ff93e",
+          "ob-ae824bd3cf",
+          "ob-8122ce7f87"
+        ],
+        "missing_obligations": [],
+        "unknown_obligations": [],
+        "evidence_refs": [
+          {
+            "obligation_id": "ob-e2d42ff93e",
+            "file_path": "src/fmt.py",
+            "span": [
+              4,
+              6
+            ],
+            "tool_call_id": "R4-alias-0"
+          },
+          {
+            "obligation_id": "ob-ae824bd3cf",
+            "file_path": "src/alias_report.py",
+            "span": [
+              6,
+              8
+            ],
+            "tool_call_id": "R4-alias-2"
+          },
+          {
+            "obligation_id": "ob-8122ce7f87",
+            "file_path": "src/report.py",
+            "span": [
+              6,
+              8
+            ],
+            "tool_call_id": "R4-alias-1"
+          }
+        ],
+        "explanation": "every derived obligation is covered by evidence that replays exactly from the saved report"
+      },
+      "replay_status": "exact",
+      "replay_notes": [],
+      "snapshot_sha": "1c47089073c41969f91dbc8fa1a520660e18b701",
+      "review_id": "R4-alias/complete",
+      "review_sha": "1c47089073c41969f91dbc8fa1a520660e18b701",
+      "report_sha": "1c47089073c41969f91dbc8fa1a520660e18b701",
+      "assessment_version": "v4.5.2",
+      "elapsed_ms": 561.1,
+      "obligation_kinds": [
+        "caller_usage",
+        "modified_definition"
+      ]
+    },
+    {
+      "sufficiency": {
+        "status": "insufficient",
+        "snapshot_sha": "1c47089073c41969f91dbc8fa1a520660e18b701",
+        "diff_state": "analysable",
+        "assessment_version": "v4.5.2",
+        "obligations": [
+          {
+            "obligation_id": "ob-e2d42ff93e",
+            "kind": "modified_definition",
+            "file_path": "src/fmt.py",
+            "qualname": "render",
+            "required_span": [
+              4,
+              6
+            ],
+            "rationale": "the diff changes this definition",
+            "derivation_method": "diff line inside the AST span at head",
+            "confidence": "high",
+            "required": true,
+            "status": "fulfilled"
+          },
+          {
+            "obligation_id": "ob-ae824bd3cf",
+            "kind": "caller_usage",
+            "file_path": "src/alias_report.py",
+            "qualname": "build",
+            "required_span": [
+              6,
+              8
+            ],
+            "rationale": "render changes its signature or raised exceptions, and build calls it",
+            "derivation_method": "signature diff + index call edge",
+            "confidence": "medium",
+            "required": true,
+            "status": "missing"
+          },
+          {
+            "obligation_id": "ob-8122ce7f87",
+            "kind": "caller_usage",
+            "file_path": "src/report.py",
+            "qualname": "build",
+            "required_span": [
+              6,
+              8
+            ],
+            "rationale": "render changes its signature or raised exceptions, and build calls it",
+            "derivation_method": "signature diff + index call edge",
+            "confidence": "medium",
+            "required": true,
+            "status": "missing"
+          }
+        ],
+        "fulfilled_obligations": [
+          "ob-e2d42ff93e"
+        ],
+        "missing_obligations": [
+          "ob-ae824bd3cf",
+          "ob-8122ce7f87"
+        ],
+        "unknown_obligations": [],
+        "evidence_refs": [
+          {
+            "obligation_id": "ob-e2d42ff93e",
+            "file_path": "src/fmt.py",
+            "span": [
+              4,
+              6
+            ],
+            "tool_call_id": "R4-alias-0"
+          }
+        ],
+        "explanation": "required evidence was not delivered for: ob-ae824bd3cf, ob-8122ce7f87"
+      },
+      "replay_status": "exact",
+      "replay_notes": [],
+      "snapshot_sha": "1c47089073c41969f91dbc8fa1a520660e18b701",
+      "review_id": "R4-alias/partial",
+      "review_sha": "1c47089073c41969f91dbc8fa1a520660e18b701",
+      "report_sha": "1c47089073c41969f91dbc8fa1a520660e18b701",
+      "assessment_version": "v4.5.2",
+      "elapsed_ms": 551.7,
+      "obligation_kinds": [
+        "caller_usage",
+        "modified_definition"
+      ]
+    },
+    {
+      "sufficiency": {
+        "status": "insufficient",
+        "snapshot_sha": "5f714707f8d301e261aa201109bae0efc826bf00",
+        "diff_state": "analysable",
+        "assessment_version": "v4.5.2",
+        "obligations": [
+          {
+            "obligation_id": "ob-3ad519ac81",
+            "kind": "modified_definition",
+            "file_path": "src/fmt.py",
+            "qualname": "announce",
+            "required_span": [
+              9,
+              11
+            ],
+            "rationale": "the diff changes this definition",
+            "derivation_method": "diff line inside the AST span at head",
+            "confidence": "high",
+            "required": true,
+            "status": "fulfilled"
+          },
+          {
+            "obligation_id": "ob-74dde708f6",
+            "kind": "caller_usage",
+            "file_path": "src/report.py",
+            "qualname": "greeting",
+            "required_span": [
+              11,
+              13
+            ],
+            "rationale": "announce changes its signature or raised exceptions, and greeting calls it",
+            "derivation_method": "signature diff + index call edge",
+            "confidence": "medium",
+            "required": true,
+            "status": "missing"
+          }
+        ],
+        "fulfilled_obligations": [
+          "ob-3ad519ac81"
+        ],
+        "missing_obligations": [
+          "ob-74dde708f6"
+        ],
+        "unknown_obligations": [],
+        "evidence_refs": [
+          {
+            "obligation_id": "ob-3ad519ac81",
+            "file_path": "src/fmt.py",
+            "span": [
+              9,
+              11
+            ],
+            "tool_call_id": "R9-default-0"
+          }
+        ],
+        "explanation": "required evidence was not delivered for: ob-74dde708f6"
+      },
+      "replay_status": "exact",
+      "replay_notes": [],
+      "snapshot_sha": "5f714707f8d301e261aa201109bae0efc826bf00",
+      "review_id": "R9-default/partial",
+      "review_sha": "5f714707f8d301e261aa201109bae0efc826bf00",
+      "report_sha": "5f714707f8d301e261aa201109bae0efc826bf00",
+      "assessment_version": "v4.5.2",
+      "elapsed_ms": 504.4,
+      "obligation_kinds": [
+        "caller_usage",
+        "modified_definition"
+      ]
+    },
+    {
+      "sufficiency": {
+        "status": "unknown",
+        "snapshot_sha": "51e86b187e9b97d54bfe62d9910bdd21784409ba",
+        "diff_state": "analysable",
+        "assessment_version": "v4.5.2",
+        "obligations": [
+          {
+            "obligation_id": "ob-b6dd2f0885",
+            "kind": "modified_definition",
+            "file_path": "src/registry.py",
+            "qualname": "handler",
+            "required_span": [
+              13,
+              17
+            ],
+            "rationale": "the diff changes this definition",
+            "derivation_method": "diff line inside the AST span at head",
+            "confidence": "high",
+            "required": true,
+            "status": "fulfilled"
+          },
+          {
+            "obligation_id": "ob-65cc18af5f",
+            "kind": "unknown_dependency",
+            "file_path": "src/registry.py",
+            "qualname": "handler",
+            "required_span": [
+              13,
+              17
+            ],
+            "rationale": "the definition is registered or decorated, so its callers cannot be enumerated statically",
+            "derivation_method": "AST decorator / module-level mapping scan",
+            "confidence": "low",
+            "required": false,
+            "status": "unknown"
+          }
+        ],
+        "fulfilled_obligations": [
+          "ob-b6dd2f0885"
+        ],
+        "missing_obligations": [],
+        "unknown_obligations": [
+          "ob-65cc18af5f"
+        ],
+        "evidence_refs": [
+          {
+            "obligation_id": "ob-b6dd2f0885",
+            "file_path": "src/registry.py",
+            "span": [
+              13,
+              17
+            ],
+            "tool_call_id": "R10-registry-0"
+          }
+        ],
+        "explanation": "required evidence is covered, but dynamic constructs mean the obligation set cannot be proven complete: ob-65cc18af5f"
+      },
+      "replay_status": "exact",
+      "replay_notes": [],
+      "snapshot_sha": "51e86b187e9b97d54bfe62d9910bdd21784409ba",
+      "review_id": "R10-registry/partial",
+      "review_sha": "51e86b187e9b97d54bfe62d9910bdd21784409ba",
+      "report_sha": "51e86b187e9b97d54bfe62d9910bdd21784409ba",
+      "assessment_version": "v4.5.2",
+      "elapsed_ms": 510.7,
+      "obligation_kinds": [
+        "modified_definition",
+        "unknown_dependency"
+      ]
+    }
+  ]
+}
