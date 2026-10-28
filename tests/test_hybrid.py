@@ -301,3 +301,40 @@ def test_retrieval_mode_setting_is_validated(monkeypatch):
     assert get_settings().retrieval_mode == "bm25"
     monkeypatch.delenv("PR_GUARDIAN_RETRIEVAL_MODE")
     assert get_settings().retrieval_mode == "bm25"
+
+def test_public_model_info_has_no_local_paths():
+    """Published metadata must not leak the machine or user that ran the eval."""
+    from pr_guardian.dense_index import public_model_info
+
+    info = public_model_info()
+    blob = json.dumps(info, ensure_ascii=False)
+    assert ("Us" + "ers") not in blob and ("App" + "Data") not in blob
+    assert "/" not in blob.replace("BAAI/bge-small-en-v1.5", "")
+    assert info["pooling"] == "mean"
+    assert info["dim"] == 384
+    assert set(info) == {"model_id", "revision", "dim", "pooling", "normalise",
+                         "text_version", "available", "reason"}
+
+
+@pytest.mark.parametrize("relative", [
+    "docs/hybrid-eval-v1/results.json",
+    "docs/hybrid-smoke/results.json",
+    "docs/rag-eval-v2/results.json",
+    "docs/rag-smoke/results.json",
+])
+def test_committed_artefacts_have_no_host_paths(relative):
+    """Regression: a local user path once reached a published results file."""
+    import re
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / relative
+    if not path.is_file():
+        pytest.skip(f"{relative} not present")
+    text = path.read_text(encoding="utf-8")
+    # needles are assembled so this test file stays clean under the same scan
+    users = "Us" + "ers"
+    local_folder = "App" + "Data"
+    drive_user = re.compile(r"[A-Za-z]" + re.escape(":" + "\\") + users)
+    assert not drive_user.search(text), relative
+    assert local_folder not in text, relative
+    assert "/home/" not in text and "/tmp/" not in text, relative

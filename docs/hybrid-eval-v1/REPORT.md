@@ -3,7 +3,8 @@
 Frozen: gold `(file_path, qualname, start_line)`, queries, model revision,
 chunk rules, top-k = 5, RRF k = 60. Nothing here is a review-accuracy claim.
 
-* model `BAAI/bge-small-en-v1.5` @ `5c38ec7c405ec4b44b94cc5a9bb96e735b38267a`, dim 384, local ONNX, available: True
+* model `BAAI/bge-small-en-v1.5` @ `5c38ec7c405ec4b44b94cc5a9bb96e735b38267a`, dim 384,
+  pooling `mean` (implementation deviation: the model card recommends CLS), normalised True, local ONNX, available: True
 
 ## synthetic — <synthetic-v2> (dev (queries authored earlier))
 

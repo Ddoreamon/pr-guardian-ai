@@ -28,6 +28,7 @@ LOGGER = logging.getLogger("pr_guardian.dense")
 MODEL_ID = "BAAI/bge-small-en-v1.5"
 MODEL_REVISION = "5c38ec7c405ec4b44b94cc5a9bb96e735b38267a"
 MODEL_DIM = 384
+POOLING = "mean"          # the frozen implementation; see docs/hybrid-stage.md
 MAX_TOKENS = 512
 BATCH_SIZE = 16          # bounds peak memory on CPU; 864 chunks would otherwise OOM
 TEXT_VERSION = "v1"
@@ -91,6 +92,21 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def public_model_info() -> dict:
+    """Metadata safe to publish: no local paths, no user names, no file hashes."""
+    status = model_status()
+    return {
+        "model_id": status["model_id"],
+        "revision": status["revision"],
+        "dim": status["dim"],
+        "pooling": status["pooling"],
+        "normalise": status["normalise"],
+        "text_version": status["text_version"],
+        "available": status["available"],
+        "reason": status["reason"],
+    }
+
+
 def model_status() -> dict:
     """Report whether dense retrieval can run here, without loading the model."""
     info = {
@@ -99,7 +115,8 @@ def model_status() -> dict:
         "dim": MODEL_DIM,
         "text_version": TEXT_VERSION,
         "normalise": NORMALISE,
-        "dir": str(model_dir()),
+        # pooling is part of the model's identity: changing it changes vectors
+        "pooling": POOLING,
     }
     try:
         import numpy  # noqa: F401

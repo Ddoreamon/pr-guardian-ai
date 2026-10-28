@@ -34,9 +34,34 @@ below, are *yes* and *not with the specified fusion*.
 | Revision (pinned) | `5c38ec7c405ec4b44b94cc5a9bb96e735b38267a` |
 | Runtime | ONNX Runtime 1.31.1 on CPU (no PyTorch), `tokenizers` 0.23.3 |
 | Files | `model.onnx` (133 MB), `tokenizer.json`, `config.json`, pinned by SHA-256 |
-| Dimension / pooling | 384, masked mean pool, L2-normalised, cosine via dot product |
+| Dimension | 384 |
+| **Pooling (as implemented)** | **masked MEAN pooling** — see 2.1; this differs from the model's documented recommendation |
+| Normalisation | L2, cosine similarity via dot product |
 | Encoded text (`TEXT_VERSION=v1`) | `qualname \n file_path \n kind \n chunk text` |
 | Truncation | 512 tokens; batches of 16 (an 864-chunk repository needs >10 GB of attention buffers in one pass) |
+
+### 2.1 Pooling — what was actually run
+
+The model card for `BAAI/bge-small-en-v1.5` recommends **CLS pooling**. This
+implementation used **masked mean pooling** (`POOLING = "mean"`), which was the
+code that produced every number in this document. That is a deviation from the
+recommended recipe, and it is recorded rather than quietly corrected:
+
+* the frozen results in `docs/hybrid-eval-v1/` apply **only** to mean pooling with
+  revision `5c38ec7c`, encoded text `v1` and L2 normalisation;
+* switching to CLS pooling changes the vectors, so it must be a **new version**:
+  bump `TEXT_VERSION`/`POOLING` in the cache identity, rebuild the vector cache,
+  and evaluate on a **fresh, independently written** query set — not on the click
+  held-out that has now been seen;
+* no result here may be attributed to "BGE-small-en-v1.5" in general.
+
+Pinned file digests (SHA-256), for reproducibility:
+
+| File | SHA-256 |
+|---|---|
+| `model.onnx` (133,093,490 B) | `828e1496d7fabb79cfa4dcd84fa38625c0d3d21da474a00f08db0f559940cf35` |
+| `tokenizer.json` (711,396 B) | `d241a60d5e8f04cc1b2b3e9ef7a4921b27bf526d9f6050ab90f9267a1f9e5c66` |
+| `config.json` (743 B) | `094f8e891b932f2000c92cfc663bac4c62069f5d8af5b5278c4306aef3084750` |
 
 Everything runs locally. The model is downloaded once into `.cache/models/` (never
 committed), inference is a static graph — no `trust_remote_code`, no Python from
@@ -128,3 +153,43 @@ carried the pinned SHA; the session closed with no leaked thread. Both runs hit 
 * Fusion alternatives (weighted RRF, equal-depth lists, convex combination) are
   untested; testing them on this corpus would be fitting to the test set.
 * No model run with `dense` mode was made; the smoke used `hybrid`, as specified.
+
+## 8. Boundaries — how to read these numbers
+
+* **A zero no-result rate does not mean relevant results.** Dense always returns
+  its top-k, so "found something" is guaranteed; only the gold-based Recall/MRR
+  columns measure whether that something was right.
+* **The vector cache is not tamper-proof.** Load-time SHA-256 checks catch
+  accidental corruption (truncated file, wrong shape, non-finite values, stale
+  chunk list). An attacker who can write to the cache directory can rewrite the
+  data *and* the checksum together. It is an integrity check, not a security
+  boundary. Environments that need one should run with
+  `PR_GUARDIAN_RAG_CACHE=off` and rebuild per process.
+* **The model cannot choose the retrieval mode.** It is bound at startup from
+  configuration; a tool call cannot request a repository, a commit, or a mode.
+* **The two real-model smoke runs were both `partial`** (4-call budget exhausted).
+  They demonstrate that the tool loop, transport and validator work end to end.
+  They are **not** evidence about review accuracy and must not be quoted as such.
+* Published metadata is limited to model id, revision, dimension, pooling,
+  normalisation, text version and availability — no local paths, no user names.
+  `scripts/hybrid_eval.py` serialises `public_model_info()` rather than the raw
+  status dict, and a test asserts that neither the descriptor nor any committed
+  results file contains a host path.
+* **History is not rewritten.** The earlier commit `5b43239` still contains the
+  local model directory inside `docs/hybrid-eval-v1/results.json`. It was removed
+  from the current tree in the archival commit; the numbers, queries, gold
+  positions and ranks are unchanged.
+
+## 9. Decision record
+
+| Decision | Status | Evidence |
+|---|---|---|
+| `bm25` remains the default retrieval mode | **accepted** | zero extra dependencies, works offline, is the fallback everywhere |
+| `dense` kept as an experimental, optional local mode | **accepted** | 16/31 and 7/20 gold chunks recovered that BM25's top-5 missed, with no BM25-only cases |
+| `hybrid` (equal-weight RRF, k = 60) | **experimental / not recommended** | worse than dense alone on both corpora; below BM25 at Recall@1 on the held-out set |
+| RRF weights tuned on the click held-out | **rejected** | would fit the only held-out set; a new fusion needs a new pre-registered evaluation |
+| Negative hybrid result kept | **accepted** | `docs/hybrid-eval-v1/` is frozen and unmodified apart from removing a local path from `results.json` |
+| CLS pooling | **deferred** | changing pooling invalidates the frozen vectors and needs a fresh query set |
+
+The embedding stack therefore stays an opt-in extra: the default install, the MCP
+server and the Render deployment never load it.

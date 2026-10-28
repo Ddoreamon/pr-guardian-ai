@@ -196,7 +196,8 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=Path("docs/hybrid-eval-v1"))
     args = ap.parse_args()
 
-    payload: dict = {"model": dense_index.model_status(), "corpora": {}}
+    # only public metadata: model id, revision, dimension, pooling, availability
+    payload: dict = {"model": dense_index.public_model_info(), "corpora": {}}
 
     # ---- Dev: synthetic corpus
     root = Path(tempfile.mkdtemp()) / "synth"
