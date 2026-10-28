@@ -33,6 +33,7 @@ from pr_guardian.agent_tools import TrustedCodebase
 from pr_guardian.mcp_client import MCPToolBackend
 from pr_guardian.settings import Settings
 
+DEV_REPO_LABEL = "<dev-repo>"
 BUG_BRANCH = "dev/express-shipping"
 CLEAN_BRANCH = "dev/currency-arg"
 
@@ -216,6 +217,7 @@ def run_case(repo: Path, branch: str, case: str, backend: str) -> dict:
         "case": case,
         "branch": branch,
         "backend": backend,
+        "repo_label": DEV_REPO_LABEL,
         "snapshot_sha": _git(repo, "rev-parse", branch).strip(),
         "llm_status": report.llm_status,
         "model_name": report.model_name,
@@ -252,7 +254,8 @@ def main() -> int:
 
     root = Path(tempfile.mkdtemp()) / "smoke-repo"
     build_dev_repo(root)
-    result: dict = {"repo": str(root), "cases": []}
+    # Artefacts are public: never persist the host path or user name.
+    result: dict = {"repo_label": DEV_REPO_LABEL, "cases": []}
 
     result["direct_comparison"] = direct_comparison(root, BUG_BRANCH)
     for case, branch in (("bug", BUG_BRANCH), ("clean", CLEAN_BRANCH)):

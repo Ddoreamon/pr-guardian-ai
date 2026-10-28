@@ -165,3 +165,35 @@ def test_backend_setting_rejects_unknown_values(monkeypatch):
     assert get_settings().tool_backend == "local"
     monkeypatch.setenv("PR_GUARDIAN_TOOL_BACKEND", "mcp")
     assert get_settings().tool_backend == "mcp"
+
+def test_smoke_artefacts_never_contain_host_paths():
+    """The smoke report is public: it must not leak the local user or temp path."""
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "mcp_smoke", Path(__file__).resolve().parents[1] / "scripts" / "mcp_smoke.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    fake = {
+        "repo_label": module.DEV_REPO_LABEL,
+        "direct_comparison": {
+            "pinned_sha": "a" * 40, "init_s": 0.5, "calls": [],
+            "all_identical": True, "all_refs_match": True,
+            "worktree_edit_ignored": True, "local_median_s": 0.01,
+            "mcp_median_s": 0.02, "session_closed": True,
+            "leaked_threads": [], "audit_summary": {"calls": 0},
+        },
+        "cases": [{
+            "case": "bug", "backend": "mcp", "branch": "b", "snapshot_sha": "a" * 40,
+            "llm_status": "ok", "tool_status": "ok", "tool_model_calls": 1,
+            "tool_model_failures": 0, "tool_rounds": 1, "prompt_tokens": 1,
+            "completion_tokens": 1, "tool_calls": [], "llm_findings": [],
+            "final_findings": [], "leaked_threads": [],
+        }],
+    }
+    text = module.render(fake)
+    assert "C:\\\\Users" not in text
+    assert "/tmp/" not in text and "/home/" not in text
+    assert module.DEV_REPO_LABEL == "<dev-repo>"

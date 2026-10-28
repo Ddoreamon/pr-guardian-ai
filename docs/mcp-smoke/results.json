@@ -1,5 +1,4 @@
 {
-  "repo": "C:\\Users\\qiyan\\AppData\\Local\\Temp\\tmpbuszs2wv\\smoke-repo",
   "cases": [
     {
       "case": "bug",
@@ -350,5 +349,6 @@
       "latency_median_s": 0.048,
       "latency_max_s": 0.1083
     }
-  }
+  },
+  "repo_label": "<dev-repo>"
 }

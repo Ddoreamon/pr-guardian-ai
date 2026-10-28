@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import sys
 import threading
 import time
@@ -32,13 +33,31 @@ SERVER_MODULE = "pr_guardian.mcp_server"
 LOGGER = logging.getLogger("pr_guardian.mcp_client")
 
 
+# The server reads git snapshots; it never talks to a model provider. Only the
+# variables a Python process and `git` genuinely need are forwarded, so a key in
+# the parent environment is never handed to the child.
+SAFE_ENV_KEYS = (
+    "PATH", "PATHEXT", "COMSPEC", "SYSTEMROOT", "SYSTEMDRIVE", "WINDIR",
+    "TEMP", "TMP", "TMPDIR", "HOME", "USERPROFILE",
+    "LANG", "LC_ALL", "PYTHONIOENCODING", "PYTHONUTF8", "PYTHONHASHSEED",
+)
+
+
+def minimal_env(base: dict[str, str] | None = None) -> dict[str, str]:
+    """Whitelisted environment for the server process (no API keys)."""
+    source = os.environ if base is None else base
+    env = {key: source[key] for key in SAFE_ENV_KEYS if key in source}
+    env.setdefault("PYTHONIOENCODING", "utf-8")
+    return env
+
+
 def server_parameters(repo: Path | str, ref: str,
                       python: str | None = None) -> StdioServerParameters:
     """Command that starts the MCP server for one repository and commit."""
     return StdioServerParameters(
         command=python or sys.executable,
         args=["-m", SERVER_MODULE, "--repo", str(repo), "--ref", ref],
-        env=None,
+        env=minimal_env(),
         cwd=None,
         encoding="utf-8",
         encoding_error_handler="replace",

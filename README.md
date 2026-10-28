@@ -451,6 +451,11 @@ The MCP transport adds no measurable per-call cost once the session is warm; the
 one-off session start is the real price. The public Render deployment keeps
 `PR_GUARDIAN_TOOL_CALLS_ENABLED=0` and exposes no MCP endpoint.
 
+The MCP work is covered by 45 tests (protocol 25, lifecycle 12, integration 8)
+inside a 245-test suite; `pytest -q` and `ruff check` are clean, and the browser
+suite still passes. `psutil` is a dev-only dependency, used to prove that a closed
+session leaves no server process behind.
+
 **MCP is a transport, not a smarter reviewer.** Nothing here improves detection;
 the frozen benchmark above is unchanged and was not re-run for MCP. Two further
 guarantees are enforced in code and tests: the server rejects undeclared,

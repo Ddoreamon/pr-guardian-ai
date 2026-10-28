@@ -1,6 +1,7 @@
 """MCP session lifecycle: failures must not leak threads or server processes."""
 
 import asyncio
+import os
 import subprocess
 import sys
 import threading
@@ -200,3 +201,28 @@ def test_invalid_json_content_becomes_an_error_payload():
     assert is_error is False
     assert payload["ok"] is False
     assert payload["error"]["code"] == "bad_payload"
+
+def test_server_environment_is_whitelisted(monkeypatch):
+    """The server never needs the provider key, so it is not forwarded."""
+    monkeypatch.setenv("PR_GUARDIAN_API_KEY", "sk-must-not-reach-the-child")
+    monkeypatch.setenv("PR_GUARDIAN_MODEL", "deepseek-flash")
+    from pr_guardian.mcp_client import minimal_env, server_parameters
+
+    env = minimal_env()
+    assert "PR_GUARDIAN_API_KEY" not in env
+    assert "PR_GUARDIAN_MODEL" not in env
+    assert not any("KEY" in k or "TOKEN" in k or "SECRET" in k for k in env)
+    assert env["PYTHONIOENCODING"] == "utf-8"
+
+    params = server_parameters(".", "HEAD")
+    assert params.env is not None
+    assert "PR_GUARDIAN_API_KEY" not in params.env
+    # git and python still work: the essential variables survive
+    assert "PATH" in params.env or "PATH" not in os.environ
+
+
+def test_minimal_env_drops_everything_else():
+    from pr_guardian.mcp_client import minimal_env
+
+    env = minimal_env({"PATH": "/usr/bin", "SECRET": "x", "PR_GUARDIAN_API_KEY": "k"})
+    assert env == {"PATH": "/usr/bin", "PYTHONIOENCODING": "utf-8"}
