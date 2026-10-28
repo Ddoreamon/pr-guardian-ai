@@ -308,6 +308,13 @@ class MCPToolBackend:
                                                  {"symbol": symbol})
         return payload
 
+    def search_code(self, query: object, top_k: object = 5) -> dict:
+        arguments: dict = {"query": query}
+        if top_k is not None:
+            arguments["top_k"] = top_k
+        payload, _is_error, _latency = self.call("search_code", arguments)
+        return payload
+
     def audit_summary(self) -> dict:
         if not self.audit:
             return {"calls": 0}

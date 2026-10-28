@@ -465,6 +465,47 @@ successful tool call even if the payload claims `ok: true`. Sessions are reaped 
 startup timeout, early server exit and RPC timeout, with tests asserting no
 leftover thread or server process.
 
+### Repository retrieval (v2, keyword only)
+
+A third read-only tool, `search_code(query, top_k)`, retrieves code from the
+**reviewed commit** by keyword when the reviewer does not already know the file or
+symbol. The index is built from the AST (functions, methods, classes, module
+constants), cached per commit SHA under `.cache/`, and never reads the working
+tree. Ranking is BM25 plus symbol/import/call signals; every hit reports its file,
+line range, score, the signals that fired and a snippet, and a miss says so
+explicitly. No embedding model and no external service are involved.
+
+The disk cache is verified before use: it stores a manifest of git blob SHAs and
+every chunk's text is compared with the source read through `TrustedCodebase`, so a
+corrupted or tampered cache is discarded and rebuilt rather than served.
+`PR_GUARDIAN_RAG_CACHE=off` disables it.
+
+Measured on an independent dev corpus (103 chunks, 28 files, 51 frozen queries;
+`docs/rag-eval-v2/REPORT.md`):
+
+| Method | Recall@1 | Recall@3 | Recall@5 | MRR | Paraphrase Recall@3 |
+|---|---|---|---|---|---|
+| BM25 | 52.94% | 64.71% | 66.67% | 0.579 | 41.94% |
+| BM25 + domain synonym table | 78.43% | 90.20% | 94.12% | 0.846 | 83.87% |
+| BM25 + generic synonym table | 50.98% | 66.67% | 70.59% | 0.579 | 45.16% |
+
+The middle row is a **tuned upper bound**: its table was written while looking at
+the corpus, and the generic table barely moves the numbers. The honest reading is
+that keyword retrieval leaves ~40–45% of paraphrase queries unreachable at k=3, and
+that gap is vocabulary, not ranking.
+
+A real `deepseek-flash` smoke run
+([`docs/rag-smoke/REPORT.md`](docs/rag-smoke/REPORT.md)) shows the model choosing
+`search_code` on its own, reading the located file, and producing a correct
+cross-file finding; Local and MCP search payloads were identical and every tool
+result carried the pinned SHA. It also produced one low-severity false alarm on the
+clean case, and both runs exhausted the tool budget. This is a functional check of
+the loop, **not** a detection improvement: the frozen benchmark was not touched and
+no accuracy claim is made.
+
+Design notes and the dense-retrieval evidence:
+[`docs/rag-stage-v2.md`](docs/rag-stage-v2.md).
+
 ### Corrections to earlier benchmark artefacts
 
 Committed reports are historical records and are not rewritten. Known defects in

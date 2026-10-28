@@ -145,7 +145,7 @@ def test_request_declares_tools_and_replies_with_matching_tool_id(queued, codeba
 
     first = queued.sent[0]["payload"]
     assert [t["function"]["name"] for t in first["tools"]] == [
-        "read_code_context", "find_symbol_definition",
+        "read_code_context", "find_symbol_definition", "search_code",
     ]
 
     second_msgs = queued.sent[1]["payload"]["messages"]
@@ -409,3 +409,87 @@ def test_successful_run_has_no_failures(queued, codebase):
     assert res.model_successes == 1
     assert res.model_failures == 0
     assert any("failed 0" in n for n in res.notes)
+
+def test_search_output_respects_the_hard_cap():
+    """A big search result must be bounded, valid JSON, and say what it dropped."""
+    from pr_guardian.tool_calling import MAX_TOOL_OUTPUT_CHARS, _cap_payload
+
+    hits = [
+        {
+            "file_path": "src/" + ("very_long_directory_name/" * 6) + f"module_{i}.py",
+            "start_line": 10 + i, "end_line": 60 + i,
+            "kind": "function", "qualname": "some_quite_long_symbol_name_" + "x" * 60,
+            "part": 0, "parts": 1, "score": 9.5, "why": ["bm25=1.0", "exact_symbol"],
+            "snippet": "def f():\n" + "    value = compute()\n" * 40,
+            "ref": "a" * 40,
+        }
+        for i in range(10)
+    ]
+    payload = {"ok": True, "found": True, "query": "q", "ref": "a" * 40,
+               "hits": hits, "count": 10, "match_count": 10}
+    capped, text = _cap_payload(payload)
+    assert len(text) <= MAX_TOOL_OUTPUT_CHARS
+    assert json.loads(text) == capped          # still parseable
+    assert capped["truncated"] is True
+    assert len(capped["hits"]) <= 10
+    assert capped["count"] == len(capped["hits"])
+    if len(capped["hits"]) < 10:
+        assert capped["omitted"] == 10 - len(capped["hits"])
+
+
+def test_generic_output_is_capped_and_parseable():
+    from pr_guardian.tool_calling import MAX_TOOL_OUTPUT_CHARS, _cap_payload
+
+    payload = {"ok": True, "content": "x" * (MAX_TOOL_OUTPUT_CHARS * 3), "ref": "b" * 40}
+    capped, text = _cap_payload(payload)
+    assert len(text) <= MAX_TOOL_OUTPUT_CHARS
+    assert json.loads(text) == capped
+    assert capped["truncated"] is True
+
+def test_hits_removed_by_the_cap_turn_the_call_into_a_miss():
+    """If every hit is dropped, the tool did not deliver evidence: miss, not hit."""
+    from pr_guardian.tool_calling import MAX_TOOL_OUTPUT_CHARS, _cap_payload
+
+    huge = "x" * (MAX_TOOL_OUTPUT_CHARS * 2)
+    payload = {"ok": True, "found": True, "query": "q", "ref": "a" * 40,
+               "hits": [{"file_path": "src/a.py", "start_line": 1, "end_line": 2,
+                         "kind": "function", "qualname": "f", "part": 0, "parts": 1,
+                         "score": 1.0, "why": ["bm25"], "snippet": huge, "ref": "a" * 40,
+                         "padding": huge}],
+               "count": 1, "match_count": 1}
+    capped, _text = _cap_payload(payload)
+    assert json.loads(json.dumps(capped, ensure_ascii=False))
+    from pr_guardian.agent_tools import SEARCH_CODE, is_effective_hit
+
+    assert capped.get("hits") == [] or capped.get("truncated") is True
+    if not capped.get("hits"):
+        assert is_effective_hit(SEARCH_CODE, capped) is False
+
+
+def test_budget_denied_record_keeps_the_provider_call_id(monkeypatch):
+    """A refused call must still be traceable to the model's tool_call_id."""
+    from pr_guardian import tool_calling
+
+    class FakeSession:
+        attempts = successes = failures = 0
+        model = "fake-model"
+        latency_s = 0.0
+
+        def __init__(self):
+            self.usage = {}
+
+        def post(self, payload):
+            if payload["messages"][-1]["role"] == "user":
+                return {"choices": [{"message": {"content": "",
+                                                 "tool_calls": [{"id": "call_budget_1",
+                                                                 "function": {"name": "search_code",
+                                                                              "arguments": '{"query": "x"}'}}]}}]}
+            return {"choices": [{"message": {"content": FINDINGS_JSON}}]}
+
+    monkeypatch.setattr(tool_calling, "_Session", lambda *a, **k: FakeSession())
+    result = tool_calling.review_with_tools(
+        "diff", FILES, object(), _settings(), max_rounds=1, max_tool_calls=0)
+    assert result.status == "tool_limit"
+    denied = [r for r in result.trace if r.outcome == "budget_denied"]
+    assert denied and denied[0].call_id == "call_budget_1"
+    assert denied[0].result_chars > 0

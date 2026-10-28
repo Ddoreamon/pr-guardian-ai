@@ -34,6 +34,7 @@ from .agent_tools import (
     MAX_LINES_PER_READ,
     MAX_SYMBOL_RESULTS,
     READ_CODE_CONTEXT,
+    SEARCH_CODE,
     ToolError,
     TrustedCodebase,
 )
@@ -80,6 +81,26 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "additionalProperties": False,
         },
     },
+    {
+        "name": SEARCH_CODE,
+        "description": (
+            "Search the reviewed commit for code related to a query. Returns ranked "
+            "chunks with file path, line range, relevance score and a snippet. Use it "
+            "to find where something lives, then read_code_context to read it in full. "
+            "A miss means nothing matched; never invent a file."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "keywords or a symbol name"},
+                "top_k": {"type": "integer", "minimum": 1, "maximum": 10,
+                          "description": "number of chunks to return (default 5)"},
+            },
+            "required": ["query"],
+            "additionalProperties": False,
+        },
+    },
+
 ]
 
 
@@ -89,6 +110,13 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
 PARAMETER_SPECS: dict[str, dict[str, type]] = {
     READ_CODE_CONTEXT: {"file_path": str, "start_line": int, "end_line": int},
     FIND_SYMBOL_DEFINITION: {"symbol": str},
+    SEARCH_CODE: {"query": str, "top_k": int},
+}
+
+REQUIRED_PARAMS: dict[str, tuple[str, ...]] = {
+    READ_CODE_CONTEXT: ("file_path", "start_line", "end_line"),
+    FIND_SYMBOL_DEFINITION: ("symbol",),
+    SEARCH_CODE: ("query",),
 }
 
 
@@ -107,7 +135,7 @@ def validate_arguments(name: str, arguments: dict) -> dict | None:
             "details": {"declared": sorted(spec)},
         }}
 
-    missing = sorted(set(spec) - set(arguments))
+    missing = sorted(set(REQUIRED_PARAMS[name]) - set(arguments))
     if missing:
         return {"ok": False, "error": {
             "code": "missing_parameter",
@@ -115,6 +143,8 @@ def validate_arguments(name: str, arguments: dict) -> dict | None:
         }}
 
     for key, expected in spec.items():
+        if key not in arguments:
+            continue
         value = arguments[key]
         # bool is an int subclass: reject it explicitly rather than accept True/False
         if expected is int and (isinstance(value, bool) or not isinstance(value, int)):
@@ -150,6 +180,14 @@ def _dispatch(codebase: TrustedCodebase, name: str, arguments: dict) -> types.Ca
                 arguments.get("start_line"),
                 arguments.get("end_line"),
             )
+        except ToolError as exc:
+            return _text_result(exc.as_payload(), is_error=True)
+        return _text_result(payload)
+
+    if name == SEARCH_CODE:
+        try:
+            payload = codebase.search_code(arguments.get("query"),
+                                           arguments.get("top_k", 5))
         except ToolError as exc:
             return _text_result(exc.as_payload(), is_error=True)
         return _text_result(payload)

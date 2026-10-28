@@ -9,6 +9,7 @@ from pr_guardian import pipeline
 from pr_guardian.agent_tools import (
     FIND_SYMBOL_DEFINITION,
     READ_CODE_CONTEXT,
+    SEARCH_CODE,
     TrustedCodebase,
 )
 from pr_guardian.mcp_client import MCPToolBackend
@@ -92,6 +93,7 @@ def test_execute_gives_the_same_result_for_local_and_mcp(repo):
                           direct, 1)
     local_symbol = _execute(FIND_SYMBOL_DEFINITION, {"symbol": "TAX"}, direct, 1)
     local_fn = _execute(FIND_SYMBOL_DEFINITION, {"symbol": "calc"}, direct, 1)
+    local_search = _execute(SEARCH_CODE, {"query": "rate calculation", "top_k": 3}, direct, 1)
 
     with MCPToolBackend(repo, "HEAD") as backend:
         mcp_read = _execute(READ_CODE_CONTEXT,
@@ -99,8 +101,11 @@ def test_execute_gives_the_same_result_for_local_and_mcp(repo):
                             backend, 1)
         mcp_symbol = _execute(FIND_SYMBOL_DEFINITION, {"symbol": "TAX"}, backend, 1)
         mcp_fn = _execute(FIND_SYMBOL_DEFINITION, {"symbol": "calc"}, backend, 1)
+        mcp_search = _execute(SEARCH_CODE, {"query": "rate calculation", "top_k": 3},
+                              backend, 1)
 
-    for local, mcp in ((local_read, mcp_read), (local_symbol, mcp_symbol), (local_fn, mcp_fn)):
+    for local, mcp in ((local_read, mcp_read), (local_symbol, mcp_symbol),
+                       (local_fn, mcp_fn), (local_search, mcp_search)):
         local_record, local_payload = local
         mcp_record, mcp_payload = mcp
         # the payload handed to the model is identical: no latency key, no metadata
