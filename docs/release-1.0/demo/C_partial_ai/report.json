@@ -1,0 +1,350 @@
+{
+  "review_id": "1f091ece3e32",
+  "repository": "demo-repo",
+  "base_ref": "main",
+  "head_ref": "feature/boundary-bug",
+  "model_name": "deepseek-flash",
+  "changed_files": [
+    {
+      "file_path": "src/discount.py",
+      "change_type": "modified",
+      "added_lines": [
+        6
+      ],
+      "deleted_lines": [
+        6
+      ],
+      "language": "python"
+    }
+  ],
+  "static_findings": [
+    {
+      "id": "pytest-1",
+      "file_path": "(test suite)",
+      "start_line": 1,
+      "end_line": 1,
+      "category": "test-failure",
+      "severity": "high",
+      "summary": "1 test(s) failing on head",
+      "explanation": "Failing tests: tests/test_discount.py::test_threshold_order_gets_discount",
+      "evidence": "pytest reported 1 failed, 0 errors",
+      "suggested_fix": "",
+      "source": "pytest",
+      "verification_status": "confirmed",
+      "rule": null,
+      "evidence_refs": [],
+      "evidence_status": "not_evaluated",
+      "claim_status": "claim_unjudged",
+      "evidence_validation_notes": []
+    }
+  ],
+  "llm_findings": [
+    {
+      "id": "llm-1",
+      "file_path": "src/discount.py",
+      "start_line": 5,
+      "end_line": 7,
+      "category": "boundary_condition",
+      "severity": "high",
+      "summary": "Boundary change to `>` excludes orders of exactly 100 from the discount, contradicting the documented contract \"Orders of 100 or more get 10% off\".",
+      "explanation": "The docstring on line 5 of src/discount.py states: \"Return the discount amount. Orders of 100 or more get 10% off.\" The function's contract therefore requires order_total == 100 to yield order_total * 0.10 = 10.0. With the change from `>=` to `>` on line 6, an order_total of exactly 100.0 (float) now falls through to `return 0.0` on line 8, returning no discount. This is an off-by-one boundary regression between the function's documented behaviour and its implementation; any caller relying on the documented inclusive threshold (e.g. an order totalling exactly 100) silently loses the 10% discount.",
+      "evidence": "src/discount.py lines 4-8: `def calculate_discount(order_total: float) -> float:` / `\"\"\"Return the discount amount. Orders of 100 or more get 10% off.\"\"\"` / `if order_total > 100:` / `return order_total * 0.10` / `return 0.0`. The docstring says \"100 or more\" (inclusive) but the condition is exclusive.",
+      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:`. If the intended business rule really is strictly greater than 100, update the docstring accordingly and notify callers, but as written the code contradicts its documented contract.",
+      "source": "llm",
+      "verification_status": "suspected",
+      "rule": null,
+      "evidence_refs": [
+        {
+          "ref": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+          "file_path": "src/discount.py",
+          "start_line": 4,
+          "end_line": 8,
+          "tool_call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516",
+          "tool_name": "read_code_context",
+          "evidence_status": "source_verified",
+          "snippet_sha256": ""
+        }
+      ],
+      "evidence_status": "source_verified",
+      "claim_status": "claim_unjudged",
+      "evidence_validation_notes": []
+    }
+  ],
+  "final_findings": [
+    {
+      "id": "pytest-1",
+      "file_path": "(test suite)",
+      "start_line": 1,
+      "end_line": 1,
+      "category": "test-failure",
+      "severity": "high",
+      "summary": "1 test(s) failing on head",
+      "explanation": "Failing tests: tests/test_discount.py::test_threshold_order_gets_discount",
+      "evidence": "pytest reported 1 failed, 0 errors",
+      "suggested_fix": "",
+      "source": "pytest",
+      "verification_status": "confirmed",
+      "rule": null,
+      "evidence_refs": [],
+      "evidence_status": "deterministic",
+      "claim_status": "deterministic",
+      "evidence_validation_notes": []
+    },
+    {
+      "id": "llm-1",
+      "file_path": "src/discount.py",
+      "start_line": 5,
+      "end_line": 7,
+      "category": "boundary_condition",
+      "severity": "high",
+      "summary": "Boundary change to `>` excludes orders of exactly 100 from the discount, contradicting the documented contract \"Orders of 100 or more get 10% off\".",
+      "explanation": "The docstring on line 5 of src/discount.py states: \"Return the discount amount. Orders of 100 or more get 10% off.\" The function's contract therefore requires order_total == 100 to yield order_total * 0.10 = 10.0. With the change from `>=` to `>` on line 6, an order_total of exactly 100.0 (float) now falls through to `return 0.0` on line 8, returning no discount. This is an off-by-one boundary regression between the function's documented behaviour and its implementation; any caller relying on the documented inclusive threshold (e.g. an order totalling exactly 100) silently loses the 10% discount.",
+      "evidence": "src/discount.py lines 4-8: `def calculate_discount(order_total: float) -> float:` / `\"\"\"Return the discount amount. Orders of 100 or more get 10% off.\"\"\"` / `if order_total > 100:` / `return order_total * 0.10` / `return 0.0`. The docstring says \"100 or more\" (inclusive) but the condition is exclusive.",
+      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:`. If the intended business rule really is strictly greater than 100, update the docstring accordingly and notify callers, but as written the code contradicts its documented contract.",
+      "source": "llm",
+      "verification_status": "suspected",
+      "rule": null,
+      "evidence_refs": [
+        {
+          "ref": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+          "file_path": "src/discount.py",
+          "start_line": 4,
+          "end_line": 8,
+          "tool_call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516",
+          "tool_name": "read_code_context",
+          "evidence_status": "source_verified",
+          "snippet_sha256": ""
+        }
+      ],
+      "evidence_status": "source_verified",
+      "claim_status": "claim_unjudged",
+      "evidence_validation_notes": []
+    }
+  ],
+  "notes": [
+    "pytest on head: 1 passed, 1 failed, 0 errors, timed_out=False",
+    "LLM model: deepseek-flash",
+    "model requests: 2 (success 2, failed 0; tool rounds: 1)",
+    "tool calls: 2 (hit 1, miss 0, error 0, budget 1)",
+    "PARTIAL: the tool budget ran out before the model finished investigating."
+  ],
+  "test_summary": {
+    "ran": true,
+    "skipped_reason": "",
+    "passed": 1,
+    "failed": 1,
+    "errors": 0,
+    "failed_tests": [
+      "tests/test_discount.py::test_threshold_order_gets_discount"
+    ],
+    "timed_out": false,
+    "duration_seconds": 0.562
+  },
+  "llm_status": "partial",
+  "llm_note": "LLM model: deepseek-flash",
+  "tool_status": "tool_limit",
+  "tool_calls": [
+    {
+      "round": 1,
+      "name": "read_code_context",
+      "arguments": {
+        "file_path": "src/discount.py",
+        "start_line": 1,
+        "end_line": 40
+      },
+      "ok": true,
+      "outcome": "hit",
+      "error_code": "",
+      "error_message": "",
+      "result_chars": 639,
+      "latency_s": 0.062,
+      "matched": 0,
+      "call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516"
+    },
+    {
+      "round": 1,
+      "name": "search_code",
+      "arguments": {
+        "query": "calculate_discount"
+      },
+      "ok": false,
+      "outcome": "budget_denied",
+      "error_code": "budget_exceeded",
+      "error_message": "tool call budget exhausted",
+      "result_chars": 178,
+      "latency_s": 0.0,
+      "matched": 0,
+      "call_id": "call_01_ET_jaykyrqHGeCdLljpaMZU5891"
+    }
+  ],
+  "llm_prompt_tokens": 2439,
+  "llm_completion_tokens": 632,
+  "tool_model_calls": 2,
+  "tool_model_failures": 0,
+  "tool_rounds": 1,
+  "evidence_verified": 1,
+  "evidence_unverified": 0,
+  "trusted_findings": [
+    {
+      "id": "pytest-1",
+      "file_path": "(test suite)",
+      "start_line": 1,
+      "end_line": 1,
+      "category": "test-failure",
+      "severity": "high",
+      "summary": "1 test(s) failing on head",
+      "explanation": "Failing tests: tests/test_discount.py::test_threshold_order_gets_discount",
+      "evidence": "pytest reported 1 failed, 0 errors",
+      "suggested_fix": "",
+      "source": "pytest",
+      "verification_status": "confirmed",
+      "rule": null,
+      "evidence_refs": [],
+      "evidence_status": "deterministic",
+      "claim_status": "deterministic",
+      "evidence_validation_notes": []
+    },
+    {
+      "id": "llm-1",
+      "file_path": "src/discount.py",
+      "start_line": 5,
+      "end_line": 7,
+      "category": "boundary_condition",
+      "severity": "high",
+      "summary": "Boundary change to `>` excludes orders of exactly 100 from the discount, contradicting the documented contract \"Orders of 100 or more get 10% off\".",
+      "explanation": "The docstring on line 5 of src/discount.py states: \"Return the discount amount. Orders of 100 or more get 10% off.\" The function's contract therefore requires order_total == 100 to yield order_total * 0.10 = 10.0. With the change from `>=` to `>` on line 6, an order_total of exactly 100.0 (float) now falls through to `return 0.0` on line 8, returning no discount. This is an off-by-one boundary regression between the function's documented behaviour and its implementation; any caller relying on the documented inclusive threshold (e.g. an order totalling exactly 100) silently loses the 10% discount.",
+      "evidence": "src/discount.py lines 4-8: `def calculate_discount(order_total: float) -> float:` / `\"\"\"Return the discount amount. Orders of 100 or more get 10% off.\"\"\"` / `if order_total > 100:` / `return order_total * 0.10` / `return 0.0`. The docstring says \"100 or more\" (inclusive) but the condition is exclusive.",
+      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:`. If the intended business rule really is strictly greater than 100, update the docstring accordingly and notify callers, but as written the code contradicts its documented contract.",
+      "source": "llm",
+      "verification_status": "suspected",
+      "rule": null,
+      "evidence_refs": [
+        {
+          "ref": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+          "file_path": "src/discount.py",
+          "start_line": 4,
+          "end_line": 8,
+          "tool_call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516",
+          "tool_name": "read_code_context",
+          "evidence_status": "source_verified",
+          "snippet_sha256": ""
+        }
+      ],
+      "evidence_status": "source_verified",
+      "claim_status": "claim_unjudged",
+      "evidence_validation_notes": []
+    }
+  ],
+  "evidence_sources": [
+    {
+      "tool_call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516",
+      "tool_name": "read_code_context",
+      "ref": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+      "file_path": "src/discount.py",
+      "start_line": 1,
+      "end_line": 8,
+      "hit": true,
+      "truncated": false,
+      "snippet_sha256": "7ebfe8eda4ec2bc0",
+      "kind": "read",
+      "complete_lines": 8,
+      "complete_lines_list": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "arguments": {
+        "file_path": "src/discount.py",
+        "start_line": 1,
+        "end_line": 40
+      }
+    }
+  ],
+  "evidence_registry_fingerprint": "9a3fae73ffe1867f",
+  "review_status": "partial",
+  "completeness": {
+    "status": "partial",
+    "reason": "tool_budget_exhausted",
+    "tool_rounds_used": 1,
+    "tool_rounds_max": 2,
+    "tool_calls_requested": 2,
+    "tool_calls_executed": 1,
+    "tool_calls_used": 1,
+    "tool_calls_max": 1,
+    "tool_calls_denied": 1,
+    "denied_requests": [
+      {
+        "tool": "search_code",
+        "arguments": {
+          "query": "calculate_discount"
+        }
+      }
+    ],
+    "model_requests": 2,
+    "model_failures": 0,
+    "tool_errors": 0,
+    "tool_misses": 0,
+    "duplicate_calls": 0,
+    "findings_signal": "has_findings"
+  },
+  "deterministic_findings": [
+    {
+      "id": "pytest-1",
+      "file_path": "(test suite)",
+      "start_line": 1,
+      "end_line": 1,
+      "category": "test-failure",
+      "severity": "high",
+      "summary": "1 test(s) failing on head",
+      "explanation": "Failing tests: tests/test_discount.py::test_threshold_order_gets_discount",
+      "evidence": "pytest reported 1 failed, 0 errors",
+      "suggested_fix": "",
+      "source": "pytest",
+      "verification_status": "confirmed",
+      "rule": null,
+      "evidence_refs": [],
+      "evidence_status": "deterministic",
+      "claim_status": "deterministic",
+      "evidence_validation_notes": []
+    }
+  ],
+  "source_verified_findings": [
+    {
+      "id": "llm-1",
+      "file_path": "src/discount.py",
+      "start_line": 5,
+      "end_line": 7,
+      "category": "boundary_condition",
+      "severity": "high",
+      "summary": "Boundary change to `>` excludes orders of exactly 100 from the discount, contradicting the documented contract \"Orders of 100 or more get 10% off\".",
+      "explanation": "The docstring on line 5 of src/discount.py states: \"Return the discount amount. Orders of 100 or more get 10% off.\" The function's contract therefore requires order_total == 100 to yield order_total * 0.10 = 10.0. With the change from `>=` to `>` on line 6, an order_total of exactly 100.0 (float) now falls through to `return 0.0` on line 8, returning no discount. This is an off-by-one boundary regression between the function's documented behaviour and its implementation; any caller relying on the documented inclusive threshold (e.g. an order totalling exactly 100) silently loses the 10% discount.",
+      "evidence": "src/discount.py lines 4-8: `def calculate_discount(order_total: float) -> float:` / `\"\"\"Return the discount amount. Orders of 100 or more get 10% off.\"\"\"` / `if order_total > 100:` / `return order_total * 0.10` / `return 0.0`. The docstring says \"100 or more\" (inclusive) but the condition is exclusive.",
+      "suggested_fix": "Restore the inclusive comparison: `if order_total >= 100:`. If the intended business rule really is strictly greater than 100, update the docstring accordingly and notify callers, but as written the code contradicts its documented contract.",
+      "source": "llm",
+      "verification_status": "suspected",
+      "rule": null,
+      "evidence_refs": [
+        {
+          "ref": "000d402836e074dc343d8771f6f7c24f8d2308fb",
+          "file_path": "src/discount.py",
+          "start_line": 4,
+          "end_line": 8,
+          "tool_call_id": "call_00_ET_iN8hMdYCneUUbDwXimt06516",
+          "tool_name": "read_code_context",
+          "evidence_status": "source_verified",
+          "snippet_sha256": ""
+        }
+      ],
+      "evidence_status": "source_verified",
+      "claim_status": "claim_unjudged",
+      "evidence_validation_notes": []
+    }
+  ],
+  "source_unverified_findings": [],
+  "created_at": "2026-10-28T15:28:28.744014Z"
+}

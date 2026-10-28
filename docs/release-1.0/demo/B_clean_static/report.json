@@ -1,0 +1,78 @@
+{
+  "review_id": "056818e92d46",
+  "repository": "demo-repo",
+  "base_ref": "main",
+  "head_ref": "feature/clean",
+  "model_name": "none",
+  "changed_files": [
+    {
+      "file_path": "src/discount.py",
+      "change_type": "modified",
+      "added_lines": [
+        3,
+        4,
+        5,
+        9,
+        10
+      ],
+      "deleted_lines": [
+        6,
+        7
+      ],
+      "language": "python"
+    }
+  ],
+  "static_findings": [],
+  "llm_findings": [],
+  "final_findings": [],
+  "notes": [
+    "pytest on head: 2 passed, 0 failed, 0 errors, timed_out=False"
+  ],
+  "test_summary": {
+    "ran": true,
+    "skipped_reason": "",
+    "passed": 2,
+    "failed": 0,
+    "errors": 0,
+    "failed_tests": [],
+    "timed_out": false,
+    "duration_seconds": 0.516
+  },
+  "llm_status": "disabled_by_request",
+  "llm_note": "LLM step disabled for this review.",
+  "tool_status": "disabled",
+  "tool_calls": [],
+  "llm_prompt_tokens": 0,
+  "llm_completion_tokens": 0,
+  "tool_model_calls": 0,
+  "tool_model_failures": 0,
+  "tool_rounds": 0,
+  "evidence_verified": 0,
+  "evidence_unverified": 0,
+  "trusted_findings": [],
+  "evidence_sources": [],
+  "evidence_registry_fingerprint": "",
+  "review_status": "not_run",
+  "completeness": {
+    "status": "not_run",
+    "reason": "disabled_by_request",
+    "tool_rounds_used": 0,
+    "tool_rounds_max": 3,
+    "tool_calls_requested": 0,
+    "tool_calls_executed": 0,
+    "tool_calls_used": 0,
+    "tool_calls_max": 4,
+    "tool_calls_denied": 0,
+    "denied_requests": [],
+    "model_requests": 0,
+    "model_failures": 0,
+    "tool_errors": 0,
+    "tool_misses": 0,
+    "duplicate_calls": 0,
+    "findings_signal": "has_findings"
+  },
+  "deterministic_findings": [],
+  "source_verified_findings": [],
+  "source_unverified_findings": [],
+  "created_at": "2026-10-28T15:28:23.493473Z"
+}

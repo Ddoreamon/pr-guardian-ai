@@ -38,6 +38,7 @@ from .agent_tools import (
     ToolError,
     TrustedCodebase,
 )
+from .version import __version__
 
 LOGGER = logging.getLogger("pr_guardian.mcp")
 
@@ -235,7 +236,7 @@ def build_server(codebase: TrustedCodebase) -> Server:
 
     return Server(
         name=SERVER_NAME,
-        version="0.1.0",
+        version=__version__,
         instructions=(
             "Read-only code context for one repository at one commit. "
             "The repository and commit are fixed when this server starts; "

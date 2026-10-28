@@ -129,7 +129,7 @@ removal is required for Release 1.0; it is a configuration and documentation que
 | API key in tracked files | only placeholders: `.env.example` (`PR_GUARDIAN_API_KEY=` empty) and test strings `sk-should-never-be-written`, `sk-never-read` |
 | API key in Git history | none (`git log --all -p` scan for `sk-…` found no literal) |
 | API key in reports/exports/static pages | none; the child MCP process gets a whitelisted environment without the key |
-| Host paths, usernames, `OneDrive` in tracked docs/app/src | none |
+| Host paths or usernames in tracked docs/app/src | none |
 | Host paths in exported artefacts under `docs/*.json` | none |
 | Tool read scope | `src/**/*.py` allowlist, pinned to the reviewed commit, symlinks and `tests/`, `docs/`, `.env` refused |
 | Path traversal / arbitrary file read | refused by `_resolve` plus the allowlist; covered by tests |

@@ -116,6 +116,11 @@
   </div>
 </section>
 
+<footer class="muted" id="page-footer">
+  PR Guardian v{{ version }} — the footer reports the running build, which can be
+  older than the repository while a deploy is pending.
+</footer>
+
 <script>
   window.PR_GUARDIAN_CONFIG = {{ config | tojson }};
 </script>
