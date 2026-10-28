@@ -465,7 +465,7 @@ successful tool call even if the payload claims `ok: true`. Sessions are reaped 
 startup timeout, early server exit and RPC timeout, with tests asserting no
 leftover thread or server process.
 
-### Repository retrieval (v1, keyword only)
+### Repository retrieval (v2, keyword only)
 
 A third read-only tool, `search_code(query, top_k)`, retrieves code from the
 **reviewed commit** by keyword when the reviewer does not already know the file or
@@ -475,19 +475,36 @@ tree. Ranking is BM25 plus symbol/import/call signals; every hit reports its fil
 line range, score, the signals that fired and a snippet, and a miss says so
 explicitly. No embedding model and no external service are involved.
 
-Measured on an independent dev corpus (10 chunks, 12 queries, gold spans fixed
-first; `docs/rag-eval/REPORT.md`):
+The disk cache is verified before use: it stores a manifest of git blob SHAs and
+every chunk's text is compared with the source read through `TrustedCodebase`, so a
+corrupted or tampered cache is discarded and rebuilt rather than served.
+`PR_GUARDIAN_RAG_CACHE=off` disables it.
 
-| Query group | n | Recall@1 | Recall@3 | MRR |
-|---|---|---|---|---|
-| Lexical | 8 | 100% | 100% | 1.000 |
-| Paraphrase (little overlap) | 4 | 25% | 25% | 0.250 |
+Measured on an independent dev corpus (103 chunks, 28 files, 51 frozen queries;
+`docs/rag-eval-v2/REPORT.md`):
 
-Index build 0.20 s, 0.011 s cached, search latency 0.5 ms. This is **not** a
-detection improvement: no review-accuracy run is claimed, and the frozen
-benchmark was not touched. The paraphrase failures are the evidence that a hybrid
-or embedding retriever may be worth the next round; with four queries they are not
-enough to justify one yet. Details: [`docs/rag-stage.md`](docs/rag-stage.md).
+| Method | Recall@1 | Recall@3 | Recall@5 | MRR | Paraphrase Recall@3 |
+|---|---|---|---|---|---|
+| BM25 | 52.94% | 64.71% | 66.67% | 0.579 | 41.94% |
+| BM25 + domain synonym table | 78.43% | 90.20% | 94.12% | 0.846 | 83.87% |
+| BM25 + generic synonym table | 50.98% | 66.67% | 70.59% | 0.579 | 45.16% |
+
+The middle row is a **tuned upper bound**: its table was written while looking at
+the corpus, and the generic table barely moves the numbers. The honest reading is
+that keyword retrieval leaves ~40–45% of paraphrase queries unreachable at k=3, and
+that gap is vocabulary, not ranking.
+
+A real `deepseek-flash` smoke run
+([`docs/rag-smoke/REPORT.md`](docs/rag-smoke/REPORT.md)) shows the model choosing
+`search_code` on its own, reading the located file, and producing a correct
+cross-file finding; Local and MCP search payloads were identical and every tool
+result carried the pinned SHA. It also produced one low-severity false alarm on the
+clean case, and both runs exhausted the tool budget. This is a functional check of
+the loop, **not** a detection improvement: the frozen benchmark was not touched and
+no accuracy claim is made.
+
+Design notes and the dense-retrieval evidence:
+[`docs/rag-stage-v2.md`](docs/rag-stage-v2.md).
 
 ### Corrections to earlier benchmark artefacts
 

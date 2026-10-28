@@ -1,0 +1,351 @@
+{
+  "corpus_label": "<rag-dev-case>",
+  "gold": {
+    "symbol": "apply_credit",
+    "file": "src/shop/invoices.py"
+  },
+  "parity": {
+    "query": "credit invoice units",
+    "top_k": 5,
+    "identical": true,
+    "ref": "9a79ddc5d541050601b3a64449bfeea6cc4e65e2",
+    "local_latency_s": 0.8109,
+    "mcp_latency_s": 0.769,
+    "mcp_rpc_latency_s": 0.7689,
+    "top_files": [
+      "src/shop/invoices.py",
+      "src/shop/checkout.py",
+      "src/shop/invoices.py",
+      "src/shop/invoices.py",
+      "src/shop/invoices.py"
+    ],
+    "gold_in_top_k": true
+  },
+  "cases": [
+    {
+      "case": "bug",
+      "branch": "dev/credit-cents",
+      "snapshot_sha": "9a79ddc5d541050601b3a64449bfeea6cc4e65e2",
+      "llm_status": "partial",
+      "tool_status": "tool_limit",
+      "model_calls": 4,
+      "model_failures": 0,
+      "rounds": 3,
+      "prompt_tokens": 10470,
+      "completion_tokens": 1031,
+      "wall_s": 9.463,
+      "used_search": true,
+      "search_calls": 1,
+      "search_found_gold": false,
+      "tool_calls": [
+        {
+          "round": 1,
+          "call_id": "call_00_ET_SpBF3GHVQjUzlYHCvIc38044",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/checkout.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 1,
+          "call_id": "call_01_ET_6ll76AflJsIoYEm476i37696",
+          "name": "find_symbol_definition",
+          "arguments": {
+            "symbol": "apply_credit"
+          },
+          "outcome": "hit",
+          "matched": 1
+        },
+        {
+          "round": 2,
+          "call_id": "call_00_fI9XuQxb2GVJCksHO8Jf4081",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/invoices.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 2,
+          "call_id": "call_01_LL3qToYA6gSMRUvusNU46199",
+          "name": "search_code",
+          "arguments": {
+            "query": "order[\"cents\"] order[\"amount\"] finalise",
+            "top_k": 10
+          },
+          "outcome": "hit",
+          "matched": 10
+        },
+        {
+          "round": 3,
+          "call_id": "",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/orders.py",
+            "start_line": 1,
+            "end_line": 25
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        },
+        {
+          "round": 3,
+          "call_id": "",
+          "name": "search_code",
+          "arguments": {
+            "query": "cents key order dictionary",
+            "top_k": 10
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        }
+      ],
+      "tool_payloads": [
+        {
+          "tool": "read_code_context",
+          "ok": true,
+          "ref": "9a79ddc5d541050601b3a64449bfeea6cc4e65e2",
+          "count": null,
+          "files": [],
+          "symbols": []
+        },
+        {
+          "tool": "find_symbol_definition",
+          "ok": true,
+          "ref": "9a79ddc5d541050601b3a64449bfeea6cc4e65e2",
+          "count": 1,
+          "files": [],
+          "symbols": [
+            "src/shop/invoices.py"
+          ]
+        },
+        {
+          "tool": "read_code_context",
+          "ok": true,
+          "ref": "9a79ddc5d541050601b3a64449bfeea6cc4e65e2",
+          "count": null,
+          "files": [],
+          "symbols": []
+        },
+        {
+          "tool": "search_code",
+          "ok": true,
+          "ref": "9a79ddc5d541050601b3a64449bfeea6cc4e65e2",
+          "count": 10,
+          "files": [
+            "src/shop/checkout.py",
+            "src/shop/orders.py",
+            "src/shop/money.py",
+            "src/shop/orders.py",
+            "src/shop/pricing.py"
+          ],
+          "symbols": []
+        }
+      ],
+      "findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 8,
+          "end_line": 8,
+          "category": "data handling",
+          "severity": "high",
+          "summary": "finalise now passes a minor-unit (cents) value to apply_credit, which documents its amount parameter as whole currency units",
+          "explanation": "apply_credit is documented as taking an amount in whole currency units (\"Apply a credit given in whole currency units (not cents)\") and stores the value verbatim into invoice[\"credit\"] without any scaling. Changing the call from order[\"amount\"] to order[\"cents\"] therefore writes a credit that is 100x too large (e.g. 1234 cents instead of 12.34 or 12), silently corrupting every finalised invoice. Additionally, orders are constructed with a \"total\" key (create_order returns {\"total\": order_total(net, region)}), and the module provides money.to_cents/from_cents for conversions, so a raw \"cents\" key is not an established part of the order contract; if it is absent the line raises KeyError instead of the previous behaviour. Any unit conversion (via money.from_cents or to_cents) must happen at the call site, not be implied by the key name.",
+          "evidence": "src/shop/invoices.py:23-25 defines `def apply_credit(invoice, amount, note=\"\"):` with docstring \"Apply a credit given in whole currency units (not cents).\" and body `invoice[\"credit\"] = amount`. src/shop/money.py:7-13 provides to_cents/from_cents conversions, showing cents is a distinct representation from the amount used by pricing. src/shop/orders.py:6-8 builds orders as {\"total\": order_total(net, region)}.",
+          "suggested_fix": "Keep the argument in whole currency units, e.g. `apply_credit(order[\"invoice\"], order[\"amount\"])`, or explicitly convert minor units at the call site: `apply_credit(order[\"invoice\"], from_cents(order[\"cents\"]))` (with the corresponding import) if the order dict is genuinely keyed by cents.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null
+        }
+      ],
+      "llm_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 8,
+          "end_line": 8,
+          "category": "data handling",
+          "severity": "high",
+          "summary": "finalise now passes a minor-unit (cents) value to apply_credit, which documents its amount parameter as whole currency units",
+          "explanation": "apply_credit is documented as taking an amount in whole currency units (\"Apply a credit given in whole currency units (not cents)\") and stores the value verbatim into invoice[\"credit\"] without any scaling. Changing the call from order[\"amount\"] to order[\"cents\"] therefore writes a credit that is 100x too large (e.g. 1234 cents instead of 12.34 or 12), silently corrupting every finalised invoice. Additionally, orders are constructed with a \"total\" key (create_order returns {\"total\": order_total(net, region)}), and the module provides money.to_cents/from_cents for conversions, so a raw \"cents\" key is not an established part of the order contract; if it is absent the line raises KeyError instead of the previous behaviour. Any unit conversion (via money.from_cents or to_cents) must happen at the call site, not be implied by the key name.",
+          "evidence": "src/shop/invoices.py:23-25 defines `def apply_credit(invoice, amount, note=\"\"):` with docstring \"Apply a credit given in whole currency units (not cents).\" and body `invoice[\"credit\"] = amount`. src/shop/money.py:7-13 provides to_cents/from_cents conversions, showing cents is a distinct representation from the amount used by pricing. src/shop/orders.py:6-8 builds orders as {\"total\": order_total(net, region)}.",
+          "suggested_fix": "Keep the argument in whole currency units, e.g. `apply_credit(order[\"invoice\"], order[\"amount\"])`, or explicitly convert minor units at the call site: `apply_credit(order[\"invoice\"], from_cents(order[\"cents\"]))` (with the corresponding import) if the order dict is genuinely keyed by cents.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null
+        }
+      ],
+      "session_closed": true,
+      "leaked_threads": []
+    },
+    {
+      "case": "clean",
+      "branch": "dev/credit-units",
+      "snapshot_sha": "b0d5a48d45467edbf73ca004a1516b4cf55be4b3",
+      "llm_status": "partial",
+      "tool_status": "tool_limit",
+      "model_calls": 4,
+      "model_failures": 0,
+      "rounds": 3,
+      "prompt_tokens": 8411,
+      "completion_tokens": 1417,
+      "wall_s": 11.788,
+      "used_search": true,
+      "search_calls": 1,
+      "search_found_gold": true,
+      "tool_calls": [
+        {
+          "round": 1,
+          "call_id": "call_00_ET_INwBMmN1AD3VF9vpeiMH9086",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/checkout.py",
+            "start_line": 1,
+            "end_line": 30
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 1,
+          "call_id": "call_01_ET_xsG3ddknxpv603ozoUAt9878",
+          "name": "find_symbol_definition",
+          "arguments": {
+            "symbol": "apply_credit"
+          },
+          "outcome": "hit",
+          "matched": 1
+        },
+        {
+          "round": 2,
+          "call_id": "call_00_BLd2wj4BRa6tsmRYFSRv5960",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/invoices.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 2,
+          "call_id": "call_01_KPpDk3cU12bhg5oa5abd7645",
+          "name": "search_code",
+          "arguments": {
+            "query": "apply_credit note",
+            "top_k": 10
+          },
+          "outcome": "hit",
+          "matched": 3
+        },
+        {
+          "round": 3,
+          "call_id": "",
+          "name": "search_code",
+          "arguments": {
+            "query": "finalise order checkout",
+            "top_k": 10
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        },
+        {
+          "round": 3,
+          "call_id": "",
+          "name": "search_code",
+          "arguments": {
+            "query": "note",
+            "top_k": 10
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        }
+      ],
+      "tool_payloads": [
+        {
+          "tool": "read_code_context",
+          "ok": true,
+          "ref": "b0d5a48d45467edbf73ca004a1516b4cf55be4b3",
+          "count": null,
+          "files": [],
+          "symbols": []
+        },
+        {
+          "tool": "find_symbol_definition",
+          "ok": true,
+          "ref": "b0d5a48d45467edbf73ca004a1516b4cf55be4b3",
+          "count": 1,
+          "files": [],
+          "symbols": [
+            "src/shop/invoices.py"
+          ]
+        },
+        {
+          "tool": "read_code_context",
+          "ok": true,
+          "ref": "b0d5a48d45467edbf73ca004a1516b4cf55be4b3",
+          "count": null,
+          "files": [],
+          "symbols": []
+        },
+        {
+          "tool": "search_code",
+          "ok": true,
+          "ref": "b0d5a48d45467edbf73ca004a1516b4cf55be4b3",
+          "count": 3,
+          "files": [
+            "src/shop/invoices.py",
+            "src/shop/checkout.py",
+            "src/shop/pricing.py"
+          ],
+          "symbols": []
+        }
+      ],
+      "findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 8,
+          "end_line": 8,
+          "category": "logic",
+          "severity": "low",
+          "summary": "Passing note=\"web\" to apply_credit has no effect: the callee ignores its note parameter, so the intended credit-source tagging is silently dropped.",
+          "explanation": "checkout.finalise now calls apply_credit(order[\"invoice\"], order[\"amount\"], note=\"web\"). The definition of apply_credit (src/shop/invoices.py:23-26) accepts note with a default of \"\" but never reads it; it only sets invoice[\"credit\"] = amount and returns the invoice. Therefore the added argument changes nothing in the resulting invoice state, and the caller's apparent intent to record that the credit originated from the web channel is not realised. Because the parameter is accepted, a caller cannot tell from the call site or from any exception that the information was discarded; the note is silently lost. The only documented behaviour of apply_credit (\"Apply a credit given in whole currency units (not cents)\") says nothing about note being stored, so the semantics of the parameter are unfulfilled by the current implementation.",
+          "evidence": "src/shop/checkout.py:8 -> apply_credit(order[\"invoice\"], order[\"amount\"], note=\"web\"); src/shop/invoices.py:23-26 -> def apply_credit(invoice, amount, note=\"\"): \"\"\"Apply a credit given in whole currency units (not cents).\"\"\" invoice[\"credit\"] = amount; return invoice  (note is never used)",
+          "suggested_fix": "Either remove the unused note argument from the call in finalise, or make apply_credit honour it (e.g. store the note on the invoice, such as invoice[\"credit_note\"] = note, or at least document/validate it) so that the information conveyed by note=\"web\" is actually recorded.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null
+        }
+      ],
+      "llm_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 8,
+          "end_line": 8,
+          "category": "logic",
+          "severity": "low",
+          "summary": "Passing note=\"web\" to apply_credit has no effect: the callee ignores its note parameter, so the intended credit-source tagging is silently dropped.",
+          "explanation": "checkout.finalise now calls apply_credit(order[\"invoice\"], order[\"amount\"], note=\"web\"). The definition of apply_credit (src/shop/invoices.py:23-26) accepts note with a default of \"\" but never reads it; it only sets invoice[\"credit\"] = amount and returns the invoice. Therefore the added argument changes nothing in the resulting invoice state, and the caller's apparent intent to record that the credit originated from the web channel is not realised. Because the parameter is accepted, a caller cannot tell from the call site or from any exception that the information was discarded; the note is silently lost. The only documented behaviour of apply_credit (\"Apply a credit given in whole currency units (not cents)\") says nothing about note being stored, so the semantics of the parameter are unfulfilled by the current implementation.",
+          "evidence": "src/shop/checkout.py:8 -> apply_credit(order[\"invoice\"], order[\"amount\"], note=\"web\"); src/shop/invoices.py:23-26 -> def apply_credit(invoice, amount, note=\"\"): \"\"\"Apply a credit given in whole currency units (not cents).\"\"\" invoice[\"credit\"] = amount; return invoice  (note is never used)",
+          "suggested_fix": "Either remove the unused note argument from the call in finalise, or make apply_credit honour it (e.g. store the note on the invoice, such as invoice[\"credit_note\"] = note, or at least document/validate it) so that the information conveyed by note=\"web\" is actually recorded.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null
+        }
+      ],
+      "session_closed": true,
+      "leaked_threads": []
+    }
+  ]
+}
