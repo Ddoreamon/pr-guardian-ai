@@ -1,0 +1,212 @@
+[
+  {
+    "n": 1,
+    "title": "V2.1: snapshot-backed tools, honest tool budgets, Agent tool trace UI",
+    "head": "feature/v2-function-calling",
+    "base": "main",
+    "head_sha": "14c61082f38a",
+    "draft": true,
+    "mergeable": true,
+    "commits": 15,
+    "files": 87,
+    "url": "https://github.com/Ddoreamon/pr-guardian-ai/pull/1",
+    "checks": [
+      [
+        "Browser UI checks",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Browser UI checks",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ]
+    ]
+  },
+  {
+    "n": 2,
+    "title": "MCP server and client (stdio) for the read-only review tools",
+    "head": "feature/v2-mcp-server",
+    "base": "feature/v2-function-calling",
+    "head_sha": "dd03e0fdc314",
+    "draft": true,
+    "mergeable": true,
+    "commits": 4,
+    "files": 18,
+    "url": "https://github.com/Ddoreamon/pr-guardian-ai/pull/2",
+    "checks": [
+      [
+        "Browser UI checks",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Browser UI checks",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ]
+    ]
+  },
+  {
+    "n": 3,
+    "title": "Repository-level retrieval: search_code over a per-commit keyword index",
+    "head": "feature/v3-repo-rag",
+    "base": "feature/v2-mcp-server",
+    "head_sha": "9659536aaae4",
+    "draft": true,
+    "mergeable": true,
+    "commits": 5,
+    "files": 22,
+    "url": "https://github.com/Ddoreamon/pr-guardian-ai/pull/3",
+    "checks": [
+      [
+        "Browser UI checks",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Browser UI checks",
+        "success"
+      ]
+    ]
+  },
+  {
+    "n": 4,
+    "title": "Hybrid retrieval: local dense embeddings + RRF over AST chunks",
+    "head": "feature/v3-hybrid-rag",
+    "base": "feature/v3-repo-rag",
+    "head_sha": "54eb047b0938",
+    "draft": true,
+    "mergeable": true,
+    "commits": 2,
+    "files": 19,
+    "url": "https://github.com/Ddoreamon/pr-guardian-ai/pull/4",
+    "checks": [
+      [
+        "Browser UI checks",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Browser UI checks",
+        "success"
+      ]
+    ]
+  },
+  {
+    "n": 5,
+    "title": "V4.1 Evidence provenance: registry, source validator, honest statuses",
+    "head": "feature/v4-agent-reliability",
+    "base": "feature/v3-repo-rag",
+    "head_sha": "59f354538b5d",
+    "draft": true,
+    "mergeable": true,
+    "commits": 4,
+    "files": 36,
+    "url": "https://github.com/Ddoreamon/pr-guardian-ai/pull/5",
+    "checks": [
+      [
+        "Browser UI checks",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Browser UI checks",
+        "success"
+      ]
+    ]
+  },
+  {
+    "n": 6,
+    "title": "V4.4 Evidence-aware planning: frozen six-case A/B (No-Go)",
+    "head": "feature/v4-evidence-planner",
+    "base": "feature/v4-budget-efficiency",
+    "head_sha": "a5bde152d352",
+    "draft": true,
+    "mergeable": true,
+    "commits": 1,
+    "files": 12,
+    "url": "https://github.com/Ddoreamon/pr-guardian-ai/pull/6",
+    "checks": [
+      [
+        "Browser UI checks",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Browser UI checks",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ]
+    ]
+  },
+  {
+    "n": 7,
+    "title": "V4.5 Evidence Sufficiency Gate (offline, no enforcement)",
+    "head": "feature/v4-evidence-sufficiency",
+    "base": "feature/v4-evidence-planner",
+    "head_sha": "6689645a47d1",
+    "draft": true,
+    "mergeable": true,
+    "commits": 3,
+    "files": 24,
+    "url": "https://github.com/Ddoreamon/pr-guardian-ai/pull/7",
+    "checks": [
+      [
+        "Browser UI checks",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Lint and tests",
+        "success"
+      ],
+      [
+        "Browser UI checks",
+        "success"
+      ]
+    ]
+  }
+]
