@@ -1,0 +1,430 @@
+{
+  "planner": true,
+  "runs": [
+    {
+      "case": "B1-cents",
+      "label": "bug",
+      "sha": "61c61107bad70d23cf00a2603a6ae87cd2022bfd",
+      "planner": true,
+      "model_requests": 4,
+      "model_failures": 0,
+      "tool_calls_requested": 5,
+      "tool_calls_executed": 4,
+      "tool_calls_denied": 1,
+      "tool_errors": 0,
+      "tool_misses": 0,
+      "required_evidence_obtained": 2,
+      "evidence_required_total": 2,
+      "review_status": "partial",
+      "findings_total": 1,
+      "findings_source_verified": 1,
+      "finding_correct": true,
+      "finding_gold_file_hit": false,
+      "finding_false_positive": false,
+      "prompt_tokens": 8539,
+      "completion_tokens": 1170,
+      "latency_s": 8.72,
+      "calls": [
+        {
+          "round": 1,
+          "tool": "read_code_context",
+          "arguments": {
+            "file_path": "src/checkout.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 1,
+          "tool": "find_symbol_definition",
+          "arguments": {
+            "symbol": "to_cents"
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 2,
+          "tool": "read_code_context",
+          "arguments": {
+            "file_path": "src/shipping.py",
+            "start_line": 1,
+            "end_line": 30
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 2,
+          "tool": "read_code_context",
+          "arguments": {
+            "file_path": "src/money.py",
+            "start_line": 1,
+            "end_line": 30
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 3,
+          "tool": "search_code",
+          "arguments": {
+            "query": "total(weight_kg",
+            "top_k": 5
+          },
+          "outcome": "budget_denied"
+        }
+      ],
+      "findings": [
+        {
+          "file_path": "src/checkout.py",
+          "start_line": 10,
+          "end_line": 10,
+          "summary": "total() passes a cents-converted value into estimate(), which expects kilograms, inflating the shipping estimate by a factor of 100.",
+          "evidence_status": "source_verified",
+          "verification_status": "suspected"
+        }
+      ]
+    },
+    {
+      "case": "B2-kwarg",
+      "label": "bug",
+      "sha": "84c6d9792a62ac540b1245767555cd73affb4cb5",
+      "planner": true,
+      "model_requests": 3,
+      "model_failures": 0,
+      "tool_calls_requested": 4,
+      "tool_calls_executed": 4,
+      "tool_calls_denied": 0,
+      "tool_errors": 0,
+      "tool_misses": 0,
+      "required_evidence_obtained": 2,
+      "evidence_required_total": 2,
+      "review_status": "completed",
+      "findings_total": 1,
+      "findings_source_verified": 1,
+      "finding_correct": true,
+      "finding_gold_file_hit": false,
+      "finding_false_positive": false,
+      "prompt_tokens": 6611,
+      "completion_tokens": 1105,
+      "latency_s": 7.17,
+      "calls": [
+        {
+          "round": 1,
+          "tool": "read_code_context",
+          "arguments": {
+            "file_path": "src/checkout.py",
+            "start_line": 1,
+            "end_line": 25
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 1,
+          "tool": "find_symbol_definition",
+          "arguments": {
+            "symbol": "estimate"
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 2,
+          "tool": "read_code_context",
+          "arguments": {
+            "end_line": 10,
+            "file_path": "src/shipping.py",
+            "start_line": 1
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 2,
+          "tool": "search_code",
+          "arguments": {
+            "query": "express shipping surcharge estimate",
+            "top_k": 5
+          },
+          "outcome": "hit"
+        }
+      ],
+      "findings": [
+        {
+          "file_path": "src/checkout.py",
+          "start_line": 10,
+          "end_line": 10,
+          "summary": "`total()` now calls `estimate(weight_kg, express=True)`, but `estimate` accepts no `express` argument, so every call to `total()` raises `TypeError`.",
+          "evidence_status": "source_verified",
+          "verification_status": "suspected"
+        }
+      ]
+    },
+    {
+      "case": "B3-exception",
+      "label": "bug",
+      "sha": "52886370b7eec60e4544ec96a45d2f343cda7f0d",
+      "planner": true,
+      "model_requests": 4,
+      "model_failures": 0,
+      "tool_calls_requested": 4,
+      "tool_calls_executed": 4,
+      "tool_calls_denied": 0,
+      "tool_errors": 0,
+      "tool_misses": 0,
+      "required_evidence_obtained": 2,
+      "evidence_required_total": 2,
+      "review_status": "partial",
+      "findings_total": 1,
+      "findings_source_verified": 1,
+      "finding_correct": true,
+      "finding_gold_file_hit": true,
+      "finding_false_positive": false,
+      "prompt_tokens": 9031,
+      "completion_tokens": 1210,
+      "latency_s": 9.2,
+      "calls": [
+        {
+          "round": 1,
+          "tool": "read_code_context",
+          "arguments": {
+            "file_path": "src/stock.py",
+            "start_line": 1,
+            "end_line": 20
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 1,
+          "tool": "search_code",
+          "arguments": {
+            "query": "insufficient stock ValueError",
+            "top_k": 10
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 2,
+          "tool": "read_code_context",
+          "arguments": {
+            "end_line": 30,
+            "file_path": "src/checkout.py",
+            "start_line": 1
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 3,
+          "tool": "search_code",
+          "arguments": {
+            "query": "except ValueError reserve",
+            "top_k": 10
+          },
+          "outcome": "hit"
+        }
+      ],
+      "findings": [
+        {
+          "file_path": "src/stock.py",
+          "start_line": 6,
+          "end_line": 7,
+          "summary": "reserve() now raises LookupError instead of ValueError, which no longer matches the caller contract in checkout.place() (it only catches ValueError), so a stock",
+          "evidence_status": "source_verified",
+          "verification_status": "suspected"
+        }
+      ]
+    },
+    {
+      "case": "C1-kwarg",
+      "label": "clean",
+      "sha": "82deae9e3348b180dde8b7576677e9ca7b318a5f",
+      "planner": true,
+      "model_requests": 4,
+      "model_failures": 0,
+      "tool_calls_requested": 6,
+      "tool_calls_executed": 4,
+      "tool_calls_denied": 2,
+      "tool_errors": 0,
+      "tool_misses": 0,
+      "required_evidence_obtained": 1,
+      "evidence_required_total": 1,
+      "review_status": "partial",
+      "findings_total": 0,
+      "findings_source_verified": 0,
+      "finding_correct": true,
+      "finding_gold_file_hit": null,
+      "finding_false_positive": false,
+      "prompt_tokens": 9957,
+      "completion_tokens": 583,
+      "latency_s": 5.3,
+      "calls": [
+        {
+          "round": 1,
+          "tool": "read_code_context",
+          "arguments": {
+            "file_path": "src/checkout.py",
+            "start_line": 1,
+            "end_line": 30
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 1,
+          "tool": "find_symbol_definition",
+          "arguments": {
+            "symbol": "total"
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 2,
+          "tool": "search_code",
+          "arguments": {
+            "query": "label(",
+            "top_k": 10
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 2,
+          "tool": "search_code",
+          "arguments": {
+            "query": "checkout label order",
+            "top_k": 10
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 3,
+          "tool": "search_code",
+          "arguments": {
+            "query": "def estimate weight_kg",
+            "top_k": 5
+          },
+          "outcome": "budget_denied"
+        },
+        {
+          "round": 3,
+          "tool": "search_code",
+          "arguments": {
+            "query": "pub 展开 public API checkout functions documentation",
+            "top_k": 5
+          },
+          "outcome": "budget_denied"
+        }
+      ],
+      "findings": []
+    },
+    {
+      "case": "C2-identity",
+      "label": "clean",
+      "sha": "0e8a8671c8d1b137ea89f3dc6b7237acb5f1849c",
+      "planner": true,
+      "model_requests": 3,
+      "model_failures": 0,
+      "tool_calls_requested": 3,
+      "tool_calls_executed": 3,
+      "tool_calls_denied": 0,
+      "tool_errors": 0,
+      "tool_misses": 0,
+      "required_evidence_obtained": 1,
+      "evidence_required_total": 1,
+      "review_status": "completed",
+      "findings_total": 0,
+      "findings_source_verified": 0,
+      "finding_correct": true,
+      "finding_gold_file_hit": null,
+      "finding_false_positive": false,
+      "prompt_tokens": 6511,
+      "completion_tokens": 552,
+      "latency_s": 5.22,
+      "calls": [
+        {
+          "round": 1,
+          "tool": "read_code_context",
+          "arguments": {
+            "file_path": "src/checkout.py",
+            "start_line": 1,
+            "end_line": 30
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 1,
+          "tool": "find_symbol_definition",
+          "arguments": {
+            "symbol": "to_cents"
+          },
+          "outcome": "hit"
+        },
+        {
+          "round": 2,
+          "tool": "read_code_context",
+          "arguments": {
+            "file_path": "src/money.py",
+            "start_line": 1,
+            "end_line": 30
+          },
+          "outcome": "hit"
+        }
+      ],
+      "findings": []
+    },
+    {
+      "case": "C3-refactor",
+      "label": "clean",
+      "sha": "f2dc4c1469886d1306a32a5a4fabfc67962603e2",
+      "planner": true,
+      "model_requests": 2,
+      "model_failures": 0,
+      "tool_calls_requested": 1,
+      "tool_calls_executed": 1,
+      "tool_calls_denied": 0,
+      "tool_errors": 0,
+      "tool_misses": 0,
+      "required_evidence_obtained": 1,
+      "evidence_required_total": 2,
+      "review_status": "completed",
+      "findings_total": 0,
+      "findings_source_verified": 0,
+      "finding_correct": true,
+      "finding_gold_file_hit": null,
+      "finding_false_positive": false,
+      "prompt_tokens": 3250,
+      "completion_tokens": 140,
+      "latency_s": 2.4,
+      "calls": [
+        {
+          "round": 1,
+          "tool": "read_code_context",
+          "arguments": {
+            "file_path": "src/stock.py",
+            "start_line": 1,
+            "end_line": 30
+          },
+          "outcome": "hit"
+        }
+      ],
+      "findings": []
+    }
+  ],
+  "summary": {
+    "cases": 6,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "clean_false_alarm_rate": 0.0,
+    "tp": 3,
+    "fp": 0,
+    "fn": 0,
+    "tn": 3,
+    "evidence_coverage": 0.9,
+    "executed_calls": 20,
+    "requested_calls": 23,
+    "denied_calls": 3,
+    "partial_rate": 0.5,
+    "verified_findings": 3,
+    "gold_file_hits": 1,
+    "prompt_tokens": 43899,
+    "completion_tokens": 4760,
+    "mean_latency_s": 6.33
+  }
+}

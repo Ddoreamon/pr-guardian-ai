@@ -14,6 +14,7 @@ Supported variables:
   PR_GUARDIAN_MAX_TOOL_ROUNDS      max model turns in the tool loop (default 3, max 5)
   PR_GUARDIAN_MAX_TOOL_CALLS       max tool executions per review (default 4, max 8)
   PR_GUARDIAN_TOOL_BACKEND         local (default) or mcp: transport for the tools
+  PR_GUARDIAN_EVIDENCE_PLANNER     1 = evidence-first planning guidance (V4.4, default off)
 """
 
 from __future__ import annotations
@@ -60,6 +61,8 @@ class Settings:
     # "local" (default) calls TrustedCodebase in-process; "mcp" goes through an
     # MCP stdio session. Same tools, same safety code, different transport.
     tool_backend: str = "local"
+    # V4.4: opt-in evidence-first planning guidance; default stays exactly as before
+    evidence_planner: bool = False
 
     @property
     def llm_configured(self) -> bool:
@@ -104,4 +107,5 @@ def get_settings() -> Settings:
         max_tool_rounds=max(1, min(int(os.environ.get("PR_GUARDIAN_MAX_TOOL_ROUNDS", "3") or 3), 5)),
         max_tool_calls=max(1, min(int(os.environ.get("PR_GUARDIAN_MAX_TOOL_CALLS", "4") or 4), 8)),
         tool_backend=_tool_backend(),
+        evidence_planner=_flag("PR_GUARDIAN_EVIDENCE_PLANNER", default=False),
     )

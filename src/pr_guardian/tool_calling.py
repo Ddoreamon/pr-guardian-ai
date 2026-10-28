@@ -152,6 +152,21 @@ Final answer must be JSON only, with this shape:
 """
 
 
+
+PLANNER_GUIDANCE = """
+Planning with a limited budget:
+- Before reading anything, list from the diff the names the change relies on (what it
+  calls or imports) and the names that rely on it. Each is a question, not a file.
+- Answer the smallest question first: a signature or docstring usually needs a few
+  lines, not the whole file. Prefer a narrow read over a wide one.
+- Use find_symbol_definition when you already know the name you need; use search_code
+  when you do not; use read_code_context only for the lines you still need to see.
+- A search hit is a candidate, not proof: read the lines before relying on them.
+- Keep count of your remaining calls. When one or two remain, stop exploring and
+  answer from the evidence you already have, reporting only what it supports. Say
+  nothing rather than guess.
+"""
+
 class _RawFinding(BaseModel):
     file_path: str
     start_line: int = Field(ge=1)
@@ -324,8 +339,10 @@ def review_with_tools(
     session = _Session(f"{settings.base_url.rstrip('/')}/chat/completions",
                        {"Authorization": f"Bearer {settings.api_key}"}, model)
     registry = EvidenceRegistry(ref=_snapshot_sha(codebase))
+    system_prompt = SYSTEM_PROMPT + (PLANNER_GUIDANCE
+                                     if getattr(settings, "evidence_planner", False) else "")
     messages: list[dict] = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": _user_prompt(diff_text, files,
                                                  _snapshot_sha(codebase))},
     ]
