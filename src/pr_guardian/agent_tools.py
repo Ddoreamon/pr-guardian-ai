@@ -259,6 +259,11 @@ class TrustedCodebase:
         return out[:MAX_SNAPSHOT_FILES]
 
     # ---- tool: read_code_context ----------------------------------------
+    @property
+    def snapshot_sha(self) -> str:
+        """The pinned commit every read is performed against."""
+        return self.snapshot.sha
+
     def source_files(self) -> list[str]:
         """Tracked Python files that pass the same scope rules as reads."""
         paths: list[str] = []

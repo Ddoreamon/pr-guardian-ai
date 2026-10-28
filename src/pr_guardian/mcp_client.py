@@ -163,8 +163,21 @@ class MCPToolBackend:
         self._client: mcp.Client | None = None
         self._error: BaseException | None = None
         self._closed = False
+        self.snapshot_sha = self._resolve_sha(repo, ref)
         if autostart:
             self.start()
+
+    @staticmethod
+    def _resolve_sha(repo: Path | str, ref: str) -> str:
+        import subprocess
+
+        try:
+            out = subprocess.run(["git", "-C", str(repo), "rev-parse", "--verify",
+                                  f"{ref}^{{commit}}"], capture_output=True, text=True,
+                                 timeout=30, check=False)
+            return out.stdout.strip() if out.returncode == 0 else ""
+        except (OSError, subprocess.SubprocessError):
+            return ""
 
     # ---- lifecycle -------------------------------------------------------
     def start(self) -> None:
