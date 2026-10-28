@@ -1,0 +1,136 @@
+{
+  "frozen": true,
+  "budgets": {
+    "max_tool_calls": 4,
+    "max_tool_rounds": 3,
+    "search_top_k": 5
+  },
+  "metrics": [
+    "model_requests",
+    "model_failures",
+    "tool_calls_requested",
+    "tool_calls_executed",
+    "tool_calls_denied",
+    "tool_errors",
+    "tool_misses",
+    "required_evidence_obtained",
+    "evidence_required_total",
+    "review_status",
+    "findings_total",
+    "findings_source_verified",
+    "finding_correct",
+    "finding_false_positive",
+    "prompt_tokens",
+    "completion_tokens",
+    "latency_s"
+  ],
+  "cases": [
+    {
+      "id": "B1-cents",
+      "label": "bug",
+      "branch": "case/b1",
+      "head_file": "src/checkout.py",
+      "gold": {
+        "file_path": "src/shipping.py",
+        "qualname": "estimate",
+        "line": 4
+      },
+      "required_evidence": [
+        "src/shipping.py:4-6",
+        "src/checkout.py:8-10"
+      ],
+      "rationale": "a cents value reaches a dollars parameter; only the callee's docstring decides it",
+      "sha_main": "974a9392b2169b8fa9270350d2d81a13b738f683",
+      "sha_head": "61c61107bad70d23cf00a2603a6ae87cd2022bfd"
+    },
+    {
+      "id": "B2-kwarg",
+      "label": "bug",
+      "branch": "case/b2",
+      "head_file": "src/checkout.py",
+      "gold": {
+        "file_path": "src/shipping.py",
+        "qualname": "estimate",
+        "line": 4
+      },
+      "required_evidence": [
+        "src/shipping.py:4-6",
+        "src/checkout.py:8-10"
+      ],
+      "rationale": "estimate() takes no express keyword, so the call raises at runtime",
+      "sha_main": "073e58b03164fd60c65be48cfe99011b5e68b74a",
+      "sha_head": "84c6d9792a62ac540b1245767555cd73affb4cb5"
+    },
+    {
+      "id": "B3-exception",
+      "label": "bug",
+      "branch": "case/b3",
+      "head_file": "src/stock.py",
+      "gold": {
+        "file_path": "src/stock.py",
+        "qualname": "reserve",
+        "line": 4
+      },
+      "required_evidence": [
+        "src/stock.py:4-8",
+        "src/checkout.py:13-18"
+      ],
+      "rationale": "the callee raises a new exception type and the caller only catches ValueError; both sides are needed to see it",
+      "sha_main": "8098eb8bc2c584528ac3e8ee5ef769fc9c7104fb",
+      "sha_head": "52886370b7eec60e4544ec96a45d2f343cda7f0d"
+    },
+    {
+      "id": "C1-kwarg",
+      "label": "clean",
+      "branch": "case/c1",
+      "head_file": "src/checkout.py",
+      "gold": {
+        "file_path": "src/checkout.py",
+        "qualname": "label",
+        "line": 19
+      },
+      "required_evidence": [
+        "src/checkout.py:21-23"
+      ],
+      "rationale": "a new caller is fine, but the reviewer must read it and the callee",
+      "sha_main": "4fdee7065c9c6e4f13eaff8a000a8309916709e9",
+      "sha_head": "82deae9e3348b180dde8b7576677e9ca7b318a5f"
+    },
+    {
+      "id": "C2-identity",
+      "label": "clean",
+      "branch": "case/c2",
+      "head_file": "src/checkout.py",
+      "gold": {
+        "file_path": "src/checkout.py",
+        "qualname": "dollars_as_cents",
+        "line": 19
+      },
+      "required_evidence": [
+        "src/checkout.py:21-23"
+      ],
+      "rationale": "a conversion looks risky until the callee confirms it is exact",
+      "sha_main": "d18a5b425f876b21a61cb792adefca461931b6d9",
+      "sha_head": "0e8a8671c8d1b137ea89f3dc6b7237acb5f1849c"
+    },
+    {
+      "id": "C3-refactor",
+      "label": "clean",
+      "branch": "case/c3",
+      "head_file": "src/stock.py",
+      "gold": {
+        "file_path": "src/stock.py",
+        "qualname": "reserve",
+        "line": 4
+      },
+      "required_evidence": [
+        "src/stock.py:4-8",
+        "src/checkout.py:13-18"
+      ],
+      "rationale": "a rewrite that preserves the result for every input",
+      "sha_main": "4a160de5836b52f21233f2e8edcb8bcc1c3ec484",
+      "sha_head": "f2dc4c1469886d1306a32a5a4fabfc67962603e2"
+    }
+  ],
+  "note": "Built with fixed commit dates so the SHAs are reproducible. Labels are verified by tests/test_gold.py: it passes on main and on clean branches and fails on bug branches. The agent cannot read tests/."
+}

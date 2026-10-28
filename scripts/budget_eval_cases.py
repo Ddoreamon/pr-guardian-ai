@@ -1,31 +1,36 @@
-"""Frozen V4.3 dev cases: three cross-file bugs and three clean PRs.
+"""Frozen V4.4 dev cases: three cross-file bugs and three clean PRs.
 
-The point of this file is to *fix* the evaluation before any optimisation exists,
-so a later cache or planner cannot be judged against a moving target.
+Six independent repositories, built deterministically (fixed commit dates) so the
+SHAs are reproducible. Each case carries:
 
-Each case defines: the repository content, the base and head branch, the gold
-location (file + qualname + line), the evidence a reviewer must actually obtain to
-judge it, and the budgets. Nothing here calls a model; `--freeze` writes the
-machine-readable definition and a readable summary.
+* a head branch with the change, diffed against `main`;
+* a **hidden test** (`tests/test_gold.py`) that fails on the bug branch and passes
+  on `main` and on the clean branch — the label is executable, not asserted;
+* the gold location `(file, qualname, line)`;
+* the evidence ranges a reviewer must actually obtain to judge the case.
+
+The hidden test lives under `tests/`, which the tool allowlist refuses to read, so
+the agent cannot see the answer.
 
 Run:
-    python scripts/budget_eval_cases.py --freeze
+    python scripts/budget_eval_cases.py --freeze     # write the definition
+    python scripts/budget_eval_cases.py --verify     # build and run hidden tests
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 MAX_TOOL_CALLS = 4
 MAX_ROUNDS = 3
 TOP_K = 5
-
-# ---------------------------------------------------------------------------
-# repository building blocks
-# ---------------------------------------------------------------------------
+FIXED_DATE = "2026-01-01T00:00:00+0000"
 
 BASE_FILES = {
     "src/__init__.py": "",
@@ -52,194 +57,269 @@ def reserve(available, requested):
         raise ValueError("insufficient stock")
     return available - requested
 ''',
-    "src/checkout.py": """\"\"\"Checkout.\"\"\"
-
-from .money import to_cents
-from .shipping import estimate
-
-
-def total(weight_kg, net):
-    \"\"\"Return the order total.\"\"\"
-    return round(net + estimate(weight_kg), 2)
-""",
-}
-
-HEAD_FILES = {
-    # B1: cents value passed where whole units are expected
-    "bug_cents": '''"""Checkout."""
-
-from .money import to_cents
-from .shipping import estimate
-
-
-def total(weight_kg, net):
-    """Return the order total."""
-    return round(net + estimate(to_cents(weight_kg)), 2)
-''',
-    # B2: a keyword the callee does not accept
-    "bug_kwarg": '''"""Checkout."""
-
-from .money import to_cents
-from .shipping import estimate
-
-
-def total(weight_kg, net):
-    """Return the order total."""
-    return round(net + estimate(weight_kg, express=True), 2)
-''',
-    # B3: exception type changes and the caller catches the old one
-    "bug_exception": '''"""Checkout."""
+    "src/checkout.py": '''"""Checkout."""
 
 from .money import to_cents
 from .shipping import estimate
 from .stock import reserve
 
 
+def total(weight_kg, net):
+    """Return the order total."""
+    return round(net + estimate(weight_kg), 2)
+
+
 def place(available, requested):
-    """Place an order, reporting a shortage as a validation error."""
+    """Place an order, reporting a shortage as a validation failure."""
     try:
         return reserve(available, requested)
     except ValueError:
         return 0
 ''',
-    # C1: an extra keyword the callee accepts
-    "clean_kwarg": '''"""Checkout."""
+}
+
+HEAD_FILES = {
+    "bug_cents": '''"""Checkout."""
 
 from .money import to_cents
 from .shipping import estimate
+from .stock import reserve
 
 
 def total(weight_kg, net):
     """Return the order total."""
-    return round(net + estimate(weight_kg), 2)
+    return round(net + estimate(to_cents(weight_kg)), 2)
 
 
-def label(weight_kg, net):
-    """Return a short label."""
-    return "order " + str(total(weight_kg, net))
+def place(available, requested):
+    """Place an order, reporting a shortage as a validation failure."""
+    try:
+        return reserve(available, requested)
+    except ValueError:
+        return 0
 ''',
-    # C2: conversion is the identity for the value used
-    "clean_identity": '''"""Checkout."""
+    "bug_kwarg": '''"""Checkout."""
 
 from .money import to_cents
 from .shipping import estimate
+from .stock import reserve
 
 
 def total(weight_kg, net):
     """Return the order total."""
-    return round(net + estimate(weight_kg), 2)
+    return round(net + estimate(weight_kg, express=True), 2)
 
 
-def cents_of(dollars):
-    """Return the value in cents."""
-    return to_cents(dollars)
+def place(available, requested):
+    """Place an order, reporting a shortage as a validation failure."""
+    try:
+        return reserve(available, requested)
+    except ValueError:
+        return 0
 ''',
-    # C3: the guard already rejects the risky input upstream
-    "clean_guard": '''"""Stock."""
-
-MIN_REQUEST = 1
+    # the callee changes its exception type; the caller still catches ValueError
+    "bug_exception": '''"""Stock."""
 
 
 def reserve(available, requested):
     """Reserve stock, raising when there is not enough."""
-    if requested < MIN_REQUEST:
-        raise ValueError("requested must be positive")
+    if requested > available:
+        raise LookupError("insufficient stock")
+    return available - requested
+''',
+    "clean_kwarg": '''"""Checkout."""
+
+from .money import to_cents
+from .shipping import estimate
+from .stock import reserve
+
+
+def total(weight_kg, net):
+    """Return the order total."""
+    return round(net + estimate(weight_kg), 2)
+
+
+def place(available, requested):
+    """Place an order, reporting a shortage as a validation failure."""
+    try:
+        return reserve(available, requested)
+    except ValueError:
+        return 0
+
+
+def label(weight_kg, net):
+    """Return a short label for the order."""
+    return "order " + str(total(weight_kg, net))
+''',
+    "clean_identity": '''"""Checkout."""
+
+from .money import to_cents
+from .shipping import estimate
+from .stock import reserve
+
+
+def total(weight_kg, net):
+    """Return the order total."""
+    return round(net + estimate(weight_kg), 2)
+
+
+def place(available, requested):
+    """Place an order, reporting a shortage as a validation failure."""
+    try:
+        return reserve(available, requested)
+    except ValueError:
+        return 0
+
+
+def dollars_as_cents(dollars):
+    """Return the same amount expressed in cents."""
+    return to_cents(dollars)
+''',
+    # behaviour-preserving rewrite: same result for every input
+    "clean_refactor": '''"""Stock."""
+
+
+def reserve(available, requested):
+    """Reserve stock, raising when there is not enough."""
     if requested > available:
         raise ValueError("insufficient stock")
-    return available - requested
+    return available - requested + 0
+''',
+}
+
+# hidden tests encode main's behaviour: a bug branch fails, a clean branch passes.
+# The agent cannot read them: `tests/` is outside the tool allowlist.
+HIDDEN_TESTS = {
+    "B1-cents": '''from src.checkout import total
+
+
+def test_total_uses_shipping_units():
+    assert total(2.0, 10.0) == 17.0
+''',
+    "B2-kwarg": '''from src.checkout import total
+
+
+def test_total_does_not_raise():
+    assert total(2.0, 10.0) == 17.0
+''',
+    "B3-exception": '''from src.checkout import place
+
+
+def test_shortage_is_reported_not_raised():
+    assert place(5, 10) == 0
+    assert place(5, 2) == 3
+''',
+    "C1-kwarg": '''from src.checkout import label, total
+
+
+def test_order_label():
+    assert total(2.0, 10.0) == 17.0
+    assert label(2.0, 10.0) == "order 17.0"
+''',
+    "C2-identity": '''from src.checkout import dollars_as_cents
+
+
+def test_identity_conversion():
+    assert dollars_as_cents(0) == 0
+    assert dollars_as_cents(2.5) == 250
+''',
+    "C3-refactor": '''from src.stock import reserve
+
+
+def test_reserve_behaviour_unchanged():
+    assert reserve(5, 2) == 3
+    assert reserve(5, 0) == 5
+    try:
+        reserve(5, 10)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("shortage must raise")
 ''',
 }
 
 CASES = [
     {
-        "id": "B1-cents",
-        "label": "bug",
-        "branch": "case/b1",
-        "head_file": "src/checkout.py",
-        "head_body": "bug_cents",
+        "id": "B1-cents", "label": "bug", "branch": "case/b1",
+        "head_file": "src/checkout.py", "head_body": "bug_cents",
         "gold": {"file_path": "src/shipping.py", "qualname": "estimate", "line": 4},
-        "required_evidence": ["src/shipping.py:1-8", "src/checkout.py:1-10"],
+        "required_evidence": ["src/shipping.py:1-8", "src/checkout.py:1-16"],
         "why": "a cents value reaches a dollars parameter; only the callee's "
                "docstring decides it",
     },
     {
-        "id": "B2-kwarg",
-        "label": "bug",
-        "branch": "case/b2",
-        "head_file": "src/checkout.py",
-        "head_body": "bug_kwarg",
+        "id": "B2-kwarg", "label": "bug", "branch": "case/b2",
+        "head_file": "src/checkout.py", "head_body": "bug_kwarg",
         "gold": {"file_path": "src/shipping.py", "qualname": "estimate", "line": 4},
         "required_evidence": ["src/shipping.py:1-8"],
         "why": "estimate() takes no express keyword, so the call raises at runtime",
     },
     {
-        "id": "B3-exception",
-        "label": "bug",
-        "branch": "case/b3",
-        "head_file": "src/checkout.py",
-        "head_body": "bug_exception",
+        "id": "B3-exception", "label": "bug", "branch": "case/b3",
+        "head_file": "src/stock.py", "head_body": "bug_exception",
         "gold": {"file_path": "src/stock.py", "qualname": "reserve", "line": 4},
-        "required_evidence": ["src/stock.py:1-8", "src/checkout.py:1-12"],
-        "why": "a raised exception escapes the caller's except clause; the callee "
-               "body is required to see it",
+        "required_evidence": ["src/stock.py:1-8", "src/checkout.py:14-20"],
+        "why": "the callee raises a new exception type and the caller only catches "
+               "ValueError; both sides are needed to see it",
     },
     {
-        "id": "C1-kwarg",
-        "label": "clean",
-        "branch": "case/c1",
-        "head_file": "src/checkout.py",
-        "head_body": "clean_kwarg",
-        "gold": {"file_path": "src/checkout.py", "qualname": "label", "line": 12},
-        "required_evidence": ["src/checkout.py:1-14", "src/shipping.py:1-8"],
-        "why": "the new caller is fine; a reviewer must still read it to confirm",
+        "id": "C1-kwarg", "label": "clean", "branch": "case/c1",
+        "head_file": "src/checkout.py", "head_body": "clean_kwarg",
+        "gold": {"file_path": "src/checkout.py", "qualname": "label", "line": 19},
+        "required_evidence": ["src/checkout.py:18-21", "src/checkout.py:1-16"],
+        "why": "a new caller is fine, but the reviewer must read it and the callee",
     },
     {
-        "id": "C2-identity",
-        "label": "clean",
-        "branch": "case/c2",
-        "head_file": "src/checkout.py",
-        "head_body": "clean_identity",
-        "gold": {"file_path": "src/money.py", "qualname": "to_cents", "line": 4},
-        "required_evidence": ["src/money.py:1-6", "src/checkout.py:9-12"],
-        "why": "a conversion looks risky until the callee confirms it is applied once",
+        "id": "C2-identity", "label": "clean", "branch": "case/c2",
+        "head_file": "src/checkout.py", "head_body": "clean_identity",
+        "gold": {"file_path": "src/checkout.py", "qualname": "dollars_as_cents",
+                 "line": 19},
+        "required_evidence": ["src/checkout.py:18-21", "src/money.py:1-6"],
+        "why": "a conversion looks risky until the callee confirms it is exact",
     },
     {
-        "id": "C3-guard",
-        "label": "clean",
-        "branch": "case/c3",
-        "head_file": "src/stock.py",
-        "head_body": "clean_guard",
+        "id": "C3-refactor", "label": "clean", "branch": "case/c3",
+        "head_file": "src/stock.py", "head_body": "clean_refactor",
         "gold": {"file_path": "src/stock.py", "qualname": "reserve", "line": 4},
-        "required_evidence": ["src/stock.py:1-10"],
-        "why": "an added guard is harmless; the reviewer must read it to prove that",
+        "required_evidence": ["src/stock.py:1-8"],
+        "why": "a rewrite that preserves the result for every input",
     },
 ]
 
 METRICS = [
+    "model_requests", "model_failures",
     "tool_calls_requested", "tool_calls_executed", "tool_calls_denied",
-    "invalid_argument_calls", "empty_searches", "exact_repeat_calls",
-    "overlapping_read_calls", "required_evidence_obtained",
-    "review_status", "partial_rate", "prompt_tokens", "completion_tokens",
-    "latency_s", "findings_total", "findings_source_verified",
-    "findings_correct", "findings_false_positive",
+    "tool_errors", "tool_misses",
+    "required_evidence_obtained", "evidence_required_total",
+    "review_status", "findings_total", "findings_source_verified",
+    "finding_correct", "finding_false_positive",
+    "prompt_tokens", "completion_tokens", "latency_s",
 ]
 
 
 def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(["git", "-C", str(repo), *args],
-                          check=True, capture_output=True, text=True).stdout
+    env = dict(os.environ)
+    env.update(GIT_AUTHOR_DATE=FIXED_DATE, GIT_COMMITTER_DATE=FIXED_DATE,
+               GIT_AUTHOR_NAME="eval", GIT_AUTHOR_EMAIL="eval@example.com",
+               GIT_COMMITTER_NAME="eval", GIT_COMMITTER_EMAIL="eval@example.com")
+    return subprocess.run(["git", "-C", str(repo), *args], check=True,
+                          capture_output=True, text=True, env=env).stdout
 
 
 def build_case(root: Path, case: dict) -> Path:
     repo = root / case["id"]
+    if repo.exists():
+        return repo
     (repo / "src").mkdir(parents=True)
+    (repo / "tests").mkdir()
     _git(repo, "init", "-q", "-b", "main")
-    _git(repo, "config", "user.email", "e@example.com")
-    _git(repo, "config", "user.name", "e")
+    _git(repo, "config", "user.email", "eval@example.com")
+    _git(repo, "config", "user.name", "eval")
     for rel, body in BASE_FILES.items():
         path = repo / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(body, encoding="utf-8")
+    (repo / "tests" / "test_gold.py").write_text(HIDDEN_TESTS[case["id"]], encoding="utf-8")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "base")
 
@@ -250,96 +330,147 @@ def build_case(root: Path, case: dict) -> Path:
     return repo
 
 
-def freeze(payload_out: Path, markdown_out: Path) -> dict:
+def run_hidden_tests(repo: Path, ref: str) -> bool:
+    work = repo.parent / f"_check_{repo.name}_{ref.replace('/', '_')}"
+    if work.exists():
+        subprocess.run(["git", "-C", str(repo), "worktree", "remove", "--force",
+                        str(work)], check=False, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo), "worktree", "add", "-q", "--detach",
+                    str(work), ref], check=True, capture_output=True, text=True)
+    try:
+        env = dict(os.environ)
+        env["PYTHONPATH"] = str(work)
+        proc = subprocess.run([sys.executable, "-m", "pytest", "-q",
+                               "-p", "no:cacheprovider", "tests/test_gold.py"],
+                              cwd=work, capture_output=True, text=True, check=False,
+                              env=env)
+        return proc.returncode == 0
+    finally:
+        subprocess.run(["git", "-C", str(repo), "worktree", "remove", "--force",
+                        str(work)], check=False, capture_output=True, text=True)
+
+
+def verify(root: Path) -> dict:
+    report = {}
+    for case in CASES:
+        repo = build_case(root, case)
+        main_ok = run_hidden_tests(repo, "main")
+        head_ok = run_hidden_tests(repo, case["branch"])
+        expected_clean = case["label"] == "clean"
+        report[case["id"]] = {
+            "main_passes": main_ok,
+            "head_passes": head_ok,
+            "label": case["label"],
+            "label_matches": head_ok == expected_clean,
+            "sha_main": _git(repo, "rev-parse", "main").strip(),
+            "sha_head": _git(repo, "rev-parse", case["branch"]).strip(),
+        }
+    return report
+
+
+def _required_evidence(repo: Path, case: dict) -> list[str]:
+    """Required ranges are derived from the code, never hand-written.
+
+    The gold function's span is mandatory. When the callee lives in a different
+    file from the change, the changed file is mandatory too: the defect is only
+    visible by reading both sides.
+    """
+    from pr_guardian.agent_tools import TrustedCodebase
+    from pr_guardian.repo_index import build_index
+
+    codebase = TrustedCodebase.from_git(repo, case["branch"])
+    index = build_index(codebase)
+    gold = case["gold"]
+    spans: list[str] = []
+    for chunk in index.chunks:
+        if chunk.file_path == gold["file_path"] and chunk.qualname == gold["qualname"]:
+            spans.append(f"{chunk.file_path}:{chunk.start_line}-{chunk.end_line}")
+            break
+    if not spans:
+        raise SystemExit(f"gold not found for {case['id']}")
+    callers = [c for c in index.chunks
+               if c.file_path != gold["file_path"]
+               and gold["qualname"] in (c.calls or [])]
+    if callers:
+        caller = min(callers, key=lambda c: (c.file_path, c.start_line))
+        spans.append(f"{caller.file_path}:{caller.start_line}-{caller.end_line}")
+    return spans
+
+
+def freeze(root: Path, out: Path) -> dict:
+    out.mkdir(parents=True, exist_ok=True)
     payload = {
         "frozen": True,
         "budgets": {"max_tool_calls": MAX_TOOL_CALLS, "max_tool_rounds": MAX_ROUNDS,
                     "search_top_k": TOP_K},
         "metrics": METRICS,
-        "cases": [
-            {
-                "id": case["id"], "label": case["label"], "branch": case["branch"],
-                "head_file": case["head_file"],
-                "gold": case["gold"], "required_evidence": case["required_evidence"],
-                "rationale": case["why"],
-            }
-            for case in CASES
-        ],
-        "note": ("Defined before any optimisation. Gold is a (file, qualname, line) "
-                 "triple; required_evidence lists the ranges a reviewer must actually "
-                 "receive to judge the case. No model run backs these cases yet."),
+        "cases": [],
+        "note": ("Built with fixed commit dates so the SHAs are reproducible. Labels "
+                 "are verified by tests/test_gold.py: it passes on main and on clean "
+                 "branches and fails on bug branches. The agent cannot read tests/."),
     }
-    payload_out.write_text(json.dumps(payload, indent=2, ensure_ascii=False),
-                           encoding="utf-8")
-    markdown_out.write_text(render(payload), encoding="utf-8")
+    for case in CASES:
+        repo = build_case(root, case)
+        payload["cases"].append({
+            "id": case["id"], "label": case["label"], "branch": case["branch"],
+            "head_file": case["head_file"],
+            "gold": case["gold"],
+            "required_evidence": _required_evidence(repo, case),
+            "rationale": case["why"],
+            "sha_main": _git(repo, "rev-parse", "main").strip(),
+            "sha_head": _git(repo, "rev-parse", case["branch"]).strip(),
+        })
+    (out / "cases.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False),
+                                    encoding="utf-8")
+    (out / "CASES.md").write_text(render(payload), encoding="utf-8")
     return payload
 
 
 def render(payload: dict) -> str:
     b = payload["budgets"]
     lines = [
-        "# V4.3 frozen dev evaluation",
+        "# V4.4 frozen dev cases",
         "",
-        "Six independent cases, fixed **before** any efficiency work: three cross-file",
-        "bugs and three clean PRs. No case overlaps the frozen held-out sets or the",
-        "historical smoke repositories.",
+        "Six independent repositories, built deterministically (fixed commit dates).",
+        "Every label is executable: `tests/test_gold.py` passes on `main` and on the",
+        "clean branch, and fails on the bug branch. `tests/` is outside the tool",
+        "allowlist, so the agent cannot read the answer.",
         "",
         (f"Budgets: `max_tool_calls={b['max_tool_calls']}`, "
         f"`max_tool_rounds={b['max_tool_rounds']}`, `search_top_k={b['search_top_k']}`."),
         "",
-        "## Cases",
-        "",
-        "| id | label | branch | head file | gold | required evidence |",
-        "|---|---|---|---|---|---|",
+        "| id | label | head sha | gold | required evidence |",
+        "|---|---|---|---|---|",
     ]
     for case in payload["cases"]:
-        gold = case["gold"]
-        lines.append(f"| {case['id']} | {case['label']} | `{case['branch']}` | "
-                     f"`{case['head_file']}` | `{gold['file_path']}:{gold['line']}` "
-                     f"`{gold['qualname']}` | {', '.join('`' + r + '`' for r in case['required_evidence'])} |")
+        g = case["gold"]
+        lines.append(f"| {case['id']} | {case['label']} | `{case['sha_head'][:12]}` | "
+                     f"`{g['file_path']}:{g['line']}` `{g['qualname']}` | "
+                     f"{', '.join('`' + r + '`' for r in case['required_evidence'])} |")
     lines += ["", "## Rationale", ""]
     for case in payload["cases"]:
         lines.append(f"* **{case['id']}** — {case['rationale']}")
-    lines += ["", "## Metrics", "",
-              "| metric | meaning |", "|---|---|",
-              "| `tool_calls_requested` | calls the model asked for |",
-              "| `tool_calls_executed` | calls that really ran |",
-              "| `tool_calls_denied` | refused by the budget |",
-              "| `invalid_argument_calls` | validation failures (category C) |",
-              "| `empty_searches` | searches returning nothing (D) |",
-              "| `exact_repeat_calls` | identical executed calls (A) |",
-              "| `overlapping_read_calls` | different arguments, overlapping lines (B) |",
-              "| `required_evidence_obtained` | how many required ranges were delivered |",
-              "| `review_status` / `partial_rate` | process outcome |",
-              "| `prompt_tokens`, `completion_tokens`, `latency_s` | cost |",
-              "| `findings_*`, `findings_correct`, `findings_false_positive` | quality |",
-              "",
-              "## Acceptance rule",
-              "",
-              "A change is kept only if it **keeps `required_evidence_obtained` and",
-              "`findings_correct` unchanged** while reducing executed calls or denials.",
-              "Fewer calls with missing evidence is a regression, not a win.",
-              "",
-              "## Status",
-              "",
-              "The cases are frozen; no model has been run against them yet. Measuring",
-              "`findings_correct` requires a live run, which this round does not do.",
-              ]
+    lines += ["", "## Metrics", ", ".join(f"`{m}`" for m in payload["metrics"]), ""]
     return "\n".join(lines) + "\n"
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--freeze", action="store_true")
-    ap.add_argument("--out", type=Path, default=Path("docs/v4.3-dev-eval"))
+    ap.add_argument("--verify", action="store_true")
+    ap.add_argument("--out", type=Path, default=Path("docs/v4.4-dev-eval"))
     args = ap.parse_args()
-    if not args.freeze:
-        print("nothing to do; pass --freeze")
+    root = Path(tempfile.mkdtemp(prefix="pr-guardian-v44-"))
+    if args.verify:
+        print(json.dumps(verify(root), indent=2))
         return 0
-    args.out.mkdir(parents=True, exist_ok=True)
-    payload = freeze(args.out / "cases.json", args.out / "CASES.md")
-    print(json.dumps({"cases": len(payload["cases"]),
-                      "budgets": payload["budgets"]}, indent=2))
+    if args.freeze:
+        payload = freeze(root, args.out)
+        print(json.dumps({"cases": len(payload["cases"]),
+                          "shas": {c["id"]: c["sha_head"][:12]
+                                   for c in payload["cases"]}}, indent=2))
+        return 0
+    print("nothing to do; pass --freeze or --verify")
     return 0
 
 
