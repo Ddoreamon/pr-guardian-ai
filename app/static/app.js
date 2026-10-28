@@ -164,6 +164,7 @@
     var summary = report.changed_files.length + " file(s) changed · review " + report.review_id;
     $("result-summary").textContent = summary;
 
+    renderCompleteness(report);
     renderRuff(report);
     renderTests(report);
     renderLLM(report);
@@ -171,6 +172,41 @@
     renderToolTrace(report);
     updateApprovalSummary();
     renderLlmBanner(report);
+  }
+
+  // V4.2: a process state, never a defect verdict. A partial review is not clean.
+  function renderCompleteness(report) {
+    var box = $("completeness-banner");
+    if (!box) { return; }
+    var c = report.completeness || {};
+    var status = report.review_status || "completed";
+    if (status === "completed") {
+      if (c.findings_signal === "no_findings_in_completed_review") {
+        box.textContent = "Review completed: no findings. This means nothing was " +
+          "flagged in this pass; it does not prove the change is free of defects.";
+        show(box, true);
+      } else {
+        show(box, false);
+      }
+      return;
+    }
+    var parts = [];
+    if (status === "partial") {
+      parts.push("PARTIAL review: " + (c.reason === "tool_budget_exhausted"
+        ? "the tool budget ran out before the investigation finished"
+        : (c.reason || "the review did not finish")));
+      parts.push((c.tool_calls_used || 0) + "/" + (c.tool_calls_max || 0) +
+        " tool calls used, " + (c.tool_calls_denied || 0) + " refused");
+      if (!(report.final_findings || []).length) {
+        parts.push("no findings - NOT a clean review, coverage is incomplete");
+      }
+    } else if (status === "failed") {
+      parts.push("Review FAILED: " + (c.reason || report.llm_note || "unknown error"));
+    } else {
+      parts.push("Review did not run: " + (c.reason || "the model was not enabled"));
+    }
+    box.textContent = parts.join(". ") + ".";
+    show(box, true);
   }
 
   function renderLlmBanner(report) {

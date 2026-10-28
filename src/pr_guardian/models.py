@@ -104,6 +104,31 @@ class ToolCallRecordModel(BaseModel):
     call_id: str = ""
 
 
+class ReviewCompleteness(BaseModel):
+    """Whether the review actually finished, derived from execution records.
+
+    This is a *process* state, not a defect verdict: `completed` means the flow ran
+    to its configured end, never that the code was proven correct.
+    """
+
+    # completed | partial | failed | not_run
+    status: str = "completed"
+    reason: str = ""
+    tool_rounds_used: int = 0
+    tool_rounds_max: int = 0
+    tool_calls_used: int = 0
+    tool_calls_max: int = 0
+    tool_calls_denied: int = 0
+    denied_requests: list[dict] = Field(default_factory=list)
+    model_requests: int = 0
+    model_failures: int = 0
+    tool_errors: int = 0
+    tool_misses: int = 0
+    duplicate_calls: int = 0
+    # not_evaluated | no_findings_in_completed_review
+    findings_signal: str = "not_evaluated"
+
+
 class ReviewReport(BaseModel):
     review_id: str
     repository: str
@@ -133,4 +158,11 @@ class ReviewReport(BaseModel):
     trusted_findings: list[ReviewFinding] = Field(default_factory=list)
     evidence_sources: list[dict] = Field(default_factory=list)
     evidence_registry_fingerprint: str = ""
+    # V4.2: process state, separate from any defect verdict
+    review_status: str = "completed"
+    completeness: ReviewCompleteness = Field(default_factory=ReviewCompleteness)
+    # explicit groups so a UI cannot confuse provenance with confirmation
+    deterministic_findings: list[ReviewFinding] = Field(default_factory=list)
+    source_verified_findings: list[ReviewFinding] = Field(default_factory=list)
+    source_unverified_findings: list[ReviewFinding] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

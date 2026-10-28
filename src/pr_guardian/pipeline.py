@@ -6,12 +6,68 @@ real analysis result, never a canned response.
 
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 import uuid
 from pathlib import Path
 
 from .agent_tools import TrustedCodebase
+
+
+def _completeness(cfg: Settings, llm_status: str, tool_status: str, tool_result,
+                  tool_calls: list, model_calls: int, model_failures: int,
+                  prompt_tokens: int, completion_tokens: int,
+                  finding_count: int):
+    """Derive the process state from what actually happened."""
+    from .models import ReviewCompleteness
+
+    denied = [c for c in tool_calls if c.outcome == "budget_denied"]
+    errors = [c for c in tool_calls if c.outcome == "error"]
+    misses = [c for c in tool_calls if c.outcome == "miss"]
+    seen: dict[tuple, int] = {}
+    for call in tool_calls:
+        key = (call.name, json.dumps(call.arguments, sort_keys=True, default=str))
+        seen[key] = seen.get(key, 0) + 1
+    duplicates = sum(count - 1 for count in seen.values() if count > 1)
+
+    made_a_call = (model_calls > 0 or prompt_tokens > 0 or completion_tokens > 0
+                   or llm_status in {"ok", "partial", "failed"})
+    if not made_a_call and llm_status in {"not_configured", "disabled_by_public_policy",
+                                          "disabled_by_request"}:
+        status, reason = "not_run", llm_status
+    elif llm_status == "failed" or tool_status in {"model_error", "schema_invalid"}:
+        status = "failed"
+        reason = (tool_result.error if tool_result is not None and tool_result.error
+                  else llm_status)
+    elif tool_status == "tool_limit" or llm_status == "partial":
+        status, reason = "partial", "tool_budget_exhausted"
+    else:
+        status, reason = "completed", ""
+
+    if status == "completed" and finding_count == 0:
+        signal = "no_findings_in_completed_review"
+    elif status == "partial" and finding_count == 0:
+        # a partial review that reported nothing is NOT a clean review
+        signal = "not_evaluated"
+    else:
+        signal = "has_findings"
+
+    return ReviewCompleteness(
+        status=status, reason=reason,
+        tool_rounds_used=getattr(tool_result, "rounds", 0) if tool_result else 0,
+        tool_rounds_max=cfg.max_tool_rounds,
+        tool_calls_used=len(tool_calls),
+        tool_calls_max=cfg.max_tool_calls,
+        tool_calls_denied=len(denied),
+        denied_requests=[{"tool": c.name, "arguments": c.arguments} for c in denied][:8],
+        model_requests=model_calls,
+        model_failures=model_failures,
+        tool_errors=len(errors),
+        tool_misses=len(misses),
+        duplicate_calls=duplicates,
+        findings_signal=signal,
+    )
 
 
 def _reported_model(cfg: Settings, llm_status: str, prompt_tokens: int,
@@ -159,6 +215,7 @@ def run_review(
     tool_model_calls = 0
     tool_model_failures = 0
     tool_rounds = 0
+    tool_result = None
     if not use_llm:
         llm_status, llm_note = "disabled_by_request", "LLM step disabled for this review."
     elif cfg.tool_calls_enabled:
@@ -219,7 +276,7 @@ def run_review(
     scope = TrustedCodebase.from_git(repo, head)
     snapshot_sha = scope.snapshot_sha
     allowed_paths = set(scope.source_files())
-    registry = getattr(tool_result, "registry", None) if cfg.tool_calls_enabled else None
+    registry = getattr(tool_result, "registry", None) if tool_result is not None else None
     llm_findings = verify_findings(llm_findings, registry, snapshot_sha, allowed_paths)
     static_verified = verify_findings(static, None, snapshot_sha, allowed_paths)
 
@@ -227,6 +284,16 @@ def run_review(
     final = final_findings(validated)
     trusted = [f for f in final
                if f.evidence_status in {EVIDENCE_VERIFIED, EVIDENCE_DETERMINISTIC}]
+    completeness = _completeness(cfg, llm_status, tool_status, tool_result,
+                                 tool_calls, tool_model_calls, tool_model_failures,
+                                 prompt_tokens, completion_tokens, len(final))
+
+    deterministic = [f for f in final if f.evidence_status == EVIDENCE_DETERMINISTIC]
+    source_verified = [f for f in final if f.evidence_status == EVIDENCE_VERIFIED]
+    source_unverified = [f for f in final
+                         if f.evidence_status not in {EVIDENCE_DETERMINISTIC,
+                                                      EVIDENCE_VERIFIED}]
+
     return ReviewReport(
         review_id=uuid.uuid4().hex[:12],
         repository=repo.name,
@@ -247,6 +314,11 @@ def run_review(
         trusted_findings=trusted,
         evidence_sources=registry.summary() if registry is not None else [],
         evidence_registry_fingerprint=registry_fingerprint(registry) if registry else "",
+        review_status=completeness.status,
+        completeness=completeness,
+        deterministic_findings=deterministic,
+        source_verified_findings=source_verified,
+        source_unverified_findings=source_unverified,
         notes=notes,
         test_summary=test_summary,
         llm_status=llm_status,
