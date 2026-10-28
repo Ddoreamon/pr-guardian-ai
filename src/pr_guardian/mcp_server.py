@@ -258,6 +258,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo", required=True, help="trusted local repository path")
     parser.add_argument("--ref", required=True, help="commit/ref to pin the snapshot to")
     parser.add_argument("--log-level", default="WARNING")
+    parser.add_argument("--retrieval-mode", default="bm25",
+                        choices=["bm25", "dense", "hybrid"],
+                        help="retrieval mode for search_code, bound at startup")
     args = parser.parse_args(argv)
 
     # stdout is the protocol channel; every diagnostic must go to stderr.
@@ -266,6 +269,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         codebase = TrustedCodebase.from_git(args.repo, args.ref)
+        codebase.retrieval_mode = args.retrieval_mode
     except ToolError as exc:
         print(f"pr-guardian-mcp: cannot bind snapshot: {exc.code}: {exc.message}",
               file=sys.stderr)

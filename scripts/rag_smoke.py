@@ -111,6 +111,7 @@ class RecordingBackend:
             "count": payload.get("count", payload.get("match_count")),
             "files": [h.get("file_path") for h in payload.get("hits", [])][:5],
             "symbols": [m.get("file_path") for m in payload.get("matches", [])][:3],
+            "retrieval": payload.get("retrieval"),
         })
         return payload
 
@@ -126,7 +127,7 @@ class RecordingBackend:
         return self._note("search_code", self.inner.search_code(query, top_k))
 
 
-def settings_for(backend: str) -> Settings:
+def settings_for(backend: str, mode: str = "bm25") -> Settings:
     return Settings(
         api_key=os.environ.get("PR_GUARDIAN_API_KEY", "").strip(),
         base_url=os.environ.get("PR_GUARDIAN_BASE_URL", "https://api.deepseek.com"),
@@ -134,6 +135,7 @@ def settings_for(backend: str) -> Settings:
         public_mode=False, allow_live_llm=True, allow_test_execution=False,
         max_live_llm_calls=50, tool_calls_enabled=True,
         max_tool_rounds=3, max_tool_calls=4, tool_backend=backend,
+        retrieval_mode=mode,
     )
 
 
@@ -162,7 +164,7 @@ def parity(repo: Path, ref: str) -> dict:
     }
 
 
-def run_case(repo: Path, branch: str, case: str) -> dict:
+def run_case(repo: Path, branch: str, case: str, mode: str = "bm25") -> dict:
     recorder: dict = {}
 
     def factory(cfg, repo_path, head):
@@ -176,7 +178,7 @@ def run_case(repo: Path, branch: str, case: str) -> dict:
     started = time.perf_counter()
     try:
         report = pipeline.run_review(repo, "main", branch, use_llm=True, run_tests=False,
-                                     settings=settings_for("mcp"))
+                                     settings=settings_for("mcp", mode))
     finally:
         pipeline._tool_backend = original
         recorder["inner"].close()
@@ -216,6 +218,7 @@ def run_case(repo: Path, branch: str, case: str) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, default=Path("docs/rag-smoke"))
+    ap.add_argument("--mode", default="bm25", choices=["bm25", "dense", "hybrid"])
     args = ap.parse_args()
     if not os.environ.get("PR_GUARDIAN_API_KEY", "").strip():
         print("PR_GUARDIAN_API_KEY is not set: Not Evaluated", file=sys.stderr)
@@ -227,7 +230,9 @@ def main() -> int:
         "corpus_label": "<rag-dev-case>",
         "gold": {"symbol": GOLD_SYMBOL, "file": GOLD_FILE},
         "parity": parity(root, BUG_BRANCH),
-        "cases": [run_case(root, BUG_BRANCH, "bug"), run_case(root, CLEAN_BRANCH, "clean")],
+        "retrieval_mode": args.mode,
+        "cases": [run_case(root, BUG_BRANCH, "bug", args.mode),
+                  run_case(root, CLEAN_BRANCH, "clean", args.mode)],
     }
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "results.json").write_text(

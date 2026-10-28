@@ -14,6 +14,7 @@ Supported variables:
   PR_GUARDIAN_MAX_TOOL_ROUNDS      max model turns in the tool loop (default 3, max 5)
   PR_GUARDIAN_MAX_TOOL_CALLS       max tool executions per review (default 4, max 8)
   PR_GUARDIAN_TOOL_BACKEND         local (default) or mcp: transport for the tools
+  PR_GUARDIAN_RETRIEVAL_MODE       bm25 (default), dense or hybrid (local model)
 """
 
 from __future__ import annotations
@@ -60,6 +61,8 @@ class Settings:
     # "local" (default) calls TrustedCodebase in-process; "mcp" goes through an
     # MCP stdio session. Same tools, same safety code, different transport.
     tool_backend: str = "local"
+    # bm25 (default) | dense | hybrid; the model cannot choose this at runtime
+    retrieval_mode: str = "bm25"
 
     @property
     def llm_configured(self) -> bool:
@@ -79,6 +82,11 @@ class Settings:
         if not self.live_llm_enabled:
             return "disabled_by_public_policy"
         return "enabled"
+
+
+def _retrieval_mode() -> str:
+    raw = (os.environ.get("PR_GUARDIAN_RETRIEVAL_MODE") or "bm25").strip().lower()
+    return raw if raw in {"bm25", "dense", "hybrid"} else "bm25"
 
 
 def _tool_backend() -> str:
@@ -104,4 +112,5 @@ def get_settings() -> Settings:
         max_tool_rounds=max(1, min(int(os.environ.get("PR_GUARDIAN_MAX_TOOL_ROUNDS", "3") or 3), 5)),
         max_tool_calls=max(1, min(int(os.environ.get("PR_GUARDIAN_MAX_TOOL_CALLS", "4") or 4), 8)),
         tool_backend=_tool_backend(),
+        retrieval_mode=_retrieval_mode(),
     )

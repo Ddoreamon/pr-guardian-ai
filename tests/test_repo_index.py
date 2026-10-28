@@ -27,7 +27,8 @@ LONG_FUNCTION = "def long_worker(seed):\n" + "".join(
 
 @pytest.fixture
 def repo(tmp_path, monkeypatch) -> Path:
-    # keep the index cache inside the test directory
+    # caches are absolute now: point them at the test directory
+    monkeypatch.setenv("PR_GUARDIAN_CACHE_DIR", str(tmp_path / ".cache"))
     monkeypatch.chdir(tmp_path)
     root = tmp_path / "repo"
     (root / "src" / "pkg").mkdir(parents=True)
@@ -201,9 +202,11 @@ def test_corrupt_cache_json_is_discarded(repo):
     build_index(codebase)
     _cache_file(codebase.snapshot.sha).write_text("{not json", encoding="utf-8")
     assert load_cached(codebase) is None
-    index = build_index(codebase)          # rebuilt, not crashed
+    # a fresh codebase has no in-process memo, so this really rebuilds the cache
+    fresh = TrustedCodebase.from_git(repo, "main")
+    index = build_index(fresh)
     assert index.chunks
-    assert load_cached(codebase) is not None
+    assert load_cached(fresh) is not None
 
 
 def test_cache_missing_required_fields_is_discarded(repo):

@@ -277,11 +277,16 @@ class TrustedCodebase:
         rel = self._resolve(file_path)
         return self.snapshot.read(rel)
 
-    def search_code(self, query: object, top_k: object = 5) -> dict:
-        """Keyword retrieval over an index built from this commit only."""
-        from .repo_index import search_code as _search
+    retrieval_mode: str = "bm25"
 
-        return _search(self, query, top_k)
+    def search_code(self, query: object, top_k: object = 5, mode: str | None = None) -> dict:
+        """Retrieval over an index built from this commit only.
+
+        `mode` comes from configuration, never from the model.
+        """
+        from .retrieval import search as _search
+
+        return _search(self, query, top_k, mode=mode or self.retrieval_mode)
 
     def read_code_context(self, file_path: object, start_line: object, end_line: object) -> dict:
         rel = self._resolve(file_path)

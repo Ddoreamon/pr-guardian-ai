@@ -47,6 +47,12 @@ _CALL_SPLIT = re.compile(r"[^A-Za-z0-9_]+")
 _CAMEL = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
 
 
+def stable_chunk_id(chunk: Chunk) -> str:
+    """Stable identity for fusion: path + span + qualified name."""
+    raw = f"{chunk.file_path}:{chunk.start_line}:{chunk.end_line}:{chunk.qualname}"
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
+
+
 def tokenize(text: str) -> list[str]:
     """Lowercase identifier-ish tokens, with snake_case and camelCase split."""
     out: list[str] = []
@@ -300,6 +306,7 @@ class RepoIndex:
         hits = []
         for score, why, chunk in scored[:top_k]:
             hits.append({
+                "chunk_id": stable_chunk_id(chunk),
                 "file_path": chunk.file_path,
                 "start_line": chunk.start_line,
                 "end_line": chunk.end_line,
@@ -324,8 +331,21 @@ class RepoIndex:
 # cache: one file per commit SHA, never shared across commits
 # ---------------------------------------------------------------------------
 
+def cache_root() -> Path:
+    """Absolute cache root.
+
+    Anchored to the project rather than the process working directory: the MCP
+    server runs as a child process with its own cwd, and a relative path would
+    silently give it a different (empty) cache and a different model location.
+    """
+    override = os.environ.get("PR_GUARDIAN_CACHE_DIR")
+    if override:
+        return Path(override)
+    return Path(__file__).resolve().parents[2] / ".cache"
+
+
 def _cache_dir() -> Path:
-    return Path(".cache") / "repo_index"
+    return cache_root() / "repo_index"
 
 
 def _cache_path(sha: str) -> Path:
@@ -463,6 +483,21 @@ def save_cached(index: RepoIndex, manifest: dict[str, list]) -> None:
 
 
 def build_index(codebase) -> RepoIndex:
+    """Build (or reuse) the index for this codebase instance.
+
+    The memo lives on the codebase object: one review = one snapshot = one index,
+    so repeated `search_code` calls do not re-derive anything. It is deliberately
+    not global, which would leak an index across unrelated snapshots and tests.
+    """
+    memo = getattr(codebase, "_repo_index_memo", None)
+    if memo is not None and memo.sha == codebase.snapshot.sha:
+        return memo
+    built = _build_index_uncached(codebase)
+    codebase._repo_index_memo = built
+    return built
+
+
+def _build_index_uncached(codebase) -> RepoIndex:
     cached = load_cached(codebase)
     if cached is not None:
         return cached

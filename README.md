@@ -506,6 +506,48 @@ no accuracy claim is made.
 Design notes and the dense-retrieval evidence:
 [`docs/rag-stage-v2.md`](docs/rag-stage-v2.md).
 
+### Hybrid retrieval (v3.1) — **experimental, not recommended**
+
+Status: `bm25` stays the default; `dense` is an **experimental, optional** local
+mode; `hybrid` is **experimental and not recommended**. The negative result is kept
+as evidence rather than tuned away.
+
+`PR_GUARDIAN_RETRIEVAL_MODE=bm25|dense|hybrid`. Dense runs a local ONNX
+`BAAI/bge-small-en-v1.5` (MIT, revision `5c38ec7c`, 133 MB, CPU, no external API,
+no source upload). Hybrid performs two independent recalls and fuses them with
+equal-weight RRF (k = 60, fixed before measurement).
+
+Measured on the synthetic Dev corpus (31 paraphrase queries) and on
+`pallets/click` at a pinned SHA (864 chunks, 20 queries, run once):
+
+| Corpus | Method | Recall@1 | Recall@3 | Recall@5 | MRR |
+|---|---|---|---|---|---|
+| synthetic | BM25 | 25.81% | 41.94% | 45.16% | 0.324 |
+| synthetic | **dense** | **58.06%** | **90.32%** | 96.77% | **0.737** |
+| synthetic | hybrid | 45.16% | 74.19% | 87.10% | 0.597 |
+| click | BM25 | 20.00% | 20.00% | 25.00% | 0.210 |
+| click | **dense** | **30.00%** | **40.00%** | **60.00%** | **0.395** |
+| click | hybrid | 15.00% | 35.00% | 40.00% | 0.246 |
+
+Dense independently recovered 16/31 and 7/20 gold chunks absent from BM25's top-5,
+with no case in the opposite direction. **Hybrid is worse than dense alone on both
+corpora** because equal-weight RRF mixes in a much weaker BM25 list.
+
+Caveats that travel with these numbers:
+
+* the implementation used **masked mean pooling**, whereas the model card
+  recommends CLS pooling — these results apply to this implementation only, and a
+  CLS variant must be a new version (new cache identity, fresh query set);
+* a zero no-result rate for dense does not mean the results are relevant;
+* the vector cache's SHA-256 check detects corruption, not tampering by someone who
+  can write to the cache directory; use `PR_GUARDIAN_RAG_CACHE=off` where that
+  matters;
+* the two real-model smoke runs were both `partial`, so they demonstrate the tool
+  loop, not review accuracy.
+
+Details: [`docs/hybrid-stage.md`](docs/hybrid-stage.md),
+[`docs/hybrid-eval-v1/REPORT.md`](docs/hybrid-eval-v1/REPORT.md).
+
 ### Corrections to earlier benchmark artefacts
 
 Committed reports are historical records and are not rewritten. Known defects in

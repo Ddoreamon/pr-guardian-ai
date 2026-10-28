@@ -52,11 +52,13 @@ def minimal_env(base: dict[str, str] | None = None) -> dict[str, str]:
 
 
 def server_parameters(repo: Path | str, ref: str,
-                      python: str | None = None) -> StdioServerParameters:
+                      python: str | None = None,
+                      retrieval_mode: str = "bm25") -> StdioServerParameters:
     """Command that starts the MCP server for one repository and commit."""
     return StdioServerParameters(
         command=python or sys.executable,
-        args=["-m", SERVER_MODULE, "--repo", str(repo), "--ref", ref],
+        args=["-m", SERVER_MODULE, "--repo", str(repo), "--ref", ref,
+              "--retrieval-mode", retrieval_mode],
         env=minimal_env(),
         cwd=None,
         encoding="utf-8",
@@ -151,10 +153,12 @@ class MCPToolBackend:
     """
 
     def __init__(self, repo: Path | str, ref: str, *, timeout: float = 60.0,
-                 python: str | None = None, autostart: bool = True) -> None:
+                 python: str | None = None, autostart: bool = True,
+                 retrieval_mode: str = "bm25") -> None:
         self.timeout = timeout
+        self.retrieval_mode = retrieval_mode
         self.audit: list[ToolRPC] = []
-        self._params = server_parameters(repo, ref, python)
+        self._params = server_parameters(repo, ref, python, retrieval_mode)
         self._loop: asyncio.AbstractEventLoop | None = None
         self._thread: threading.Thread | None = None
         self._last_thread: threading.Thread | None = None
