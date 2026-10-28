@@ -68,9 +68,9 @@ def scan_history() -> list[str]:
     hits = []
     for line in git("log", "--all", "-p", "--", "*.py", "*.json", "*.yml",
                     "*.yaml", "*.md").splitlines():
-        if line.startswith("+") and "sk-" in line and len(line) > 8:
-            if re.search(r"sk-[A-Za-z0-9]{16,}", line):
-                hits.append(line[:120])
+        if (line.startswith("+") and "sk-" in line and len(line) > 8
+                and re.search(r"sk-[A-Za-z0-9]{16,}", line)):
+            hits.append(line[:120])
     return hits[:10]
 
 

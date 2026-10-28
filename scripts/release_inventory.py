@@ -32,7 +32,7 @@ def git(*args: str, repo: Path) -> str:
 
 def is_ancestor(commit: str, ref: str, repo: Path) -> bool:
     return subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor",
-                           commit, ref], capture_output=True).returncode == 0
+                           commit, ref], capture_output=True, check=False).returncode == 0
 
 
 def main() -> int:
