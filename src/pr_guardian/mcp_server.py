@@ -83,6 +83,53 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
 ]
 
 
+# Declared parameters per tool. The low-level Server does not enforce the JSON
+# schema, so validation is explicit here: unknown keys, missing keys and wrong
+# types are rejected with structured errors before any filesystem access.
+PARAMETER_SPECS: dict[str, dict[str, type]] = {
+    READ_CODE_CONTEXT: {"file_path": str, "start_line": int, "end_line": int},
+    FIND_SYMBOL_DEFINITION: {"symbol": str},
+}
+
+
+def validate_arguments(name: str, arguments: dict) -> dict | None:
+    """Return a structured error payload, or None when the call is well formed."""
+    spec = PARAMETER_SPECS.get(name)
+    if spec is None:
+        return {"ok": False, "error": {"code": "unknown_tool",
+                                       "message": f"unknown tool: {name!r}"}}
+
+    unknown = sorted(set(arguments) - set(spec))
+    if unknown:
+        return {"ok": False, "error": {
+            "code": "unknown_parameter",
+            "message": f"undeclared parameter(s): {', '.join(unknown)}",
+            "details": {"declared": sorted(spec)},
+        }}
+
+    missing = sorted(set(spec) - set(arguments))
+    if missing:
+        return {"ok": False, "error": {
+            "code": "missing_parameter",
+            "message": f"missing required parameter(s): {', '.join(missing)}",
+        }}
+
+    for key, expected in spec.items():
+        value = arguments[key]
+        # bool is an int subclass: reject it explicitly rather than accept True/False
+        if expected is int and (isinstance(value, bool) or not isinstance(value, int)):
+            return {"ok": False, "error": {
+                "code": "bad_type",
+                "message": f"{key} must be an integer, got {type(value).__name__}",
+            }}
+        if expected is str and not isinstance(value, str):
+            return {"ok": False, "error": {
+                "code": "bad_type",
+                "message": f"{key} must be a string, got {type(value).__name__}",
+            }}
+    return None
+
+
 def _text_result(payload: dict, *, is_error: bool = False) -> types.CallToolResult:
     return types.CallToolResult(
         content=[types.TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))],
@@ -92,6 +139,10 @@ def _text_result(payload: dict, *, is_error: bool = False) -> types.CallToolResu
 
 def _dispatch(codebase: TrustedCodebase, name: str, arguments: dict) -> types.CallToolResult:
     """Run one tool call. Errors become structured, explicit results."""
+    invalid = validate_arguments(name, arguments)
+    if invalid is not None:
+        return _text_result(invalid, is_error=True)
+
     if name == READ_CODE_CONTEXT:
         try:
             payload = codebase.read_code_context(

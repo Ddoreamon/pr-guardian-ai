@@ -49,7 +49,7 @@ def main() -> int:
             local_latencies.append(round(time.perf_counter() - t0, 4))
 
             mcp_payload = backend.read_code_context(path, start, end)
-            latency = mcp_payload.pop("mcp_latency_s")
+            latency = backend.audit[-1].latency_s
             rows.append({
                 "tool": "read_code_context",
                 "arguments": {"file_path": path, "start_line": start, "end_line": end},
@@ -63,7 +63,7 @@ def main() -> int:
             local_latencies.append(round(time.perf_counter() - t0, 4))
 
             mcp_payload = backend.find_symbol_definition(symbol)
-            latency = mcp_payload.pop("mcp_latency_s")
+            latency = backend.audit[-1].latency_s
             rows.append({
                 "tool": "find_symbol_definition",
                 "arguments": {"symbol": symbol},

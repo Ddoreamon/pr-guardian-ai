@@ -400,8 +400,13 @@ discordant variant (p = 1.0). **No capability advantage is established.**
 Adjudication and raw findings:
 [`docs/benchmark-results/contrast-dev-v2-rescored/`](docs/benchmark-results/contrast-dev-v2-rescored),
 [`ADJUDICATION.md`](docs/benchmark-results/contrast-dev-v2/ADJUDICATION.md).
-Held-out has not been run; readiness conditions are in
-[`docs/v2.3-heldout-readiness.md`](docs/v2.3-heldout-readiness.md).
+**Held-out is complete and frozen** (one run, code `bcae59d`, dataset v3,
+2026-10-27). Independent audit:
+[`docs/v2-heldout-independent-audit.md`](docs/v2-heldout-independent-audit.md).
+Adjudicated: V1 4 TP / 2 FN / 1 TN / 5 contested; V2 5 TP / 1 FN / 2 TN /
+4 contested. Decided F1 80.00% vs 90.91%; **strict F1 53.33% vs 66.67%**. P7 is
+the only variant where V2 clearly added a detection, and the paired McNemar over
+7 jointly decided variants is p = 1.0. No capability advantage is claimed.
 
 ### MCP server (optional transport, local stdio only)
 
@@ -445,6 +450,15 @@ Measured on this machine against the demo repository
 The MCP transport adds no measurable per-call cost once the session is warm; the
 one-off session start is the real price. The public Render deployment keeps
 `PR_GUARDIAN_TOOL_CALLS_ENABLED=0` and exposes no MCP endpoint.
+
+**MCP is a transport, not a smarter reviewer.** Nothing here improves detection;
+the frozen benchmark above is unchanged and was not re-run for MCP. Two further
+guarantees are enforced in code and tests: the server rejects undeclared,
+missing and mistyped parameters with structured errors (the low-level Server does
+not enforce the schema), and a protocol `is_error` is never counted as a
+successful tool call even if the payload claims `ok: true`. Sessions are reaped on
+startup timeout, early server exit and RPC timeout, with tests asserting no
+leftover thread or server process.
 
 ### Corrections to earlier benchmark artefacts
 

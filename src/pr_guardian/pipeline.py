@@ -135,6 +135,8 @@ def run_review(
     llm_status = cfg.llm_status()
     llm_note = ""
     tool_status = "disabled"
+    prompt_tokens = 0
+    completion_tokens = 0
     tool_calls: list[ToolCallRecordModel] = []
     tool_model_calls = 0
     tool_model_failures = 0
@@ -160,6 +162,9 @@ def run_review(
         tool_model_failures = tool_result.model_failures
         tool_rounds = tool_result.rounds
         tool_calls = [ToolCallRecordModel(**r.as_dict()) for r in tool_result.trace]
+        usage = tool_result.usage or {}
+        prompt_tokens = int(usage.get("prompt_tokens", 0))
+        completion_tokens = int(usage.get("completion_tokens", 0))
         if tool_result.status == "not_configured":
             llm_status = "not_configured"
         elif tool_result.status == "disabled":
@@ -176,6 +181,9 @@ def run_review(
     else:
         result = review_with_llm(diff_text, files, settings=cfg)
         llm_findings = result.findings
+        usage = result.usage or {}
+        prompt_tokens = int(usage.get("prompt_tokens", 0))
+        completion_tokens = int(usage.get("completion_tokens", 0))
         notes += result.notes
         llm_note = result.notes[0] if result.notes else ""
         if not cfg.llm_configured:
@@ -202,6 +210,8 @@ def run_review(
         test_summary=test_summary,
         llm_status=llm_status,
         llm_note=llm_note,
+        llm_prompt_tokens=prompt_tokens,
+        llm_completion_tokens=completion_tokens,
         tool_status=tool_status,
         tool_calls=tool_calls,
         tool_model_calls=tool_model_calls,

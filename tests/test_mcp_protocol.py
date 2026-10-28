@@ -174,7 +174,8 @@ async def test_bad_arguments_are_reported_not_crashed(repo):
         payload, is_error = await call_tool_json(
             client, "read_code_context", {"file_path": "src/app.py"})
         assert is_error is True
-        assert payload["error"]["code"] == "bad_range"
+        assert payload["error"]["code"] == "missing_parameter"
+        assert "start_line" in payload["error"]["message"]
 
         payload, is_error = await call_tool_json(
             client, "read_code_context",
@@ -186,6 +187,29 @@ async def test_bad_arguments_are_reported_not_crashed(repo):
             client, "find_symbol_definition", {"symbol": "not a symbol"})
         assert is_error is True
         assert payload["error"]["code"] == "bad_symbol"
+
+
+@pytest.mark.parametrize("tool,arguments,expected", [
+    ("read_code_context", {"file_path": "src/app.py", "start_line": 1,
+                           "end_line": 2, "extra": 1}, "unknown_parameter"),
+    ("find_symbol_definition", {"symbol": "apply", "extra": 1}, "unknown_parameter"),
+    ("read_code_context", {"file_path": "src/app.py", "start_line": "1",
+                           "end_line": 2}, "bad_type"),
+    ("read_code_context", {"file_path": "src/app.py", "start_line": True,
+                           "end_line": 2}, "bad_type"),
+    ("read_code_context", {"file_path": 7, "start_line": 1, "end_line": 2}, "bad_type"),
+    ("find_symbol_definition", {"symbol": 3}, "bad_type"),
+    ("find_symbol_definition", {}, "missing_parameter"),
+])
+async def test_schema_violations_are_structured_errors(repo, tool, arguments, expected):
+    """The low-level Server does not enforce the schema, so the server must."""
+    from pr_guardian.mcp_client import call_tool_json, open_client
+
+    async with open_client(repo, "feature") as client:
+        payload, is_error = await call_tool_json(client, tool, arguments)
+    assert is_error is True
+    assert payload["ok"] is False
+    assert payload["error"]["code"] == expected
 
 
 async def test_unknown_symbol_is_a_clear_miss(repo):
@@ -214,15 +238,25 @@ async def test_server_cannot_be_talked_into_running_commands(repo, tmp_path):
 
 
 async def test_no_tool_can_switch_repository_or_commit(repo):
-    """There is no parameter for repo/ref/path-escape: extra keys are ignored."""
+    """There is no parameter for repo/ref: extra keys are rejected outright."""
     from pr_guardian.mcp_client import call_tool_json, open_client
 
     async with open_client(repo, "feature") as client:
-        payload, _ = await call_tool_json(client, "read_code_context", {
+        payload, is_error = await call_tool_json(client, "read_code_context", {
             "file_path": "src/app.py", "start_line": 1, "end_line": 2,
             "repo": "/etc", "ref": "main", "sha": "0" * 40,
         })
-    assert payload["ref"] == _sha(repo, "feature")
+        assert is_error is True
+        assert payload["error"]["code"] == "unknown_parameter"
+        assert "ref" in payload["error"]["message"]
+        assert payload["error"]["details"]["declared"] == [
+            "end_line", "file_path", "start_line"]
+
+        # and the declared call still serves the pinned commit
+        ok, is_error = await call_tool_json(client, "read_code_context", {
+            "file_path": "src/app.py", "start_line": 1, "end_line": 2})
+        assert is_error is False
+        assert ok["ref"] == _sha(repo, "feature")
 
 
 # ---- process hygiene -------------------------------------------------------

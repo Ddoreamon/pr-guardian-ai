@@ -103,10 +103,25 @@ def test_execute_gives_the_same_result_for_local_and_mcp(repo):
     for local, mcp in ((local_read, mcp_read), (local_symbol, mcp_symbol), (local_fn, mcp_fn)):
         local_record, local_payload = local
         mcp_record, mcp_payload = mcp
-        assert mcp_payload.pop("mcp_latency_s", None) is not None
+        # the payload handed to the model is identical: no latency key, no metadata
+        assert mcp_payload == local_payload
+        assert "mcp_latency_s" not in mcp_payload
         assert mcp_record.outcome == local_record.outcome
         assert mcp_record.matched == local_record.matched
-        assert mcp_payload == local_payload
+
+
+def test_backend_keeps_latency_out_of_the_payload_but_in_its_audit(repo):
+    with MCPToolBackend(repo, "HEAD") as backend:
+        payload = backend.read_code_context("src/mod.py", 1, 4)
+        backend.find_symbol_definition("calc")
+        summary = backend.audit_summary()
+        entries = [r.as_dict() for r in backend.audit]
+
+    assert "mcp_latency_s" not in payload
+    assert [e["tool"] for e in entries] == ["read_code_context", "find_symbol_definition"]
+    assert all(e["latency_s"] >= 0 for e in entries)
+    assert summary["calls"] == 2
+    assert summary["errors"] == 0
 
 
 def test_execute_marks_an_mcp_encoded_error_as_error(repo):
