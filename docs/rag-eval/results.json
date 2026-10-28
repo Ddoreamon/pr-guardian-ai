@@ -1,0 +1,489 @@
+{
+  "corpus_label": "<dev-corpus>",
+  "sha": "c9c73cc32451d9d9ac4b52b1260492a8b06609f6",
+  "files": [
+    "docs/notes.md",
+    "src/__init__.py",
+    "src/inventory.py",
+    "src/orders.py",
+    "src/pricing.py",
+    "src/rates.py",
+    "src/reporting.py",
+    "tests/test_orders.py"
+  ],
+  "index": {
+    "chunks": 10,
+    "build_s": 0.2035,
+    "cached_s": 0.0098
+  },
+  "search": {
+    "all": {
+      "summary": {
+        "recall@1": 0.75,
+        "recall@3": 0.75,
+        "recall@5": 0.75,
+        "mrr": 0.75,
+        "mean_latency_s": 0.0006,
+        "mean_result_chars": 1144.8,
+        "chunks": 10,
+        "queries": 12
+      },
+      "rows": [
+        {
+          "query": "order total with tax",
+          "gold": "src/pricing.py:6",
+          "gold_symbol": "total",
+          "rank": 1,
+          "returned": [
+            "src/pricing.py:6",
+            "src/orders.py:6",
+            "src/reporting.py:6"
+          ],
+          "latency_s": 0.0007,
+          "result_chars": 1368,
+          "found": true
+        },
+        {
+          "query": "rate for region",
+          "gold": "src/rates.py:7",
+          "gold_symbol": "rate_for",
+          "rank": 1,
+          "returned": [
+            "src/rates.py:7",
+            "src/rates.py:3",
+            "src/rates.py:4",
+            "src/pricing.py:6",
+            "src/orders.py:6"
+          ],
+          "latency_s": 0.0006,
+          "result_chars": 1860,
+          "found": true
+        },
+        {
+          "query": "DEFAULT_RATE",
+          "gold": "src/rates.py:3",
+          "gold_symbol": "DEFAULT_RATE",
+          "rank": 1,
+          "returned": [
+            "src/rates.py:3",
+            "src/rates.py:7",
+            "src/rates.py:4",
+            "src/pricing.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 1485,
+          "found": true
+        },
+        {
+          "query": "reserve stock insufficient",
+          "gold": "src/inventory.py:6",
+          "gold_symbol": "reserve_stock",
+          "rank": 1,
+          "returned": [
+            "src/inventory.py:6",
+            "src/inventory.py:3",
+            "src/inventory.py:13",
+            "src/inventory.py:53"
+          ],
+          "latency_s": 0.0007,
+          "result_chars": 2045,
+          "found": true
+        },
+        {
+          "query": "build report from orders",
+          "gold": "src/reporting.py:6",
+          "gold_symbol": "build_report",
+          "rank": 1,
+          "returned": [
+            "src/reporting.py:6"
+          ],
+          "latency_s": 0.0006,
+          "result_chars": 586,
+          "found": true
+        },
+        {
+          "query": "low stock threshold",
+          "gold": "src/inventory.py:13",
+          "gold_symbol": "low_stock",
+          "rank": 1,
+          "returned": [
+            "src/inventory.py:13",
+            "src/inventory.py:3",
+            "src/inventory.py:6",
+            "src/inventory.py:53"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 2039,
+          "found": true
+        },
+        {
+          "query": "ANNOTATED_RATE",
+          "gold": "src/rates.py:4",
+          "gold_symbol": "ANNOTATED_RATE",
+          "rank": 1,
+          "returned": [
+            "src/rates.py:4",
+            "src/rates.py:7",
+            "src/rates.py:3",
+            "src/pricing.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 1487,
+          "found": true
+        },
+        {
+          "query": "create order and return its total",
+          "gold": "src/orders.py:6",
+          "gold_symbol": "create_order",
+          "rank": 1,
+          "returned": [
+            "src/orders.py:6",
+            "src/pricing.py:6",
+            "src/reporting.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 1383,
+          "found": true
+        },
+        {
+          "query": "how much money the customer owes",
+          "gold": "src/pricing.py:6",
+          "gold_symbol": "total",
+          "rank": null,
+          "returned": [],
+          "latency_s": 0.0005,
+          "result_chars": 188,
+          "found": false
+        },
+        {
+          "query": "prevent selling more than we have",
+          "gold": "src/inventory.py:6",
+          "gold_symbol": "reserve_stock",
+          "rank": null,
+          "returned": [],
+          "latency_s": 0.0005,
+          "result_chars": 189,
+          "found": false
+        },
+        {
+          "query": "summary of sales rows",
+          "gold": "src/reporting.py:6",
+          "gold_symbol": "build_report",
+          "rank": 1,
+          "returned": [
+            "src/reporting.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 566,
+          "found": true
+        },
+        {
+          "query": "tax percentage per area",
+          "gold": "src/rates.py:7",
+          "gold_symbol": "rate_for",
+          "rank": null,
+          "returned": [
+            "src/pricing.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 542,
+          "found": true
+        }
+      ]
+    },
+    "lexical": {
+      "summary": {
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "mean_latency_s": 0.0005,
+        "mean_result_chars": 1531.6,
+        "chunks": 10,
+        "queries": 8
+      },
+      "rows": [
+        {
+          "query": "order total with tax",
+          "gold": "src/pricing.py:6",
+          "gold_symbol": "total",
+          "rank": 1,
+          "returned": [
+            "src/pricing.py:6",
+            "src/orders.py:6",
+            "src/reporting.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 1368,
+          "found": true
+        },
+        {
+          "query": "rate for region",
+          "gold": "src/rates.py:7",
+          "gold_symbol": "rate_for",
+          "rank": 1,
+          "returned": [
+            "src/rates.py:7",
+            "src/rates.py:3",
+            "src/rates.py:4",
+            "src/pricing.py:6",
+            "src/orders.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 1860,
+          "found": true
+        },
+        {
+          "query": "DEFAULT_RATE",
+          "gold": "src/rates.py:3",
+          "gold_symbol": "DEFAULT_RATE",
+          "rank": 1,
+          "returned": [
+            "src/rates.py:3",
+            "src/rates.py:7",
+            "src/rates.py:4",
+            "src/pricing.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 1485,
+          "found": true
+        },
+        {
+          "query": "reserve stock insufficient",
+          "gold": "src/inventory.py:6",
+          "gold_symbol": "reserve_stock",
+          "rank": 1,
+          "returned": [
+            "src/inventory.py:6",
+            "src/inventory.py:3",
+            "src/inventory.py:13",
+            "src/inventory.py:53"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 2045,
+          "found": true
+        },
+        {
+          "query": "build report from orders",
+          "gold": "src/reporting.py:6",
+          "gold_symbol": "build_report",
+          "rank": 1,
+          "returned": [
+            "src/reporting.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 586,
+          "found": true
+        },
+        {
+          "query": "low stock threshold",
+          "gold": "src/inventory.py:13",
+          "gold_symbol": "low_stock",
+          "rank": 1,
+          "returned": [
+            "src/inventory.py:13",
+            "src/inventory.py:3",
+            "src/inventory.py:6",
+            "src/inventory.py:53"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 2039,
+          "found": true
+        },
+        {
+          "query": "ANNOTATED_RATE",
+          "gold": "src/rates.py:4",
+          "gold_symbol": "ANNOTATED_RATE",
+          "rank": 1,
+          "returned": [
+            "src/rates.py:4",
+            "src/rates.py:7",
+            "src/rates.py:3",
+            "src/pricing.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 1487,
+          "found": true
+        },
+        {
+          "query": "create order and return its total",
+          "gold": "src/orders.py:6",
+          "gold_symbol": "create_order",
+          "rank": 1,
+          "returned": [
+            "src/orders.py:6",
+            "src/pricing.py:6",
+            "src/reporting.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 1383,
+          "found": true
+        }
+      ]
+    },
+    "paraphrase": {
+      "summary": {
+        "recall@1": 0.25,
+        "recall@3": 0.25,
+        "recall@5": 0.25,
+        "mrr": 0.25,
+        "mean_latency_s": 0.0004,
+        "mean_result_chars": 371.2,
+        "chunks": 10,
+        "queries": 4
+      },
+      "rows": [
+        {
+          "query": "how much money the customer owes",
+          "gold": "src/pricing.py:6",
+          "gold_symbol": "total",
+          "rank": null,
+          "returned": [],
+          "latency_s": 0.0004,
+          "result_chars": 188,
+          "found": false
+        },
+        {
+          "query": "prevent selling more than we have",
+          "gold": "src/inventory.py:6",
+          "gold_symbol": "reserve_stock",
+          "rank": null,
+          "returned": [],
+          "latency_s": 0.0004,
+          "result_chars": 189,
+          "found": false
+        },
+        {
+          "query": "summary of sales rows",
+          "gold": "src/reporting.py:6",
+          "gold_symbol": "build_report",
+          "rank": 1,
+          "returned": [
+            "src/reporting.py:6"
+          ],
+          "latency_s": 0.0005,
+          "result_chars": 566,
+          "found": true
+        },
+        {
+          "query": "tax percentage per area",
+          "gold": "src/rates.py:7",
+          "gold_symbol": "rate_for",
+          "rank": null,
+          "returned": [
+            "src/pricing.py:6"
+          ],
+          "latency_s": 0.0004,
+          "result_chars": 542,
+          "found": true
+        }
+      ]
+    }
+  },
+  "symbol_baseline": {
+    "summary": {
+      "hit_rate": 1.0,
+      "mean_latency_s": 0.0013,
+      "mean_result_chars": 504.8,
+      "note": "uses the gold symbol name as input; a caller who does not already know the symbol cannot issue this query"
+    },
+    "rows": [
+      {
+        "query": "order total with tax",
+        "symbol_used": "total",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.0013,
+        "result_chars": 444
+      },
+      {
+        "query": "rate for region",
+        "symbol_used": "rate_for",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.0024,
+        "result_chars": 471
+      },
+      {
+        "query": "DEFAULT_RATE",
+        "symbol_used": "DEFAULT_RATE",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.0013,
+        "result_chars": 500
+      },
+      {
+        "query": "reserve stock insufficient",
+        "symbol_used": "reserve_stock",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.0012,
+        "result_chars": 582
+      },
+      {
+        "query": "build report from orders",
+        "symbol_used": "build_report",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.0011,
+        "result_chars": 470
+      },
+      {
+        "query": "low stock threshold",
+        "symbol_used": "low_stock",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.001,
+        "result_chars": 635
+      },
+      {
+        "query": "ANNOTATED_RATE",
+        "symbol_used": "ANNOTATED_RATE",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.0012,
+        "result_chars": 539
+      },
+      {
+        "query": "create order and return its total",
+        "symbol_used": "create_order",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.0012,
+        "result_chars": 450
+      },
+      {
+        "query": "how much money the customer owes",
+        "symbol_used": "total",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.0012,
+        "result_chars": 444
+      },
+      {
+        "query": "prevent selling more than we have",
+        "symbol_used": "reserve_stock",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.0011,
+        "result_chars": 582
+      },
+      {
+        "query": "summary of sales rows",
+        "symbol_used": "build_report",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.001,
+        "result_chars": 470
+      },
+      {
+        "query": "tax percentage per area",
+        "symbol_used": "rate_for",
+        "found": true,
+        "covers_gold": true,
+        "latency_s": 0.001,
+        "result_chars": 471
+      }
+    ]
+  }
+}

@@ -145,7 +145,7 @@ def test_request_declares_tools_and_replies_with_matching_tool_id(queued, codeba
 
     first = queued.sent[0]["payload"]
     assert [t["function"]["name"] for t in first["tools"]] == [
-        "read_code_context", "find_symbol_definition",
+        "read_code_context", "find_symbol_definition", "search_code",
     ]
 
     second_msgs = queued.sent[1]["payload"]["messages"]

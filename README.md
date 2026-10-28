@@ -465,6 +465,30 @@ successful tool call even if the payload claims `ok: true`. Sessions are reaped 
 startup timeout, early server exit and RPC timeout, with tests asserting no
 leftover thread or server process.
 
+### Repository retrieval (v1, keyword only)
+
+A third read-only tool, `search_code(query, top_k)`, retrieves code from the
+**reviewed commit** by keyword when the reviewer does not already know the file or
+symbol. The index is built from the AST (functions, methods, classes, module
+constants), cached per commit SHA under `.cache/`, and never reads the working
+tree. Ranking is BM25 plus symbol/import/call signals; every hit reports its file,
+line range, score, the signals that fired and a snippet, and a miss says so
+explicitly. No embedding model and no external service are involved.
+
+Measured on an independent dev corpus (10 chunks, 12 queries, gold spans fixed
+first; `docs/rag-eval/REPORT.md`):
+
+| Query group | n | Recall@1 | Recall@3 | MRR |
+|---|---|---|---|---|
+| Lexical | 8 | 100% | 100% | 1.000 |
+| Paraphrase (little overlap) | 4 | 25% | 25% | 0.250 |
+
+Index build 0.20 s, 0.011 s cached, search latency 0.5 ms. This is **not** a
+detection improvement: no review-accuracy run is claimed, and the frozen
+benchmark was not touched. The paraphrase failures are the evidence that a hybrid
+or embedding retriever may be worth the next round; with four queries they are not
+enough to justify one yet. Details: [`docs/rag-stage.md`](docs/rag-stage.md).
+
 ### Corrections to earlier benchmark artefacts
 
 Committed reports are historical records and are not rewritten. Known defects in

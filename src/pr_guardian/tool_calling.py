@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from .agent_tools import (
     READ_CODE_CONTEXT,
+    SEARCH_CODE,
     ToolError,
     is_effective_hit,
     wrap_tool_output,
@@ -89,6 +90,29 @@ TOOLS: list[dict] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_code",
+            "description": (
+                "Search the reviewed commit for code related to a query. Returns ranked "
+                "chunks with file path, line range, relevance score and a short snippet. "
+                "Use it when you do not yet know where something lives, then read the "
+                "location with read_code_context. A miss means nothing matched: never "
+                "invent a file or symbol."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string",
+                              "description": "keywords, a symbol name, or a short phrase"},
+                    "top_k": {"type": "integer", "minimum": 1, "maximum": 10,
+                              "description": "how many chunks to return (default 5)"},
+                },
+                "required": ["query"],
+            },
+        },
+    },
 ]
 
 TOOL_NAMES = set(AGENT_TOOL_NAMES)
@@ -96,9 +120,10 @@ TOOL_NAMES = set(AGENT_TOOL_NAMES)
 SYSTEM_PROMPT = REVIEW_SCOPE + """You are a strict Python code reviewer with read-only tools.
 
 Work in two steps:
-1. Use the tools to gather evidence. Call read_code_context to see surrounding code in
-   the reviewed commit, and find_symbol_definition to locate a symbol's definition,
-   including in another file.
+1. Use the tools to gather evidence. search_code finds code related to a query when
+   you do not know where it lives; read_code_context shows surrounding code in the
+   reviewed commit; find_symbol_definition locates a symbol's definition, including
+   in another file. Read the location after searching.
 2. Report only behavioural defects (logic, boundary conditions, exception handling,
    state updates, data handling, API validation) that the evidence supports.
 
@@ -461,6 +486,9 @@ def _execute_inner(name: str, arguments: dict, codebase,
         if name == READ_CODE_CONTEXT:
             payload = codebase.read_code_context(
                 arguments.get("file_path"), arguments.get("start_line"), arguments.get("end_line"))
+        elif name == SEARCH_CODE:
+            top_k = arguments.get("top_k", 5)
+            payload = codebase.search_code(arguments.get("query"), top_k)
         else:
             payload = codebase.find_symbol_definition(arguments.get("symbol"))
     except ToolError as exc:

@@ -93,7 +93,7 @@ async def test_list_tools_returns_the_real_definitions(repo):
     async with open_client(repo, "feature") as client:
         result = await client.list_tools()
         names = [t.name for t in result.tools]
-        assert names == ["read_code_context", "find_symbol_definition"]
+        assert names == ["read_code_context", "find_symbol_definition", "search_code"]
         by_name = {t.name: t for t in result.tools}
         schema = by_name["read_code_context"].input_schema
         assert schema["required"] == ["file_path", "start_line", "end_line"]
@@ -189,6 +189,37 @@ async def test_bad_arguments_are_reported_not_crashed(repo):
         assert payload["error"]["code"] == "bad_symbol"
 
 
+async def test_search_code_returns_ranked_chunks_from_the_pinned_commit(repo):
+    from pr_guardian.mcp_client import call_tool_json, open_client
+
+    async with open_client(repo, "feature") as client:
+        payload, is_error = await call_tool_json(client, "search_code", {
+            "query": "apply discount limit", "top_k": 3,
+        })
+    assert is_error is False
+    assert payload["found"] is True
+    assert payload["ref"] == _sha(repo, "feature")
+    top = payload["hits"][0]
+    assert top["file_path"] == "src/app.py"
+    assert top["ref"] == payload["ref"]
+    assert top["score"] > 0
+    assert top["why"]
+    assert "snippet" in top
+
+
+async def test_search_code_miss_is_explicit(repo):
+    from pr_guardian.mcp_client import call_tool_json, open_client
+
+    async with open_client(repo, "feature") as client:
+        payload, is_error = await call_tool_json(
+            client, "search_code", {"query": "quantum entanglement"})
+    assert is_error is False
+    assert payload["found"] is False
+    assert payload["hits"] == []
+    assert payload["count"] == 0
+    assert payload["reason"]
+
+
 @pytest.mark.parametrize("tool,arguments,expected", [
     ("read_code_context", {"file_path": "src/app.py", "start_line": 1,
                            "end_line": 2, "extra": 1}, "unknown_parameter"),
@@ -200,6 +231,10 @@ async def test_bad_arguments_are_reported_not_crashed(repo):
     ("read_code_context", {"file_path": 7, "start_line": 1, "end_line": 2}, "bad_type"),
     ("find_symbol_definition", {"symbol": 3}, "bad_type"),
     ("find_symbol_definition", {}, "missing_parameter"),
+    ("search_code", {}, "missing_parameter"),
+    ("search_code", {"query": 5}, "bad_type"),
+    ("search_code", {"query": "x", "top_k": "3"}, "bad_type"),
+    ("search_code", {"query": "x", "repo": "/etc"}, "unknown_parameter"),
 ])
 async def test_schema_violations_are_structured_errors(repo, tool, arguments, expected):
     """The low-level Server does not enforce the schema, so the server must."""
