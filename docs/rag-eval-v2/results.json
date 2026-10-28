@@ -1,0 +1,3446 @@
+{
+  "corpus_label": "<dev-corpus-v2>",
+  "sha": "a007667e95472d34ac0116fdbff02a08c31488d5",
+  "index": {
+    "chunks": 103,
+    "files": 28,
+    "build_s": 1.048,
+    "cached_s": 0.0131,
+    "cache_bytes": 39375
+  },
+  "frozen": {
+    "queries": 51,
+    "groups": {
+      "lexical": 12,
+      "paraphrase": 31,
+      "mixed": 8
+    },
+    "note": "queries and gold symbols are declared in scripts/rag_eval_v2.py before measurement; gold lines are resolved through the index"
+  },
+  "methods": {
+    "A_bm25": {
+      "summary": {
+        "queries": 51,
+        "recall@1": 0.5294,
+        "recall@3": 0.6471,
+        "recall@5": 0.6667,
+        "mrr": 0.5791,
+        "no_result_rate": 0.0784,
+        "mean_candidates": 3.31,
+        "mean_latency_s": 0.0001,
+        "mean_result_chars": 1394.0,
+        "groups": {
+          "lexical": {
+            "n": 12,
+            "recall@1": 0.9167,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.9583
+          },
+          "paraphrase": {
+            "n": 31,
+            "recall@1": 0.2581,
+            "recall@3": 0.4194,
+            "recall@5": 0.4516,
+            "mrr": 0.3237
+          },
+          "mixed": {
+            "n": 8,
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      },
+      "rows": [
+        {
+          "query": "reserve_stock",
+          "used_query": "reserve_stock",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:6",
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:12",
+            "src/shop/inventory.py:20"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0002,
+          "result_chars": 1659,
+          "no_result": false
+        },
+        {
+          "query": "MIN_STOCK",
+          "used_query": "MIN_STOCK",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 3,
+            "end_line": 3,
+            "qualname": "MIN_STOCK"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:20",
+            "src/shop/inventory.py:12",
+            "src/shop/shipping.py:3",
+            "src/shop/inventory.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1950,
+          "no_result": false
+        },
+        {
+          "query": "estimate_shipping express",
+          "used_query": "estimate_shipping express",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 6,
+            "end_line": 9,
+            "qualname": "estimate_shipping"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/shipping.py:6",
+            "src/shop/shipping.py:3",
+            "src/shop/shipping.py:15",
+            "src/shop/notifications.py:8"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1724,
+          "no_result": false
+        },
+        {
+          "query": "loyalty_points",
+          "used_query": "loyalty_points",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/customers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "loyalty_points"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/customers.py:8",
+            "src/shop/customers.py:12"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 896,
+          "no_result": false
+        },
+        {
+          "query": "hash_password digest",
+          "used_query": "hash_password digest",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "hash_password"
+          },
+          "rank": 2,
+          "returned": [
+            "src/shop/security.py:10",
+            "src/shop/security.py:6"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 925,
+          "no_result": false
+        },
+        {
+          "query": "refund_window_days",
+          "used_query": "refund_window_days",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "refund_window_days"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/refunds.py:14",
+            "src/shop/refunds.py:3",
+            "src/shop/payments.py:8",
+            "src/shop/refunds.py:10",
+            "src/shop/refunds.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1993,
+          "no_result": false
+        },
+        {
+          "query": "CACHE_TTL_SECONDS",
+          "used_query": "CACHE_TTL_SECONDS",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/config.py",
+            "start_line": 4,
+            "end_line": 4,
+            "qualname": "CACHE_TTL_SECONDS"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/config.py:4",
+            "src/shop/security.py:3",
+            "src/shop/security.py:14"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1112,
+          "no_result": false
+        },
+        {
+          "query": "free_shipping_threshold",
+          "used_query": "free_shipping_threshold",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 15,
+            "end_line": 17,
+            "qualname": "free_shipping_threshold"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/shipping.py:15",
+            "src/shop/shipping.py:3",
+            "src/shop/shipping.py:6",
+            "src/shop/notifications.py:8"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1725,
+          "no_result": false
+        },
+        {
+          "query": "basket_size items",
+          "used_query": "basket_size items",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/analytics.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "basket_size"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/analytics.py:8",
+            "src/shop/utils.py:4",
+            "src/shop/inventory.py:20",
+            "src/shop/cart.py:6",
+            "src/shop/refunds.py:10"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1968,
+          "no_result": false
+        },
+        {
+          "query": "order_history customer",
+          "used_query": "order_history customer",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/orders.py",
+            "start_line": 17,
+            "end_line": 19,
+            "qualname": "order_history"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/orders.py:17",
+            "src/shop/notifications.py:4",
+            "src/shop/customers.py:4",
+            "src/shop/orders.py:10",
+            "src/shop/customers.py:12"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2100,
+          "no_result": false
+        },
+        {
+          "query": "top_products qty",
+          "used_query": "top_products qty",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/reporting.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "top_products"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/reporting.py:12",
+            "src/shop/search.py:8",
+            "src/shop/reviews.py:17"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1290,
+          "no_result": false
+        },
+        {
+          "query": "verify_password digest",
+          "used_query": "verify_password digest",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 10,
+            "end_line": 12,
+            "qualname": "verify_password"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/security.py:10",
+            "src/shop/security.py:6"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 925,
+          "no_result": false
+        },
+        {
+          "query": "how much the buyer has to pay",
+          "used_query": "how much the buyer has to pay",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/pricing.py",
+            "start_line": 8,
+            "end_line": 11,
+            "qualname": "order_total"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/money.py:7",
+            "src/shop/warehouse.py:4"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 915,
+          "no_result": false
+        },
+        {
+          "query": "stop us selling things we do not have",
+          "used_query": "stop us selling things we do not have",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/subscriptions.py:8"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 560,
+          "no_result": false
+        },
+        {
+          "query": "money given back after a return",
+          "used_query": "money given back after a return",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "refund_total"
+          },
+          "rank": 3,
+          "returned": [
+            "src/shop/money.py:11",
+            "src/shop/inventory.py:12",
+            "src/shop/refunds.py:6"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1266,
+          "no_result": false
+        },
+        {
+          "query": "how long a buyer has to ask for money back",
+          "used_query": "how long a buyer has to ask for money back",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "refund_window_days"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/money.py:7",
+            "src/shop/warehouse.py:4",
+            "src/shop/money.py:11",
+            "src/shop/inventory.py:12",
+            "src/shop/refunds.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2023,
+          "no_result": false
+        },
+        {
+          "query": "points a buyer earns for spending",
+          "used_query": "points a buyer earns for spending",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/customers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "loyalty_points"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/customers.py:8",
+            "src/shop/customers.py:12"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 914,
+          "no_result": false
+        },
+        {
+          "query": "who carries the parcel and what it costs",
+          "used_query": "who carries the parcel and what it costs",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 6,
+            "end_line": 9,
+            "qualname": "estimate_shipping"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/notifications.py:8"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 575,
+          "no_result": false
+        },
+        {
+          "query": "keep a record of what happened for later inspection",
+          "used_query": "keep a record of what happened for later inspection",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/audit.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "log_event"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/audit.py:4"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 534,
+          "no_result": false
+        },
+        {
+          "query": "make guessing a secret phrase too slow to matter",
+          "used_query": "make guessing a secret phrase too slow to matter",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "hash_password"
+          },
+          "rank": 3,
+          "returned": [
+            "src/shop/money.py:7",
+            "src/shop/warehouse.py:4",
+            "src/shop/security.py:6",
+            "src/shop/security.py:10"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1646,
+          "no_result": false
+        },
+        {
+          "query": "how many units are left in the depot",
+          "used_query": "how many units are left in the depot",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 16,
+            "end_line": 18,
+            "qualname": "available_quantity"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/money.py:11",
+            "src/shop/money.py:7",
+            "src/shop/cart.py:19",
+            "src/shop/ledger.py:10",
+            "src/shop/audit.py:8"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1924,
+          "no_result": false
+        },
+        {
+          "query": "warn when we are running out",
+          "used_query": "warn when we are running out",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 20,
+            "end_line": 22,
+            "qualname": "low_stock"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/inventory.py:6"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0002,
+          "result_chars": 616,
+          "no_result": false
+        },
+        {
+          "query": "the percentage the government adds",
+          "used_query": "the percentage the government adds",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/tax.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "vat_rate"
+          },
+          "rank": null,
+          "returned": [],
+          "candidates": 0,
+          "latency_s": 0.0001,
+          "result_chars": 190,
+          "no_result": true
+        },
+        {
+          "query": "the biggest sellers",
+          "used_query": "the biggest sellers",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/reporting.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "top_products"
+          },
+          "rank": null,
+          "returned": [],
+          "candidates": 0,
+          "latency_s": 0.0001,
+          "result_chars": 175,
+          "no_result": true
+        },
+        {
+          "query": "how often visitors end up buying",
+          "used_query": "how often visitors end up buying",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/analytics.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "conversion_rate"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/money.py:19",
+            "src/shop/customers.py:4",
+            "src/shop/pricing.py:13",
+            "src/shop/pricing.py:8"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1666,
+          "no_result": false
+        },
+        {
+          "query": "try again when something fails",
+          "used_query": "try again when something fails",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/utils.py",
+            "start_line": 8,
+            "end_line": 11,
+            "qualname": "retry_call"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/utils.py:8"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 549,
+          "no_result": false
+        },
+        {
+          "query": "cut a long list into small pieces",
+          "used_query": "cut a long list into small pieces",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/utils.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "chunked"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/reviews.py:17",
+            "src/shop/orders.py:17",
+            "src/shop/inventory.py:20"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1278,
+          "no_result": false
+        },
+        {
+          "query": "tell the buyer the parcel is on its way",
+          "used_query": "tell the buyer the parcel is on its way",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/notifications.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "send_shipping_update"
+          },
+          "rank": 3,
+          "returned": [
+            "src/shop/subscriptions.py:17",
+            "src/shop/session.py:18",
+            "src/shop/notifications.py:8",
+            "src/shop/utils.py:8",
+            "src/shop/api.py:8"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2029,
+          "no_result": false
+        },
+        {
+          "query": "how long a login stays valid",
+          "used_query": "how long a login stays valid",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "token_expiry"
+          },
+          "rank": null,
+          "returned": [],
+          "candidates": 0,
+          "latency_s": 0.0001,
+          "result_chars": 184,
+          "no_result": true
+        },
+        {
+          "query": "the cheapest company to move the box",
+          "used_query": "the cheapest company to move the box",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 11,
+            "end_line": 13,
+            "qualname": "cheapest_carrier"
+          },
+          "rank": 3,
+          "returned": [
+            "src/shop/warehouse.py:4",
+            "src/shop/money.py:7",
+            "src/shop/shipping.py:11"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1309,
+          "no_result": false
+        },
+        {
+          "query": "what the buyer owes before any reduction",
+          "used_query": "what the buyer owes before any reduction",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/pricing.py",
+            "start_line": 8,
+            "end_line": 11,
+            "qualname": "order_total"
+          },
+          "rank": null,
+          "returned": [],
+          "candidates": 0,
+          "latency_s": 0.0001,
+          "result_chars": 196,
+          "no_result": true
+        },
+        {
+          "query": "put stock back after a cancellation",
+          "used_query": "put stock back after a cancellation",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "release_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:12",
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:20",
+            "src/shop/inventory.py:6",
+            "src/shop/money.py:11"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2018,
+          "no_result": false
+        },
+        {
+          "query": "reject a request to take more than we hold",
+          "used_query": "reject a request to take more than we hold",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": 5,
+          "returned": [
+            "src/shop/api.py:4",
+            "src/shop/money.py:7",
+            "src/shop/warehouse.py:4",
+            "src/shop/payments.py:4",
+            "src/shop/inventory.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2074,
+          "no_result": false
+        },
+        {
+          "query": "the value kept back from a salary",
+          "used_query": "the value kept back from a salary",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/tax.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "withholding"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/coupons.py:8",
+            "src/shop/money.py:15",
+            "src/shop/money.py:19",
+            "src/shop/money.py:11",
+            "src/shop/utils.py:13"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1944,
+          "no_result": false
+        },
+        {
+          "query": "a short list of the best performers",
+          "used_query": "a short list of the best performers",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/search.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "rank_results"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/promotions.py:8",
+            "src/shop/reviews.py:17",
+            "src/shop/orders.py:17",
+            "src/shop/inventory.py:20"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1670,
+          "no_result": false
+        },
+        {
+          "query": "drain the pending work",
+          "used_query": "drain the pending work",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/workers.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "process_queue"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/workers.py:4"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 518,
+          "no_result": false
+        },
+        {
+          "query": "collect the jobs that did not finish",
+          "used_query": "collect the jobs that did not finish",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/workers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "retry_failed_jobs"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/workers.py:8"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 577,
+          "no_result": false
+        },
+        {
+          "query": "confirm a service is up",
+          "used_query": "confirm a service is up",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/api.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "health_check"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/api.py:8",
+            "src/shop/money.py:19",
+            "src/shop/subscriptions.py:17",
+            "src/shop/session.py:18",
+            "src/shop/customers.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1972,
+          "no_result": false
+        },
+        {
+          "query": "count how many things are in a basket",
+          "used_query": "count how many things are in a basket",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/analytics.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "basket_size"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/analytics.py:8",
+            "src/shop/ledger.py:18",
+            "src/shop/warehouse.py:16",
+            "src/shop/inventory.py:16",
+            "src/shop/reporting.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1962,
+          "no_result": false
+        },
+        {
+          "query": "sort products by how well they matched",
+          "used_query": "sort products by how well they matched",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/search.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "rank_results"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/search.py:8",
+            "src/shop/reporting.py:12"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 930,
+          "no_result": false
+        },
+        {
+          "query": "the amount kept from a wage",
+          "used_query": "the amount kept from a wage",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/tax.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "withholding"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/money.py:15",
+            "src/shop/payments.py:4",
+            "src/shop/invoices.py:23",
+            "src/shop/money.py:7",
+            "src/shop/ledger.py:10"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1962,
+          "no_result": false
+        },
+        {
+          "query": "when a payment did not go through",
+          "used_query": "when a payment did not go through",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/payments.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "payment_status"
+          },
+          "rank": 2,
+          "returned": [
+            "src/shop/payments.py:8",
+            "src/shop/payments.py:12",
+            "src/shop/payments.py:16",
+            "src/shop/payments.py:4"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1642,
+          "no_result": false
+        },
+        {
+          "query": "give the money back for one item",
+          "used_query": "give the money back for one item",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 10,
+            "end_line": 12,
+            "qualname": "partial_refund"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/cart.py:9",
+            "src/shop/cart.py:14",
+            "src/shop/warehouse.py:8",
+            "src/shop/refunds.py:6",
+            "src/shop/cart.py:3"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2233,
+          "no_result": false
+        },
+        {
+          "query": "refund total money returned",
+          "used_query": "refund total money returned",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "refund_total"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/refunds.py:6",
+            "src/shop/refunds.py:3",
+            "src/shop/refunds.py:14",
+            "src/shop/payments.py:8",
+            "src/shop/invoices.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1984,
+          "no_result": false
+        },
+        {
+          "query": "stock reserve insufficient quantity",
+          "used_query": "stock reserve insufficient quantity",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:6",
+            "src/shop/inventory.py:16",
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:12",
+            "src/shop/inventory.py:20"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2064,
+          "no_result": false
+        },
+        {
+          "query": "sales summary daily totals rows",
+          "used_query": "sales summary daily totals rows",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/reporting.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "sales_summary"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/reporting.py:4",
+            "src/shop/reporting.py:8",
+            "src/shop/warehouse.py:16",
+            "src/shop/warehouse.py:12",
+            "src/shop/reporting.py:12"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1965,
+          "no_result": false
+        },
+        {
+          "query": "customer tier loyalty points",
+          "used_query": "customer tier loyalty points",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/customers.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "customer_tier"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/customers.py:12",
+            "src/shop/customers.py:8",
+            "src/shop/promotions.py:12",
+            "src/shop/customers.py:4",
+            "src/shop/notifications.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2003,
+          "no_result": false
+        },
+        {
+          "query": "queue retry failed jobs worker",
+          "used_query": "queue retry failed jobs worker",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/workers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "retry_failed_jobs"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/workers.py:8",
+            "src/shop/workers.py:4",
+            "src/shop/utils.py:8",
+            "src/shop/payments.py:12"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1680,
+          "no_result": false
+        },
+        {
+          "query": "product search rank results score",
+          "used_query": "product search rank results score",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/search.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "rank_results"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/search.py:12",
+            "src/shop/search.py:4",
+            "src/shop/reviews.py:4",
+            "src/shop/reporting.py:12"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1678,
+          "no_result": false
+        },
+        {
+          "query": "cache ttl seconds expiry",
+          "used_query": "cache ttl seconds expiry",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/config.py",
+            "start_line": 4,
+            "end_line": 4,
+            "qualname": "CACHE_TTL_SECONDS"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/config.py:4",
+            "src/shop/security.py:14",
+            "src/shop/security.py:3",
+            "src/shop/coupons.py:12"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1502,
+          "no_result": false
+        },
+        {
+          "query": "token expiry login valid",
+          "used_query": "token expiry login valid",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "token_expiry"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/security.py:14",
+            "src/shop/coupons.py:12",
+            "src/shop/security.py:3",
+            "src/shop/payments.py:16",
+            "src/shop/payments.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1899,
+          "no_result": false
+        }
+      ]
+    },
+    "B_bm25_expanded": {
+      "summary": {
+        "queries": 51,
+        "recall@1": 0.7843,
+        "recall@3": 0.902,
+        "recall@5": 0.9412,
+        "mrr": 0.8464,
+        "no_result_rate": 0.0,
+        "mean_candidates": 4.31,
+        "mean_latency_s": 0.0002,
+        "mean_result_chars": 1802.8,
+        "groups": {
+          "lexical": {
+            "n": 12,
+            "recall@1": 0.9167,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.9583
+          },
+          "paraphrase": {
+            "n": 31,
+            "recall@1": 0.7097,
+            "recall@3": 0.8387,
+            "recall@5": 0.9032,
+            "mrr": 0.7796
+          },
+          "mixed": {
+            "n": 8,
+            "recall@1": 0.875,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.9375
+          }
+        }
+      },
+      "rows": [
+        {
+          "query": "reserve_stock",
+          "used_query": "reserve_stock",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:6",
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:12",
+            "src/shop/inventory.py:20"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1659,
+          "no_result": false
+        },
+        {
+          "query": "MIN_STOCK",
+          "used_query": "MIN_STOCK",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 3,
+            "end_line": 3,
+            "qualname": "MIN_STOCK"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:20",
+            "src/shop/inventory.py:12",
+            "src/shop/shipping.py:3",
+            "src/shop/inventory.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1950,
+          "no_result": false
+        },
+        {
+          "query": "estimate_shipping express",
+          "used_query": "estimate_shipping express expres",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 6,
+            "end_line": 9,
+            "qualname": "estimate_shipping"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/shipping.py:6",
+            "src/shop/shipping.py:3",
+            "src/shop/shipping.py:15",
+            "src/shop/notifications.py:8"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1731,
+          "no_result": false
+        },
+        {
+          "query": "loyalty_points",
+          "used_query": "loyalty_points point",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/customers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "loyalty_points"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/customers.py:8",
+            "src/shop/customers.py:12"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 903,
+          "no_result": false
+        },
+        {
+          "query": "hash_password digest",
+          "used_query": "hash_password digest",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "hash_password"
+          },
+          "rank": 2,
+          "returned": [
+            "src/shop/security.py:10",
+            "src/shop/security.py:6"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0002,
+          "result_chars": 925,
+          "no_result": false
+        },
+        {
+          "query": "refund_window_days",
+          "used_query": "refund_window_days",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "refund_window_days"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/refunds.py:14",
+            "src/shop/refunds.py:3",
+            "src/shop/payments.py:8",
+            "src/shop/refunds.py:10",
+            "src/shop/refunds.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1993,
+          "no_result": false
+        },
+        {
+          "query": "CACHE_TTL_SECONDS",
+          "used_query": "CACHE_TTL_SECONDS second",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/config.py",
+            "start_line": 4,
+            "end_line": 4,
+            "qualname": "CACHE_TTL_SECONDS"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/config.py:4",
+            "src/shop/security.py:3",
+            "src/shop/security.py:14"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1120,
+          "no_result": false
+        },
+        {
+          "query": "free_shipping_threshold",
+          "used_query": "free_shipping_threshold",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 15,
+            "end_line": 17,
+            "qualname": "free_shipping_threshold"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/shipping.py:15",
+            "src/shop/shipping.py:3",
+            "src/shop/shipping.py:6",
+            "src/shop/notifications.py:8"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1725,
+          "no_result": false
+        },
+        {
+          "query": "basket_size items",
+          "used_query": "basket_size items cart item",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/analytics.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "basket_size"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/analytics.py:8",
+            "src/shop/cart.py:3",
+            "src/shop/cart.py:9",
+            "src/shop/cart.py:14",
+            "src/shop/utils.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2300,
+          "no_result": false
+        },
+        {
+          "query": "order_history customer",
+          "used_query": "order_history customer buyer",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/orders.py",
+            "start_line": 17,
+            "end_line": 19,
+            "qualname": "order_history"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/orders.py:17",
+            "src/shop/notifications.py:4",
+            "src/shop/customers.py:4",
+            "src/shop/orders.py:10",
+            "src/shop/customers.py:12"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2106,
+          "no_result": false
+        },
+        {
+          "query": "top_products qty",
+          "used_query": "top_products qty product",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/reporting.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "top_products"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/reporting.py:12",
+            "src/shop/search.py:4",
+            "src/shop/search.py:8",
+            "src/shop/reviews.py:17",
+            "src/shop/reviews.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2006,
+          "no_result": false
+        },
+        {
+          "query": "verify_password digest",
+          "used_query": "verify_password digest",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 10,
+            "end_line": 12,
+            "qualname": "verify_password"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/security.py:10",
+            "src/shop/security.py:6"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 925,
+          "no_result": false
+        },
+        {
+          "query": "how much the buyer has to pay",
+          "used_query": "how much the buyer has to pay customer total amount",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/pricing.py",
+            "start_line": 8,
+            "end_line": 11,
+            "qualname": "order_total"
+          },
+          "rank": 4,
+          "returned": [
+            "src/shop/money.py:7",
+            "src/shop/invoices.py:6",
+            "src/shop/refunds.py:6",
+            "src/shop/pricing.py:8",
+            "src/shop/warehouse.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2106,
+          "no_result": false
+        },
+        {
+          "query": "stop us selling things we do not have",
+          "used_query": "stop us selling things we do not have stock inventory thing",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": 4,
+          "returned": [
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:12",
+            "src/shop/inventory.py:20",
+            "src/shop/inventory.py:6",
+            "src/shop/subscriptions.py:8"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2130,
+          "no_result": false
+        },
+        {
+          "query": "money given back after a return",
+          "used_query": "money given back after a return amount total refund",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "refund_total"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/refunds.py:6",
+            "src/shop/invoices.py:6",
+            "src/shop/refunds.py:10",
+            "src/shop/pricing.py:8",
+            "src/shop/refunds.py:3"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2058,
+          "no_result": false
+        },
+        {
+          "query": "how long a buyer has to ask for money back",
+          "used_query": "how long a buyer has to ask for money back duration ttl customer request amount total refund",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "refund_window_days"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/refunds.py:6",
+            "src/shop/money.py:7",
+            "src/shop/api.py:4",
+            "src/shop/invoices.py:6",
+            "src/shop/refunds.py:10"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0003,
+          "result_chars": 2129,
+          "no_result": false
+        },
+        {
+          "query": "points a buyer earns for spending",
+          "used_query": "points a buyer earns for spending customer spend order point earn",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/customers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "loyalty_points"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/customers.py:8",
+            "src/shop/customers.py:12",
+            "src/shop/orders.py:17",
+            "src/shop/notifications.py:4",
+            "src/shop/customers.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2055,
+          "no_result": false
+        },
+        {
+          "query": "who carries the parcel and what it costs",
+          "used_query": "who carries the parcel and what it costs shipping carrier carrie cost",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 6,
+            "end_line": 9,
+            "qualname": "estimate_shipping"
+          },
+          "rank": 2,
+          "returned": [
+            "src/shop/notifications.py:8",
+            "src/shop/shipping.py:6",
+            "src/shop/shipping.py:11",
+            "src/shop/shipping.py:3",
+            "src/shop/shipping.py:15"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2170,
+          "no_result": false
+        },
+        {
+          "query": "keep a record of what happened for later inspection",
+          "used_query": "keep a record of what happened for later inspection log event audit",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/audit.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "log_event"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/audit.py:4"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 583,
+          "no_result": false
+        },
+        {
+          "query": "make guessing a secret phrase too slow to matter",
+          "used_query": "make guessing a secret phrase too slow to matter hash password",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "hash_password"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/security.py:6",
+            "src/shop/security.py:10",
+            "src/shop/money.py:7",
+            "src/shop/warehouse.py:4"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0003,
+          "result_chars": 1698,
+          "no_result": false
+        },
+        {
+          "query": "how many units are left in the depot",
+          "used_query": "how many units are left in the depot quantity stock available warehouse unit",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 16,
+            "end_line": 18,
+            "qualname": "available_quantity"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:16",
+            "src/shop/inventory.py:20",
+            "src/shop/inventory.py:12",
+            "src/shop/inventory.py:6",
+            "src/shop/inventory.py:3"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0003,
+          "result_chars": 2110,
+          "no_result": false
+        },
+        {
+          "query": "warn when we are running out",
+          "used_query": "warn when we are running out low stock depleted",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 20,
+            "end_line": 22,
+            "qualname": "low_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:20",
+            "src/shop/inventory.py:6",
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:12"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1695,
+          "no_result": false
+        },
+        {
+          "query": "the percentage the government adds",
+          "used_query": "the percentage the government adds rate tax vat",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/tax.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "vat_rate"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/tax.py:8",
+            "src/shop/tax.py:4",
+            "src/shop/pricing.py:18",
+            "src/shop/pricing.py:22",
+            "src/shop/promotions.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2043,
+          "no_result": false
+        },
+        {
+          "query": "the biggest sellers",
+          "used_query": "the biggest sellers top products seller",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/reporting.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "top_products"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/reporting.py:12",
+            "src/shop/search.py:8",
+            "src/shop/reviews.py:17"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1313,
+          "no_result": false
+        },
+        {
+          "query": "how often visitors end up buying",
+          "used_query": "how often visitors end up buying visits ready order orders visitor",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/analytics.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "conversion_rate"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/analytics.py:4",
+            "src/shop/orders.py:17",
+            "src/shop/pricing.py:8",
+            "src/shop/orders.py:10",
+            "src/shop/money.py:19"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2208,
+          "no_result": false
+        },
+        {
+          "query": "try again when something fails",
+          "used_query": "try again when something fails retry failed fail",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/utils.py",
+            "start_line": 8,
+            "end_line": 11,
+            "qualname": "retry_call"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/utils.py:8",
+            "src/shop/workers.py:8",
+            "src/shop/payments.py:12"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1341,
+          "no_result": false
+        },
+        {
+          "query": "cut a long list into small pieces",
+          "used_query": "cut a long list into small pieces duration ttl items chunks piece",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/utils.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "chunked"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/config.py:4",
+            "src/shop/security.py:3",
+            "src/shop/inventory.py:20",
+            "src/shop/reviews.py:17",
+            "src/shop/security.py:14"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0003,
+          "result_chars": 1907,
+          "no_result": false
+        },
+        {
+          "query": "tell the buyer the parcel is on its way",
+          "used_query": "tell the buyer the parcel is on its way customer shipping carrier",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/notifications.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "send_shipping_update"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/notifications.py:8",
+            "src/shop/shipping.py:11",
+            "src/shop/shipping.py:3",
+            "src/shop/shipping.py:15",
+            "src/shop/customers.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2088,
+          "no_result": false
+        },
+        {
+          "query": "how long a login stays valid",
+          "used_query": "how long a login stays valid duration ttl token password expiry stay",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "token_expiry"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/security.py:14",
+            "src/shop/security.py:3",
+            "src/shop/security.py:6",
+            "src/shop/security.py:10",
+            "src/shop/coupons.py:12"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2000,
+          "no_result": false
+        },
+        {
+          "query": "the cheapest company to move the box",
+          "used_query": "the cheapest company to move the box carrier shipping parcel",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 11,
+            "end_line": 13,
+            "qualname": "cheapest_carrier"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/shipping.py:11",
+            "src/shop/warehouse.py:4",
+            "src/shop/notifications.py:8",
+            "src/shop/money.py:7",
+            "src/shop/shipping.py:3"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2056,
+          "no_result": false
+        },
+        {
+          "query": "what the buyer owes before any reduction",
+          "used_query": "what the buyer owes before any reduction customer total amount discount",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/pricing.py",
+            "start_line": 8,
+            "end_line": 11,
+            "qualname": "order_total"
+          },
+          "rank": 3,
+          "returned": [
+            "src/shop/invoices.py:6",
+            "src/shop/refunds.py:6",
+            "src/shop/pricing.py:8",
+            "src/shop/pricing.py:22",
+            "src/shop/promotions.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0003,
+          "result_chars": 2131,
+          "no_result": false
+        },
+        {
+          "query": "put stock back after a cancellation",
+          "used_query": "put stock back after a cancellation release refund cancel",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "release_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:12",
+            "src/shop/refunds.py:6",
+            "src/shop/inventory.py:3",
+            "src/shop/subscriptions.py:8",
+            "src/shop/orders.py:10"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2095,
+          "no_result": false
+        },
+        {
+          "query": "reject a request to take more than we hold",
+          "used_query": "reject a request to take more than we hold requested stock available",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:6",
+            "src/shop/inventory.py:12",
+            "src/shop/api.py:4",
+            "src/shop/money.py:7",
+            "src/shop/inventory.py:3"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2039,
+          "no_result": false
+        },
+        {
+          "query": "the value kept back from a salary",
+          "used_query": "the value kept back from a salary withholding refund gross",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/tax.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "withholding"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/tax.py:12",
+            "src/shop/refunds.py:6",
+            "src/shop/refunds.py:3",
+            "src/shop/refunds.py:14",
+            "src/shop/coupons.py:8"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1994,
+          "no_result": false
+        },
+        {
+          "query": "a short list of the best performers",
+          "used_query": "a short list of the best performers items performer",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/search.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "rank_results"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/promotions.py:8",
+            "src/shop/inventory.py:20",
+            "src/shop/reviews.py:17",
+            "src/shop/utils.py:4",
+            "src/shop/orders.py:17"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2070,
+          "no_result": false
+        },
+        {
+          "query": "drain the pending work",
+          "used_query": "drain the pending work process queue",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/workers.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "process_queue"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/workers.py:4"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 551,
+          "no_result": false
+        },
+        {
+          "query": "collect the jobs that did not finish",
+          "used_query": "collect the jobs that did not finish queue",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/workers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "retry_failed_jobs"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/workers.py:8",
+            "src/shop/workers.py:4"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 942,
+          "no_result": false
+        },
+        {
+          "query": "confirm a service is up",
+          "used_query": "confirm a service is up health ready",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/api.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "health_check"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/api.py:8",
+            "src/shop/money.py:19",
+            "src/shop/subscriptions.py:17",
+            "src/shop/session.py:18",
+            "src/shop/customers.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2004,
+          "no_result": false
+        },
+        {
+          "query": "count how many things are in a basket",
+          "used_query": "count how many things are in a basket cart thing",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/analytics.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "basket_size"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/analytics.py:8",
+            "src/shop/ledger.py:18",
+            "src/shop/warehouse.py:16",
+            "src/shop/cart.py:3",
+            "src/shop/cart.py:19"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0003,
+          "result_chars": 2222,
+          "no_result": false
+        },
+        {
+          "query": "sort products by how well they matched",
+          "used_query": "sort products by how well they matched rank score product",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/search.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "rank_results"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/search.py:12",
+            "src/shop/reporting.py:12",
+            "src/shop/search.py:4",
+            "src/shop/search.py:8",
+            "src/shop/reviews.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2039,
+          "no_result": false
+        },
+        {
+          "query": "the amount kept from a wage",
+          "used_query": "the amount kept from a wage withholding gross",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/tax.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "withholding"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/tax.py:12",
+            "src/shop/money.py:15",
+            "src/shop/payments.py:4",
+            "src/shop/invoices.py:23",
+            "src/shop/money.py:7"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1984,
+          "no_result": false
+        },
+        {
+          "query": "when a payment did not go through",
+          "used_query": "when a payment did not go through",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/payments.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "payment_status"
+          },
+          "rank": 2,
+          "returned": [
+            "src/shop/payments.py:8",
+            "src/shop/payments.py:12",
+            "src/shop/payments.py:16",
+            "src/shop/payments.py:4"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1642,
+          "no_result": false
+        },
+        {
+          "query": "give the money back for one item",
+          "used_query": "give the money back for one item amount total refund",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 10,
+            "end_line": 12,
+            "qualname": "partial_refund"
+          },
+          "rank": 3,
+          "returned": [
+            "src/shop/refunds.py:6",
+            "src/shop/invoices.py:6",
+            "src/shop/refunds.py:10",
+            "src/shop/pricing.py:8",
+            "src/shop/cart.py:9"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2143,
+          "no_result": false
+        },
+        {
+          "query": "refund total money returned",
+          "used_query": "refund total money returned amount",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "refund_total"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/refunds.py:6",
+            "src/shop/invoices.py:6",
+            "src/shop/refunds.py:10",
+            "src/shop/pricing.py:8",
+            "src/shop/refunds.py:3"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2040,
+          "no_result": false
+        },
+        {
+          "query": "stock reserve insufficient quantity",
+          "used_query": "stock reserve insufficient quantity",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:6",
+            "src/shop/inventory.py:16",
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:12",
+            "src/shop/inventory.py:20"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2064,
+          "no_result": false
+        },
+        {
+          "query": "sales summary daily totals rows",
+          "used_query": "sales summary daily totals rows sale total",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/reporting.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "sales_summary"
+          },
+          "rank": 2,
+          "returned": [
+            "src/shop/reporting.py:8",
+            "src/shop/reporting.py:4",
+            "src/shop/invoices.py:6",
+            "src/shop/refunds.py:6",
+            "src/shop/pricing.py:8"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2093,
+          "no_result": false
+        },
+        {
+          "query": "customer tier loyalty points",
+          "used_query": "customer tier loyalty points buyer point",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/customers.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "customer_tier"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/customers.py:12",
+            "src/shop/customers.py:8",
+            "src/shop/promotions.py:12",
+            "src/shop/customers.py:4",
+            "src/shop/notifications.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2015,
+          "no_result": false
+        },
+        {
+          "query": "queue retry failed jobs worker",
+          "used_query": "queue retry failed jobs worker",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/workers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "retry_failed_jobs"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/workers.py:8",
+            "src/shop/workers.py:4",
+            "src/shop/utils.py:8",
+            "src/shop/payments.py:12"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1680,
+          "no_result": false
+        },
+        {
+          "query": "product search rank results score",
+          "used_query": "product search rank results score result",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/search.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "rank_results"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/search.py:12",
+            "src/shop/search.py:4",
+            "src/shop/reviews.py:4",
+            "src/shop/reporting.py:12"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1685,
+          "no_result": false
+        },
+        {
+          "query": "cache ttl seconds expiry",
+          "used_query": "cache ttl seconds expiry second",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/config.py",
+            "start_line": 4,
+            "end_line": 4,
+            "qualname": "CACHE_TTL_SECONDS"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/config.py:4",
+            "src/shop/security.py:14",
+            "src/shop/security.py:3",
+            "src/shop/coupons.py:12"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1509,
+          "no_result": false
+        },
+        {
+          "query": "token expiry login valid",
+          "used_query": "token expiry login valid password ttl",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "token_expiry"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/security.py:14",
+            "src/shop/security.py:3",
+            "src/shop/security.py:6",
+            "src/shop/security.py:10",
+            "src/shop/coupons.py:12"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1969,
+          "no_result": false
+        }
+      ]
+    },
+    "C_generic_expansion": {
+      "summary": {
+        "queries": 51,
+        "recall@1": 0.5098,
+        "recall@3": 0.6667,
+        "recall@5": 0.6863,
+        "mrr": 0.5791,
+        "no_result_rate": 0.0784,
+        "mean_candidates": 3.43,
+        "mean_latency_s": 0.0001,
+        "mean_result_chars": 1453.6,
+        "groups": {
+          "lexical": {
+            "n": 12,
+            "recall@1": 0.9167,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.9583
+          },
+          "paraphrase": {
+            "n": 31,
+            "recall@1": 0.2581,
+            "recall@3": 0.4516,
+            "recall@5": 0.4839,
+            "mrr": 0.3398
+          },
+          "mixed": {
+            "n": 8,
+            "recall@1": 0.875,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.9375
+          }
+        }
+      },
+      "rows": [
+        {
+          "query": "reserve_stock",
+          "used_query": "reserve_stock",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:6",
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:12",
+            "src/shop/inventory.py:20"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0003,
+          "result_chars": 1659,
+          "no_result": false
+        },
+        {
+          "query": "MIN_STOCK",
+          "used_query": "MIN_STOCK",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 3,
+            "end_line": 3,
+            "qualname": "MIN_STOCK"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:20",
+            "src/shop/inventory.py:12",
+            "src/shop/shipping.py:3",
+            "src/shop/inventory.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1950,
+          "no_result": false
+        },
+        {
+          "query": "estimate_shipping express",
+          "used_query": "estimate_shipping express expres",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 6,
+            "end_line": 9,
+            "qualname": "estimate_shipping"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/shipping.py:6",
+            "src/shop/shipping.py:3",
+            "src/shop/shipping.py:15",
+            "src/shop/notifications.py:8"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1731,
+          "no_result": false
+        },
+        {
+          "query": "loyalty_points",
+          "used_query": "loyalty_points point",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/customers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "loyalty_points"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/customers.py:8",
+            "src/shop/customers.py:12"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 903,
+          "no_result": false
+        },
+        {
+          "query": "hash_password digest",
+          "used_query": "hash_password digest",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "hash_password"
+          },
+          "rank": 2,
+          "returned": [
+            "src/shop/security.py:10",
+            "src/shop/security.py:6"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 925,
+          "no_result": false
+        },
+        {
+          "query": "refund_window_days",
+          "used_query": "refund_window_days",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "refund_window_days"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/refunds.py:14",
+            "src/shop/refunds.py:3",
+            "src/shop/payments.py:8",
+            "src/shop/refunds.py:10",
+            "src/shop/refunds.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1993,
+          "no_result": false
+        },
+        {
+          "query": "CACHE_TTL_SECONDS",
+          "used_query": "CACHE_TTL_SECONDS second",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/config.py",
+            "start_line": 4,
+            "end_line": 4,
+            "qualname": "CACHE_TTL_SECONDS"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/config.py:4",
+            "src/shop/security.py:3",
+            "src/shop/security.py:14"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1120,
+          "no_result": false
+        },
+        {
+          "query": "free_shipping_threshold",
+          "used_query": "free_shipping_threshold",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 15,
+            "end_line": 17,
+            "qualname": "free_shipping_threshold"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/shipping.py:15",
+            "src/shop/shipping.py:3",
+            "src/shop/shipping.py:6",
+            "src/shop/notifications.py:8"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1725,
+          "no_result": false
+        },
+        {
+          "query": "basket_size items",
+          "used_query": "basket_size items item",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/analytics.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "basket_size"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/analytics.py:8",
+            "src/shop/cart.py:9",
+            "src/shop/cart.py:14",
+            "src/shop/utils.py:4",
+            "src/shop/cart.py:3"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2232,
+          "no_result": false
+        },
+        {
+          "query": "order_history customer",
+          "used_query": "order_history customer",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/orders.py",
+            "start_line": 17,
+            "end_line": 19,
+            "qualname": "order_history"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/orders.py:17",
+            "src/shop/notifications.py:4",
+            "src/shop/customers.py:4",
+            "src/shop/orders.py:10",
+            "src/shop/customers.py:12"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2100,
+          "no_result": false
+        },
+        {
+          "query": "top_products qty",
+          "used_query": "top_products qty product",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/reporting.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "top_products"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/reporting.py:12",
+            "src/shop/search.py:4",
+            "src/shop/search.py:8",
+            "src/shop/reviews.py:17",
+            "src/shop/reviews.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2006,
+          "no_result": false
+        },
+        {
+          "query": "verify_password digest",
+          "used_query": "verify_password digest",
+          "group": "lexical",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 10,
+            "end_line": 12,
+            "qualname": "verify_password"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/security.py:10",
+            "src/shop/security.py:6"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 925,
+          "no_result": false
+        },
+        {
+          "query": "how much the buyer has to pay",
+          "used_query": "how much the buyer has to pay purchaser",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/pricing.py",
+            "start_line": 8,
+            "end_line": 11,
+            "qualname": "order_total"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/money.py:7",
+            "src/shop/warehouse.py:4"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 925,
+          "no_result": false
+        },
+        {
+          "query": "stop us selling things we do not have",
+          "used_query": "stop us selling things we do not have halt thing",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/subscriptions.py:8"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 571,
+          "no_result": false
+        },
+        {
+          "query": "money given back after a return",
+          "used_query": "money given back after a return cash funds",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "refund_total"
+          },
+          "rank": 3,
+          "returned": [
+            "src/shop/money.py:11",
+            "src/shop/inventory.py:12",
+            "src/shop/refunds.py:6"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1277,
+          "no_result": false
+        },
+        {
+          "query": "how long a buyer has to ask for money back",
+          "used_query": "how long a buyer has to ask for money back purchaser cash funds",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "refund_window_days"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/money.py:7",
+            "src/shop/warehouse.py:4",
+            "src/shop/money.py:11",
+            "src/shop/inventory.py:12",
+            "src/shop/refunds.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2044,
+          "no_result": false
+        },
+        {
+          "query": "points a buyer earns for spending",
+          "used_query": "points a buyer earns for spending purchaser point earn",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/customers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "loyalty_points"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/customers.py:8",
+            "src/shop/customers.py:12"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 935,
+          "no_result": false
+        },
+        {
+          "query": "who carries the parcel and what it costs",
+          "used_query": "who carries the parcel and what it costs carrie cost",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 6,
+            "end_line": 9,
+            "qualname": "estimate_shipping"
+          },
+          "rank": 2,
+          "returned": [
+            "src/shop/notifications.py:8",
+            "src/shop/shipping.py:6"
+          ],
+          "candidates": 2,
+          "latency_s": 0.0001,
+          "result_chars": 992,
+          "no_result": false
+        },
+        {
+          "query": "keep a record of what happened for later inspection",
+          "used_query": "keep a record of what happened for later inspection retain",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/audit.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "log_event"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/audit.py:4"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 541,
+          "no_result": false
+        },
+        {
+          "query": "make guessing a secret phrase too slow to matter",
+          "used_query": "make guessing a secret phrase too slow to matter",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "hash_password"
+          },
+          "rank": 3,
+          "returned": [
+            "src/shop/money.py:7",
+            "src/shop/warehouse.py:4",
+            "src/shop/security.py:6",
+            "src/shop/security.py:10"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1646,
+          "no_result": false
+        },
+        {
+          "query": "how many units are left in the depot",
+          "used_query": "how many units are left in the depot unit",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 16,
+            "end_line": 18,
+            "qualname": "available_quantity"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/money.py:11",
+            "src/shop/money.py:7",
+            "src/shop/cart.py:19",
+            "src/shop/ledger.py:10",
+            "src/shop/audit.py:8"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1929,
+          "no_result": false
+        },
+        {
+          "query": "warn when we are running out",
+          "used_query": "warn when we are running out alert",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 20,
+            "end_line": 22,
+            "qualname": "low_stock"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/inventory.py:6"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 622,
+          "no_result": false
+        },
+        {
+          "query": "the percentage the government adds",
+          "used_query": "the percentage the government adds",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/tax.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "vat_rate"
+          },
+          "rank": null,
+          "returned": [],
+          "candidates": 0,
+          "latency_s": 0.0001,
+          "result_chars": 190,
+          "no_result": true
+        },
+        {
+          "query": "the biggest sellers",
+          "used_query": "the biggest sellers largest seller",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/reporting.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "top_products"
+          },
+          "rank": null,
+          "returned": [],
+          "candidates": 0,
+          "latency_s": 0.0001,
+          "result_chars": 190,
+          "no_result": true
+        },
+        {
+          "query": "how often visitors end up buying",
+          "used_query": "how often visitors end up buying visitor",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/analytics.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "conversion_rate"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/money.py:19",
+            "src/shop/customers.py:4",
+            "src/shop/pricing.py:13",
+            "src/shop/pricing.py:8"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1674,
+          "no_result": false
+        },
+        {
+          "query": "try again when something fails",
+          "used_query": "try again when something fails fail",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/utils.py",
+            "start_line": 8,
+            "end_line": 11,
+            "qualname": "retry_call"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/utils.py:8"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 554,
+          "no_result": false
+        },
+        {
+          "query": "cut a long list into small pieces",
+          "used_query": "cut a long list into small pieces divide piece",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/utils.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "chunked"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/reviews.py:17",
+            "src/shop/orders.py:17",
+            "src/shop/inventory.py:20"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1291,
+          "no_result": false
+        },
+        {
+          "query": "tell the buyer the parcel is on its way",
+          "used_query": "tell the buyer the parcel is on its way inform purchaser",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/notifications.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "send_shipping_update"
+          },
+          "rank": 3,
+          "returned": [
+            "src/shop/subscriptions.py:17",
+            "src/shop/session.py:18",
+            "src/shop/notifications.py:8",
+            "src/shop/utils.py:8",
+            "src/shop/api.py:8"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2046,
+          "no_result": false
+        },
+        {
+          "query": "how long a login stays valid",
+          "used_query": "how long a login stays valid stay",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "token_expiry"
+          },
+          "rank": null,
+          "returned": [],
+          "candidates": 0,
+          "latency_s": 0.0001,
+          "result_chars": 189,
+          "no_result": true
+        },
+        {
+          "query": "the cheapest company to move the box",
+          "used_query": "the cheapest company to move the box least expensive",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/shipping.py",
+            "start_line": 11,
+            "end_line": 13,
+            "qualname": "cheapest_carrier"
+          },
+          "rank": 3,
+          "returned": [
+            "src/shop/warehouse.py:4",
+            "src/shop/money.py:7",
+            "src/shop/shipping.py:11"
+          ],
+          "candidates": 3,
+          "latency_s": 0.0001,
+          "result_chars": 1325,
+          "no_result": false
+        },
+        {
+          "query": "what the buyer owes before any reduction",
+          "used_query": "what the buyer owes before any reduction purchaser",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/pricing.py",
+            "start_line": 8,
+            "end_line": 11,
+            "qualname": "order_total"
+          },
+          "rank": null,
+          "returned": [],
+          "candidates": 0,
+          "latency_s": 0.0001,
+          "result_chars": 206,
+          "no_result": true
+        },
+        {
+          "query": "put stock back after a cancellation",
+          "used_query": "put stock back after a cancellation place",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "release_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:12",
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:20",
+            "src/shop/inventory.py:6",
+            "src/shop/money.py:11"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2024,
+          "no_result": false
+        },
+        {
+          "query": "reject a request to take more than we hold",
+          "used_query": "reject a request to take more than we hold",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": 5,
+          "returned": [
+            "src/shop/api.py:4",
+            "src/shop/money.py:7",
+            "src/shop/warehouse.py:4",
+            "src/shop/payments.py:4",
+            "src/shop/inventory.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2074,
+          "no_result": false
+        },
+        {
+          "query": "the value kept back from a salary",
+          "used_query": "the value kept back from a salary",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/tax.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "withholding"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/coupons.py:8",
+            "src/shop/money.py:15",
+            "src/shop/money.py:19",
+            "src/shop/money.py:11",
+            "src/shop/utils.py:13"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1944,
+          "no_result": false
+        },
+        {
+          "query": "a short list of the best performers",
+          "used_query": "a short list of the best performers performer",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/search.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "rank_results"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/promotions.py:8",
+            "src/shop/reviews.py:17",
+            "src/shop/orders.py:17",
+            "src/shop/inventory.py:20"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1680,
+          "no_result": false
+        },
+        {
+          "query": "drain the pending work",
+          "used_query": "drain the pending work",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/workers.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "process_queue"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/workers.py:4"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 518,
+          "no_result": false
+        },
+        {
+          "query": "collect the jobs that did not finish",
+          "used_query": "collect the jobs that did not finish",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/workers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "retry_failed_jobs"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/workers.py:8"
+          ],
+          "candidates": 1,
+          "latency_s": 0.0001,
+          "result_chars": 577,
+          "no_result": false
+        },
+        {
+          "query": "confirm a service is up",
+          "used_query": "confirm a service is up verify",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/api.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "health_check"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/api.py:8",
+            "src/shop/security.py:10",
+            "src/shop/money.py:19",
+            "src/shop/subscriptions.py:17",
+            "src/shop/session.py:18"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0003,
+          "result_chars": 2016,
+          "no_result": false
+        },
+        {
+          "query": "count how many things are in a basket",
+          "used_query": "count how many things are in a basket tally thing",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/analytics.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "basket_size"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/analytics.py:8",
+            "src/shop/ledger.py:18",
+            "src/shop/warehouse.py:16",
+            "src/shop/inventory.py:16",
+            "src/shop/reporting.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0003,
+          "result_chars": 1974,
+          "no_result": false
+        },
+        {
+          "query": "sort products by how well they matched",
+          "used_query": "sort products by how well they matched order product",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/search.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "rank_results"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/search.py:4",
+            "src/shop/search.py:8",
+            "src/shop/reporting.py:12",
+            "src/shop/orders.py:10",
+            "src/shop/orders.py:6"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2133,
+          "no_result": false
+        },
+        {
+          "query": "the amount kept from a wage",
+          "used_query": "the amount kept from a wage",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/tax.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "withholding"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/money.py:15",
+            "src/shop/payments.py:4",
+            "src/shop/invoices.py:23",
+            "src/shop/money.py:7",
+            "src/shop/ledger.py:10"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0003,
+          "result_chars": 1962,
+          "no_result": false
+        },
+        {
+          "query": "when a payment did not go through",
+          "used_query": "when a payment did not go through",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/payments.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "payment_status"
+          },
+          "rank": 2,
+          "returned": [
+            "src/shop/payments.py:8",
+            "src/shop/payments.py:12",
+            "src/shop/payments.py:16",
+            "src/shop/payments.py:4"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0002,
+          "result_chars": 1642,
+          "no_result": false
+        },
+        {
+          "query": "give the money back for one item",
+          "used_query": "give the money back for one item cash funds",
+          "group": "paraphrase",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 10,
+            "end_line": 12,
+            "qualname": "partial_refund"
+          },
+          "rank": null,
+          "returned": [
+            "src/shop/cart.py:9",
+            "src/shop/cart.py:14",
+            "src/shop/warehouse.py:8",
+            "src/shop/refunds.py:6",
+            "src/shop/cart.py:3"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2244,
+          "no_result": false
+        },
+        {
+          "query": "refund total money returned",
+          "used_query": "refund total money returned cash funds sent back",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/refunds.py",
+            "start_line": 6,
+            "end_line": 8,
+            "qualname": "refund_total"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/refunds.py:6",
+            "src/shop/inventory.py:12",
+            "src/shop/refunds.py:3",
+            "src/shop/refunds.py:14",
+            "src/shop/payments.py:8"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 1992,
+          "no_result": false
+        },
+        {
+          "query": "stock reserve insufficient quantity",
+          "used_query": "stock reserve insufficient quantity",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/inventory.py",
+            "start_line": 6,
+            "end_line": 10,
+            "qualname": "reserve_stock"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/inventory.py:6",
+            "src/shop/inventory.py:16",
+            "src/shop/inventory.py:3",
+            "src/shop/inventory.py:12",
+            "src/shop/inventory.py:20"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 2064,
+          "no_result": false
+        },
+        {
+          "query": "sales summary daily totals rows",
+          "used_query": "sales summary daily totals rows sale total",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/reporting.py",
+            "start_line": 4,
+            "end_line": 6,
+            "qualname": "sales_summary"
+          },
+          "rank": 2,
+          "returned": [
+            "src/shop/reporting.py:8",
+            "src/shop/reporting.py:4",
+            "src/shop/invoices.py:6",
+            "src/shop/refunds.py:6",
+            "src/shop/pricing.py:8"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2093,
+          "no_result": false
+        },
+        {
+          "query": "customer tier loyalty points",
+          "used_query": "customer tier loyalty points point",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/customers.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "customer_tier"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/customers.py:12",
+            "src/shop/customers.py:8",
+            "src/shop/promotions.py:12",
+            "src/shop/customers.py:4",
+            "src/shop/notifications.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0002,
+          "result_chars": 2009,
+          "no_result": false
+        },
+        {
+          "query": "queue retry failed jobs worker",
+          "used_query": "queue retry failed jobs worker",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/workers.py",
+            "start_line": 8,
+            "end_line": 10,
+            "qualname": "retry_failed_jobs"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/workers.py:8",
+            "src/shop/workers.py:4",
+            "src/shop/utils.py:8",
+            "src/shop/payments.py:12"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1680,
+          "no_result": false
+        },
+        {
+          "query": "product search rank results score",
+          "used_query": "product search rank results score result",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/search.py",
+            "start_line": 12,
+            "end_line": 14,
+            "qualname": "rank_results"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/search.py:12",
+            "src/shop/search.py:4",
+            "src/shop/reviews.py:4",
+            "src/shop/reporting.py:12"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1685,
+          "no_result": false
+        },
+        {
+          "query": "cache ttl seconds expiry",
+          "used_query": "cache ttl seconds expiry second",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/config.py",
+            "start_line": 4,
+            "end_line": 4,
+            "qualname": "CACHE_TTL_SECONDS"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/config.py:4",
+            "src/shop/security.py:14",
+            "src/shop/security.py:3",
+            "src/shop/coupons.py:12"
+          ],
+          "candidates": 4,
+          "latency_s": 0.0001,
+          "result_chars": 1509,
+          "no_result": false
+        },
+        {
+          "query": "token expiry login valid",
+          "used_query": "token expiry login valid",
+          "group": "mixed",
+          "gold": {
+            "file_path": "src/shop/security.py",
+            "start_line": 14,
+            "end_line": 16,
+            "qualname": "token_expiry"
+          },
+          "rank": 1,
+          "returned": [
+            "src/shop/security.py:14",
+            "src/shop/coupons.py:12",
+            "src/shop/security.py:3",
+            "src/shop/payments.py:16",
+            "src/shop/payments.py:4"
+          ],
+          "candidates": 5,
+          "latency_s": 0.0001,
+          "result_chars": 1899,
+          "no_result": false
+        }
+      ]
+    }
+  }
+}
