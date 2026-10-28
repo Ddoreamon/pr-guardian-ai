@@ -506,6 +506,34 @@ no accuracy claim is made.
 Design notes and the dense-retrieval evidence:
 [`docs/rag-stage-v2.md`](docs/rag-stage-v2.md).
 
+### Hybrid retrieval (v3.1, local dense + RRF)
+
+`PR_GUARDIAN_RETRIEVAL_MODE=bm25|dense|hybrid` (default **bm25**). Dense runs a
+local ONNX `BAAI/bge-small-en-v1.5` (MIT, revision pinned, 133 MB, CPU, no external
+API, no source upload); the optional `dense` extra keeps it out of the default
+install and away from Render. Hybrid performs two independent recalls and fuses
+them with RRF (k = 60, fixed before measurement), so a chunk BM25 never returned
+can still appear.
+
+Measured on the synthetic Dev corpus (31 paraphrase queries) and on
+`pallets/click` at a pinned SHA (864 chunks, 20 queries, run once):
+
+| Corpus | Method | Recall@1 | Recall@3 | Recall@5 | MRR |
+|---|---|---|---|---|---|
+| synthetic | BM25 | 25.81% | 41.94% | 45.16% | 0.324 |
+| synthetic | **dense** | **58.06%** | **90.32%** | 96.77% | **0.737** |
+| synthetic | hybrid | 45.16% | 74.19% | 87.10% | 0.597 |
+| click | BM25 | 20.00% | 20.00% | 25.00% | 0.210 |
+| click | **dense** | **30.00%** | **40.00%** | **60.00%** | **0.395** |
+| click | hybrid | 15.00% | 35.00% | 40.00% | 0.246 |
+
+Dense independently recovered 16/31 and 7/20 gold chunks that BM25's top-5 did not
+contain, with no case in the opposite direction. **Hybrid as specified is worse
+than dense alone on both corpora** — RRF weights a much weaker BM25 list equally —
+so it is not recommended; `dense` is the mode worth keeping. Details and the
+real-model smoke: [`docs/hybrid-stage.md`](docs/hybrid-stage.md),
+[`docs/hybrid-eval-v1/REPORT.md`](docs/hybrid-eval-v1/REPORT.md).
+
 ### Corrections to earlier benchmark artefacts
 
 Committed reports are historical records and are not rewritten. Known defects in

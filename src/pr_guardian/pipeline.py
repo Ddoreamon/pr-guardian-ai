@@ -19,8 +19,10 @@ def _tool_backend(cfg: Settings, repo: Path, head: str):
     if cfg.tool_backend == "mcp":
         from .mcp_client import MCPToolBackend
 
-        return MCPToolBackend(repo, head), True
-    return TrustedCodebase.from_git(repo, head), False
+        return MCPToolBackend(repo, head, retrieval_mode=cfg.retrieval_mode), True
+    codebase = TrustedCodebase.from_git(repo, head)
+    codebase.retrieval_mode = cfg.retrieval_mode
+    return codebase, False
 from .git_reader import read_changed_files, validate_ref
 from .llm_reviewer import review_with_llm
 from .models import (

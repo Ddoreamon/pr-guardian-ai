@@ -19,7 +19,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+dense = [
+    # optional local embedding stack; never installed for the web app or Render
+    "numpy>=1.26",
+    "onnxruntime>=1.18",
+    "tokenizers>=0.20",
+]
 dev = [
+    # numeric only: lets CI run the fusion/dense-cache logic with a fake embedder
+    # without pulling onnxruntime or the model
+    "numpy>=1.26",
     "playwright>=1.45",
     # test-only: proves MCP sessions leave no server child process behind
     "psutil>=5.9",

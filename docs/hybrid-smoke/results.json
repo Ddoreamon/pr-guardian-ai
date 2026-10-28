@@ -1,0 +1,349 @@
+{
+  "corpus_label": "<rag-dev-case>",
+  "gold": {
+    "symbol": "apply_credit",
+    "file": "src/shop/invoices.py"
+  },
+  "parity": {
+    "query": "credit invoice units",
+    "top_k": 5,
+    "identical": true,
+    "ref": "5c00507cd65fdb812e785d95f73a7a032dbdf6ab",
+    "local_latency_s": 0.932,
+    "mcp_latency_s": 0.9526,
+    "mcp_rpc_latency_s": 0.9525,
+    "top_files": [
+      "src/shop/invoices.py",
+      "src/shop/checkout.py",
+      "src/shop/invoices.py",
+      "src/shop/invoices.py",
+      "src/shop/invoices.py"
+    ],
+    "gold_in_top_k": true
+  },
+  "retrieval_mode": "hybrid",
+  "cases": [
+    {
+      "case": "bug",
+      "branch": "dev/credit-cents",
+      "snapshot_sha": "5c00507cd65fdb812e785d95f73a7a032dbdf6ab",
+      "llm_status": "partial",
+      "tool_status": "tool_limit",
+      "model_calls": 4,
+      "model_failures": 0,
+      "rounds": 3,
+      "prompt_tokens": 9455,
+      "completion_tokens": 1071,
+      "wall_s": 9.823,
+      "used_search": true,
+      "search_calls": 1,
+      "search_found_gold": false,
+      "tool_calls": [
+        {
+          "round": 1,
+          "call_id": "call_00_H2iNYn7wjnb9hMoouz9I7907",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/checkout.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 1,
+          "call_id": "call_01_s01AafohRMgsG7UJzKpb2955",
+          "name": "find_symbol_definition",
+          "arguments": {
+            "symbol": "apply_credit"
+          },
+          "outcome": "hit",
+          "matched": 1
+        },
+        {
+          "round": 2,
+          "call_id": "call_00_C0w6tE0wKO6xdxB6dYQh9894",
+          "name": "search_code",
+          "arguments": {
+            "query": "finalise(order)",
+            "top_k": 5
+          },
+          "outcome": "hit",
+          "matched": 5
+        },
+        {
+          "round": 2,
+          "call_id": "call_01_d5YiCwzGT2DfSaaTH4Hk0900",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/invoices.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 3,
+          "call_id": "call_00_Q2zrdoUGn2Z4Ab8X1UCw7597",
+          "name": "search_code",
+          "arguments": {
+            "query": "order[\\\"amount\\\"] order total cents",
+            "top_k": 10
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        },
+        {
+          "round": 3,
+          "call_id": "call_01_HowEWwld1nt5sUBVCwhg1534",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/orders.py",
+            "start_line": 1,
+            "end_line": 25
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        }
+      ],
+      "tool_payloads": [
+        {
+          "tool": "read_code_context",
+          "ok": true,
+          "ref": "5c00507cd65fdb812e785d95f73a7a032dbdf6ab",
+          "count": null,
+          "files": [],
+          "symbols": [],
+          "retrieval": null
+        },
+        {
+          "tool": "find_symbol_definition",
+          "ok": true,
+          "ref": "5c00507cd65fdb812e785d95f73a7a032dbdf6ab",
+          "count": 1,
+          "files": [],
+          "symbols": [
+            "src/shop/invoices.py"
+          ],
+          "retrieval": null
+        },
+        {
+          "tool": "search_code",
+          "ok": true,
+          "ref": "5c00507cd65fdb812e785d95f73a7a032dbdf6ab",
+          "count": 5,
+          "files": [
+            "src/shop/checkout.py",
+            "src/shop/orders.py",
+            "src/shop/orders.py",
+            "src/shop/orders.py",
+            "src/shop/pricing.py"
+          ],
+          "symbols": [],
+          "retrieval": {
+            "mode": "bm25",
+            "bm25_top_k": 10,
+            "dense_top_k": 10,
+            "rrf_k": 60,
+            "model": {
+              "id": "BAAI/bge-small-en-v1.5",
+              "revision": "5c38ec7c405ec4b44b94cc5a9bb96e735b38267a",
+              "dim": 384
+            },
+            "mode_effective": "bm25"
+          }
+        },
+        {
+          "tool": "read_code_context",
+          "ok": true,
+          "ref": "5c00507cd65fdb812e785d95f73a7a032dbdf6ab",
+          "count": null,
+          "files": [],
+          "symbols": [],
+          "retrieval": null
+        }
+      ],
+      "findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 8,
+          "end_line": 8,
+          "category": "data handling",
+          "severity": "high",
+          "summary": "finalise now passes a cents value to apply_credit, which expects whole currency units, so invoices are credited 100x too much",
+          "explanation": "apply_credit's documented contract (src/shop/invoices.py:24) states it takes an amount \"given in whole currency units (not cents)\", and it stores that value directly on the invoice as invoice[\"credit\"] (line 25). The previous code passed order[\"amount\"], a whole-unit value consistent with that contract. The change passes order[\"cents\"] instead, which by name and convention is a hundredths-of-a-unit value, so the resulting credit written onto the invoice is 100x the intended amount and is in a different unit from the rest of the invoice data. This breaks the caller/callee unit contract documented on apply_credit.",
+          "evidence": "src/shop/invoices.py:23-25: def apply_credit(invoice, amount, note=\"\"):\n    \"\"\"Apply a credit given in whole currency units (not cents).\"\"\"\n    invoice[\"credit\"] = amount\nCompared with src/shop/checkout.py:8: apply_credit(order[\"invoice\"], order[\"cents\"])",
+          "suggested_fix": "Keep passing a whole-currency-unit amount (e.g. revert to order[\"amount\"]), or, if orders truly carry cents, convert explicitly before the call: apply_credit(order[\"invoice\"], order[\"cents\"] / 100) -- and make the unit explicit in the call site/docstring.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null
+        }
+      ],
+      "llm_findings": [
+        {
+          "id": "llm-1",
+          "file_path": "src/shop/checkout.py",
+          "start_line": 8,
+          "end_line": 8,
+          "category": "data handling",
+          "severity": "high",
+          "summary": "finalise now passes a cents value to apply_credit, which expects whole currency units, so invoices are credited 100x too much",
+          "explanation": "apply_credit's documented contract (src/shop/invoices.py:24) states it takes an amount \"given in whole currency units (not cents)\", and it stores that value directly on the invoice as invoice[\"credit\"] (line 25). The previous code passed order[\"amount\"], a whole-unit value consistent with that contract. The change passes order[\"cents\"] instead, which by name and convention is a hundredths-of-a-unit value, so the resulting credit written onto the invoice is 100x the intended amount and is in a different unit from the rest of the invoice data. This breaks the caller/callee unit contract documented on apply_credit.",
+          "evidence": "src/shop/invoices.py:23-25: def apply_credit(invoice, amount, note=\"\"):\n    \"\"\"Apply a credit given in whole currency units (not cents).\"\"\"\n    invoice[\"credit\"] = amount\nCompared with src/shop/checkout.py:8: apply_credit(order[\"invoice\"], order[\"cents\"])",
+          "suggested_fix": "Keep passing a whole-currency-unit amount (e.g. revert to order[\"amount\"]), or, if orders truly carry cents, convert explicitly before the call: apply_credit(order[\"invoice\"], order[\"cents\"] / 100) -- and make the unit explicit in the call site/docstring.",
+          "source": "llm",
+          "verification_status": "suspected",
+          "rule": null
+        }
+      ],
+      "session_closed": true,
+      "leaked_threads": []
+    },
+    {
+      "case": "clean",
+      "branch": "dev/credit-units",
+      "snapshot_sha": "3525f3ed29df223bb710b8a3aaf25b0f28327d6f",
+      "llm_status": "partial",
+      "tool_status": "tool_limit",
+      "model_calls": 4,
+      "model_failures": 0,
+      "rounds": 3,
+      "prompt_tokens": 8871,
+      "completion_tokens": 963,
+      "wall_s": 9.776,
+      "used_search": true,
+      "search_calls": 1,
+      "search_found_gold": true,
+      "tool_calls": [
+        {
+          "round": 1,
+          "call_id": "call_00_ET_HLa9HzxPFShJjovkGWq72958",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/checkout.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 1,
+          "call_id": "call_01_ET_OUV27nTx5MM2ssWHpKJ54205",
+          "name": "find_symbol_definition",
+          "arguments": {
+            "symbol": "apply_credit"
+          },
+          "outcome": "hit",
+          "matched": 1
+        },
+        {
+          "round": 2,
+          "call_id": "call_00_48Op136OodLDCOuBI7vv7558",
+          "name": "read_code_context",
+          "arguments": {
+            "file_path": "src/shop/invoices.py",
+            "start_line": 1,
+            "end_line": 40
+          },
+          "outcome": "hit",
+          "matched": 0
+        },
+        {
+          "round": 2,
+          "call_id": "call_01_28DSDnrgqvNIZVhe4YDp6484",
+          "name": "search_code",
+          "arguments": {
+            "query": "apply_credit note"
+          },
+          "outcome": "hit",
+          "matched": 3
+        },
+        {
+          "round": 3,
+          "call_id": "call_00_msTvBdPj5POtWAzpgZax4181",
+          "name": "search_code",
+          "arguments": {
+            "query": "note audit trail credit note",
+            "top_k": 10
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        },
+        {
+          "round": 3,
+          "call_id": "call_01_dX5R7BFvMmMUq5bREqmT0414",
+          "name": "search_code",
+          "arguments": {
+            "query": "finalise order checkout",
+            "top_k": 10
+          },
+          "outcome": "budget_denied",
+          "matched": 0
+        }
+      ],
+      "tool_payloads": [
+        {
+          "tool": "read_code_context",
+          "ok": true,
+          "ref": "3525f3ed29df223bb710b8a3aaf25b0f28327d6f",
+          "count": null,
+          "files": [],
+          "symbols": [],
+          "retrieval": null
+        },
+        {
+          "tool": "find_symbol_definition",
+          "ok": true,
+          "ref": "3525f3ed29df223bb710b8a3aaf25b0f28327d6f",
+          "count": 1,
+          "files": [],
+          "symbols": [
+            "src/shop/invoices.py"
+          ],
+          "retrieval": null
+        },
+        {
+          "tool": "read_code_context",
+          "ok": true,
+          "ref": "3525f3ed29df223bb710b8a3aaf25b0f28327d6f",
+          "count": null,
+          "files": [],
+          "symbols": [],
+          "retrieval": null
+        },
+        {
+          "tool": "search_code",
+          "ok": true,
+          "ref": "3525f3ed29df223bb710b8a3aaf25b0f28327d6f",
+          "count": 3,
+          "files": [
+            "src/shop/invoices.py",
+            "src/shop/checkout.py",
+            "src/shop/pricing.py"
+          ],
+          "symbols": [],
+          "retrieval": {
+            "mode": "bm25",
+            "bm25_top_k": 10,
+            "dense_top_k": 10,
+            "rrf_k": 60,
+            "model": {
+              "id": "BAAI/bge-small-en-v1.5",
+              "revision": "5c38ec7c405ec4b44b94cc5a9bb96e735b38267a",
+              "dim": 384
+            },
+            "mode_effective": "bm25"
+          }
+        }
+      ],
+      "findings": [],
+      "llm_findings": [],
+      "session_closed": true,
+      "leaked_threads": []
+    }
+  ]
+}

@@ -1,0 +1,3647 @@
+{
+  "model": {
+    "model_id": "BAAI/bge-small-en-v1.5",
+    "revision": "5c38ec7c405ec4b44b94cc5a9bb96e735b38267a",
+    "dim": 384,
+    "text_version": "v1",
+    "normalise": true,
+    "dir": "C:\\Users\\qiyan\\OneDrive\\文档\\deepseek-harness\\default-workspace\\pr-guardian-ai\\.cache\\models\\bge-small-en-v1.5@5c38ec7c405e",
+    "available": true,
+    "reason": "ready"
+  },
+  "corpora": {
+    "synthetic": {
+      "role": "dev (queries authored earlier)",
+      "label": "<synthetic-v2>",
+      "sha": "24192166d62ececf7b22179968ba546bd5fc858f",
+      "chunks": 103,
+      "files": 28,
+      "index_build_s": 0.8066,
+      "queries": 31,
+      "dropped_ambiguous": 0,
+      "result": {
+        "summary": {
+          "queries": 31,
+          "bm25": {
+            "recall@1": 0.2581,
+            "recall@3": 0.4194,
+            "recall@5": 0.4516,
+            "mrr": 0.3237,
+            "no_result_rate": 0.129,
+            "mean_latency_s": 0.0003,
+            "mean_chars": 1603
+          },
+          "dense": {
+            "recall@1": 0.5806,
+            "recall@3": 0.9032,
+            "recall@5": 0.9677,
+            "mrr": 0.7366,
+            "no_result_rate": 0.0,
+            "mean_latency_s": 0.007,
+            "mean_chars": 2249.0
+          },
+          "hybrid": {
+            "recall@1": 0.4516,
+            "recall@3": 0.7419,
+            "recall@5": 0.871,
+            "mrr": 0.5973,
+            "no_result_rate": 0.0,
+            "mean_latency_s": 0.0072,
+            "mean_chars": 2776.0
+          },
+          "dense_only_hits": 16,
+          "bm25_only_hits": 0,
+          "hybrid_adds_over_bm25": 13
+        },
+        "rows": [
+          {
+            "query": "how much the buyer has to pay",
+            "gold": {
+              "file_path": "src/shop/pricing.py",
+              "qualname": "order_total",
+              "start_line": 8,
+              "end_line": 11
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0003,
+              "chars": 1245,
+              "chunk_ids": [
+                "58aa342cb9beb862",
+                "19bbb5aece7e888c"
+              ],
+              "sources": [
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 3,
+              "latency_s": 0.0077,
+              "chars": 2299,
+              "chunk_ids": [
+                "7d5cda88b34d2154",
+                "80548904994ccada",
+                "f201216b43e97171",
+                "621aaf9f0f65acca",
+                "3cf7b785079c92c9"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 5,
+              "latency_s": 0.0068,
+              "chars": 2824,
+              "chunk_ids": [
+                "58aa342cb9beb862",
+                "7d5cda88b34d2154",
+                "80548904994ccada",
+                "19bbb5aece7e888c",
+                "f201216b43e97171"
+              ],
+              "sources": [
+                "both",
+                "dense",
+                "dense",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "stop us selling things we do not have",
+            "gold": {
+              "file_path": "src/shop/inventory.py",
+              "qualname": "reserve_stock",
+              "start_line": 6,
+              "end_line": 10
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0003,
+              "chars": 842,
+              "chunk_ids": [
+                "6d9a4654a50a1b2f"
+              ],
+              "sources": [
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 4,
+              "latency_s": 0.0077,
+              "chars": 2420,
+              "chunk_ids": [
+                "01663843ab928577",
+                "1496e23b37c73b18",
+                "6d9a4654a50a1b2f",
+                "f8be799de2843272",
+                "6b1a93b745291b3e"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 4,
+              "latency_s": 0.0078,
+              "chars": 2869,
+              "chunk_ids": [
+                "6d9a4654a50a1b2f",
+                "01663843ab928577",
+                "1496e23b37c73b18",
+                "f8be799de2843272",
+                "6b1a93b745291b3e"
+              ],
+              "sources": [
+                "both",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "money given back after a return",
+            "gold": {
+              "file_path": "src/shop/refunds.py",
+              "qualname": "refund_total",
+              "start_line": 6,
+              "end_line": 8
+            },
+            "bm25": {
+              "rank": 3,
+              "latency_s": 0.0003,
+              "chars": 1644,
+              "chunk_ids": [
+                "13fb7ef7dd0669e1",
+                "6b1a93b745291b3e",
+                "14d759080cd3eaf7"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 2,
+              "latency_s": 0.0075,
+              "chars": 2258,
+              "chunk_ids": [
+                "72275140ebe62da0",
+                "14d759080cd3eaf7",
+                "8e68f5e169874002",
+                "37a7d53365091571",
+                "fc79e209d4d71a7b"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0067,
+              "chars": 2795,
+              "chunk_ids": [
+                "14d759080cd3eaf7",
+                "6b1a93b745291b3e",
+                "13fb7ef7dd0669e1",
+                "72275140ebe62da0",
+                "8e68f5e169874002"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "bm25",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "how long a buyer has to ask for money back",
+            "gold": {
+              "file_path": "src/shop/refunds.py",
+              "qualname": "refund_window_days",
+              "start_line": 14,
+              "end_line": 16
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0004,
+              "chars": 2497,
+              "chunk_ids": [
+                "58aa342cb9beb862",
+                "19bbb5aece7e888c",
+                "13fb7ef7dd0669e1",
+                "6b1a93b745291b3e",
+                "14d759080cd3eaf7"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 2,
+              "latency_s": 0.0089,
+              "chars": 2190,
+              "chunk_ids": [
+                "72275140ebe62da0",
+                "fc79e209d4d71a7b",
+                "3be155bc4492b998",
+                "14d759080cd3eaf7",
+                "1ec080f5d72b5cbf"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 5,
+              "latency_s": 0.0082,
+              "chars": 2809,
+              "chunk_ids": [
+                "14d759080cd3eaf7",
+                "6b1a93b745291b3e",
+                "58aa342cb9beb862",
+                "72275140ebe62da0",
+                "fc79e209d4d71a7b"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "bm25",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "points a buyer earns for spending",
+            "gold": {
+              "file_path": "src/shop/customers.py",
+              "qualname": "loyalty_points",
+              "start_line": 8,
+              "end_line": 10
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0003,
+              "chars": 1244,
+              "chunk_ids": [
+                "042776b772cd3cbe",
+                "0c0c1cc52b083825"
+              ],
+              "sources": [
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0069,
+              "chars": 2239,
+              "chunk_ids": [
+                "042776b772cd3cbe",
+                "0c0c1cc52b083825",
+                "621aaf9f0f65acca",
+                "6120a8ad8fec1f20",
+                "676a81a4ea64e6a0"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.007,
+              "chars": 2747,
+              "chunk_ids": [
+                "042776b772cd3cbe",
+                "0c0c1cc52b083825",
+                "621aaf9f0f65acca",
+                "6120a8ad8fec1f20",
+                "676a81a4ea64e6a0"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "who carries the parcel and what it costs",
+            "gold": {
+              "file_path": "src/shop/shipping.py",
+              "qualname": "estimate_shipping",
+              "start_line": 6,
+              "end_line": 9
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0003,
+              "chars": 857,
+              "chunk_ids": [
+                "a7d6050679e2de37"
+              ],
+              "sources": [
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0069,
+              "chars": 2336,
+              "chunk_ids": [
+                "7d5cda88b34d2154",
+                "7b3806f5444dd594",
+                "a7d6050679e2de37",
+                "0245f69a93a3c6ae",
+                "2fccbf5735072a35"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 2,
+              "latency_s": 0.0073,
+              "chars": 2785,
+              "chunk_ids": [
+                "a7d6050679e2de37",
+                "7d5cda88b34d2154",
+                "7b3806f5444dd594",
+                "0245f69a93a3c6ae",
+                "2fccbf5735072a35"
+              ],
+              "sources": [
+                "both",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "keep a record of what happened for later inspection",
+            "gold": {
+              "file_path": "src/shop/audit.py",
+              "qualname": "log_event",
+              "start_line": 4,
+              "end_line": 6
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0003,
+              "chars": 816,
+              "chunk_ids": [
+                "83ca5fe12d7dae15"
+              ],
+              "sources": [
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0083,
+              "chars": 2184,
+              "chunk_ids": [
+                "83ca5fe12d7dae15",
+                "a6a9b37d1b2f461c",
+                "918e220d3836611a",
+                "68e60664307c16e8",
+                "1a85f148cddee9db"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0077,
+              "chars": 2633,
+              "chunk_ids": [
+                "83ca5fe12d7dae15",
+                "a6a9b37d1b2f461c",
+                "918e220d3836611a",
+                "68e60664307c16e8",
+                "1a85f148cddee9db"
+              ],
+              "sources": [
+                "both",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "make guessing a secret phrase too slow to matter",
+            "gold": {
+              "file_path": "src/shop/security.py",
+              "qualname": "hash_password",
+              "start_line": 6,
+              "end_line": 8
+            },
+            "bm25": {
+              "rank": 3,
+              "latency_s": 0.0004,
+              "chars": 2072,
+              "chunk_ids": [
+                "58aa342cb9beb862",
+                "19bbb5aece7e888c",
+                "54bd87bbd962090f",
+                "1fbcdbbea5b21198"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.008,
+              "chars": 2197,
+              "chunk_ids": [
+                "54bd87bbd962090f",
+                "1fbcdbbea5b21198",
+                "09a4db8768963cd1",
+                "5984a9d930d28b89",
+                "7b3806f5444dd594"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0086,
+              "chars": 2765,
+              "chunk_ids": [
+                "54bd87bbd962090f",
+                "1fbcdbbea5b21198",
+                "58aa342cb9beb862",
+                "19bbb5aece7e888c",
+                "09a4db8768963cd1"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "bm25",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "how many units are left in the depot",
+            "gold": {
+              "file_path": "src/shop/inventory.py",
+              "qualname": "available_quantity",
+              "start_line": 16,
+              "end_line": 18
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0006,
+              "chars": 2398,
+              "chunk_ids": [
+                "13fb7ef7dd0669e1",
+                "58aa342cb9beb862",
+                "0245f69a93a3c6ae",
+                "5e910bf22b467ab8",
+                "a6a9b37d1b2f461c"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 2,
+              "latency_s": 0.0071,
+              "chars": 2261,
+              "chunk_ids": [
+                "e30a99650d956db6",
+                "9bc14e3d69fbae8f",
+                "f8be799de2843272",
+                "ad1dd147e8c10df9",
+                "642e2eabae1a2094"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 3,
+              "latency_s": 0.0088,
+              "chars": 2724,
+              "chunk_ids": [
+                "13fb7ef7dd0669e1",
+                "e30a99650d956db6",
+                "9bc14e3d69fbae8f",
+                "58aa342cb9beb862",
+                "0245f69a93a3c6ae"
+              ],
+              "sources": [
+                "bm25",
+                "dense",
+                "dense",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "warn when we are running out",
+            "gold": {
+              "file_path": "src/shop/inventory.py",
+              "qualname": "low_stock",
+              "start_line": 20,
+              "end_line": 22
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0003,
+              "chars": 898,
+              "chunk_ids": [
+                "f8be799de2843272"
+              ],
+              "sources": [
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": null,
+              "latency_s": 0.0067,
+              "chars": 2288,
+              "chunk_ids": [
+                "58be8f454a17e138",
+                "f8be799de2843272",
+                "30fa9f06f7562a10",
+                "918e220d3836611a",
+                "65898935ff36fe09"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0068,
+              "chars": 2737,
+              "chunk_ids": [
+                "f8be799de2843272",
+                "58be8f454a17e138",
+                "30fa9f06f7562a10",
+                "918e220d3836611a",
+                "65898935ff36fe09"
+              ],
+              "sources": [
+                "both",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "the percentage the government adds",
+            "gold": {
+              "file_path": "src/shop/tax.py",
+              "qualname": "vat_rate",
+              "start_line": 8,
+              "end_line": 10
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0002,
+              "chars": 465,
+              "chunk_ids": [],
+              "sources": [],
+              "no_result": true,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0081,
+              "chars": 2241,
+              "chunk_ids": [
+                "4993aea5adffccef",
+                "70e619a677c75e8e",
+                "f201216b43e97171",
+                "e5f3c9832eccd79c",
+                "92bb98db2102ce28"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0068,
+              "chars": 2648,
+              "chunk_ids": [
+                "4993aea5adffccef",
+                "70e619a677c75e8e",
+                "f201216b43e97171",
+                "e5f3c9832eccd79c",
+                "92bb98db2102ce28"
+              ],
+              "sources": [
+                "dense",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "the biggest sellers",
+            "gold": {
+              "file_path": "src/shop/reporting.py",
+              "qualname": "top_products",
+              "start_line": 12,
+              "end_line": 14
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0002,
+              "chars": 450,
+              "chunk_ids": [],
+              "sources": [],
+              "no_result": true,
+              "error": null
+            },
+            "dense": {
+              "rank": 2,
+              "latency_s": 0.0054,
+              "chars": 2244,
+              "chunk_ids": [
+                "9643b60f941f73ea",
+                "7f585c4a8bccda05",
+                "c22d9152fedf3fca",
+                "642e2eabae1a2094",
+                "fea34e40fb174b03"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 2,
+              "latency_s": 0.0057,
+              "chars": 2651,
+              "chunk_ids": [
+                "9643b60f941f73ea",
+                "7f585c4a8bccda05",
+                "c22d9152fedf3fca",
+                "642e2eabae1a2094",
+                "fea34e40fb174b03"
+              ],
+              "sources": [
+                "dense",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "how often visitors end up buying",
+            "gold": {
+              "file_path": "src/shop/analytics.py",
+              "qualname": "conversion_rate",
+              "start_line": 4,
+              "end_line": 6
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0004,
+              "chars": 2092,
+              "chunk_ids": [
+                "70e619a677c75e8e",
+                "be75d06cb1e449d5",
+                "92bb98db2102ce28",
+                "f201216b43e97171"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 3,
+              "latency_s": 0.008,
+              "chars": 2205,
+              "chunk_ids": [
+                "042776b772cd3cbe",
+                "9bc14e3d69fbae8f",
+                "a4a75a950f6f3958",
+                "111c4670586fb700",
+                "ad1dd147e8c10df9"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 5,
+              "latency_s": 0.0067,
+              "chars": 2727,
+              "chunk_ids": [
+                "042776b772cd3cbe",
+                "70e619a677c75e8e",
+                "be75d06cb1e449d5",
+                "9bc14e3d69fbae8f",
+                "a4a75a950f6f3958"
+              ],
+              "sources": [
+                "dense",
+                "bm25",
+                "bm25",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "try again when something fails",
+            "gold": {
+              "file_path": "src/shop/utils.py",
+              "qualname": "retry_call",
+              "start_line": 8,
+              "end_line": 11
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0003,
+              "chars": 831,
+              "chunk_ids": [
+                "bf604367975c2801"
+              ],
+              "sources": [
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0063,
+              "chars": 2243,
+              "chunk_ids": [
+                "bf604367975c2801",
+                "65898935ff36fe09",
+                "1ec080f5d72b5cbf",
+                "37a7d53365091571",
+                "918e220d3836611a"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0072,
+              "chars": 2692,
+              "chunk_ids": [
+                "bf604367975c2801",
+                "65898935ff36fe09",
+                "1ec080f5d72b5cbf",
+                "37a7d53365091571",
+                "918e220d3836611a"
+              ],
+              "sources": [
+                "both",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "cut a long list into small pieces",
+            "gold": {
+              "file_path": "src/shop/utils.py",
+              "qualname": "chunked",
+              "start_line": 4,
+              "end_line": 6
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0004,
+              "chars": 1656,
+              "chunk_ids": [
+                "c22d9152fedf3fca",
+                "68e60664307c16e8",
+                "5984a9d930d28b89"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0068,
+              "chars": 2205,
+              "chunk_ids": [
+                "8adc549e9bffc7a8",
+                "642e2eabae1a2094",
+                "ad1dd147e8c10df9",
+                "e30a99650d956db6",
+                "5984a9d930d28b89"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 3,
+              "latency_s": 0.0075,
+              "chars": 2802,
+              "chunk_ids": [
+                "5984a9d930d28b89",
+                "c22d9152fedf3fca",
+                "8adc549e9bffc7a8",
+                "642e2eabae1a2094",
+                "68e60664307c16e8"
+              ],
+              "sources": [
+                "both",
+                "bm25",
+                "dense",
+                "dense",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "tell the buyer the parcel is on its way",
+            "gold": {
+              "file_path": "src/shop/notifications.py",
+              "qualname": "send_shipping_update",
+              "start_line": 8,
+              "end_line": 10
+            },
+            "bm25": {
+              "rank": 3,
+              "latency_s": 0.0004,
+              "chars": 2503,
+              "chunk_ids": [
+                "961d99e986988055",
+                "ac5807f19c3dfe13",
+                "a7d6050679e2de37",
+                "bf604367975c2801",
+                "1a85f148cddee9db"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0074,
+              "chars": 2342,
+              "chunk_ids": [
+                "a7d6050679e2de37",
+                "2fccbf5735072a35",
+                "1496e23b37c73b18",
+                "1ec080f5d72b5cbf",
+                "918e220d3836611a"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0077,
+              "chars": 2911,
+              "chunk_ids": [
+                "a7d6050679e2de37",
+                "961d99e986988055",
+                "2fccbf5735072a35",
+                "ac5807f19c3dfe13",
+                "1496e23b37c73b18"
+              ],
+              "sources": [
+                "both",
+                "bm25",
+                "dense",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "how long a login stays valid",
+            "gold": {
+              "file_path": "src/shop/security.py",
+              "qualname": "token_expiry",
+              "start_line": 14,
+              "end_line": 16
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0002,
+              "chars": 459,
+              "chunk_ids": [],
+              "sources": [],
+              "no_result": true,
+              "error": null
+            },
+            "dense": {
+              "rank": 3,
+              "latency_s": 0.0067,
+              "chars": 2118,
+              "chunk_ids": [
+                "30fa9f06f7562a10",
+                "1fbcdbbea5b21198",
+                "58be8f454a17e138",
+                "f3adcc0fb8ea81a3",
+                "3be155bc4492b998"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 3,
+              "latency_s": 0.0069,
+              "chars": 2525,
+              "chunk_ids": [
+                "30fa9f06f7562a10",
+                "1fbcdbbea5b21198",
+                "58be8f454a17e138",
+                "f3adcc0fb8ea81a3",
+                "3be155bc4492b998"
+              ],
+              "sources": [
+                "dense",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "the cheapest company to move the box",
+            "gold": {
+              "file_path": "src/shop/shipping.py",
+              "qualname": "cheapest_carrier",
+              "start_line": 11,
+              "end_line": 13
+            },
+            "bm25": {
+              "rank": 3,
+              "latency_s": 0.0003,
+              "chars": 1687,
+              "chunk_ids": [
+                "19bbb5aece7e888c",
+                "58aa342cb9beb862",
+                "7b3806f5444dd594"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 2,
+              "latency_s": 0.0068,
+              "chars": 2210,
+              "chunk_ids": [
+                "19bbb5aece7e888c",
+                "7b3806f5444dd594",
+                "0d28902a89c86241",
+                "a7d6050679e2de37",
+                "5984a9d930d28b89"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 2,
+              "latency_s": 0.0073,
+              "chars": 2762,
+              "chunk_ids": [
+                "19bbb5aece7e888c",
+                "7b3806f5444dd594",
+                "58aa342cb9beb862",
+                "0d28902a89c86241",
+                "a7d6050679e2de37"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "bm25",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "what the buyer owes before any reduction",
+            "gold": {
+              "file_path": "src/shop/pricing.py",
+              "qualname": "order_total",
+              "start_line": 8,
+              "end_line": 11
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0002,
+              "chars": 471,
+              "chunk_ids": [],
+              "sources": [],
+              "no_result": true,
+              "error": null
+            },
+            "dense": {
+              "rank": 3,
+              "latency_s": 0.0064,
+              "chars": 2379,
+              "chunk_ids": [
+                "1496e23b37c73b18",
+                "72275140ebe62da0",
+                "f201216b43e97171",
+                "8e68f5e169874002",
+                "1ec080f5d72b5cbf"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 3,
+              "latency_s": 0.0072,
+              "chars": 2786,
+              "chunk_ids": [
+                "1496e23b37c73b18",
+                "72275140ebe62da0",
+                "f201216b43e97171",
+                "8e68f5e169874002",
+                "1ec080f5d72b5cbf"
+              ],
+              "sources": [
+                "dense",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "put stock back after a cancellation",
+            "gold": {
+              "file_path": "src/shop/inventory.py",
+              "qualname": "release_stock",
+              "start_line": 12,
+              "end_line": 14
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0004,
+              "chars": 2492,
+              "chunk_ids": [
+                "6b1a93b745291b3e",
+                "563609083666a42c",
+                "5984a9d930d28b89",
+                "f8be799de2843272",
+                "13fb7ef7dd0669e1"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0063,
+              "chars": 2411,
+              "chunk_ids": [
+                "6b1a93b745291b3e",
+                "1496e23b37c73b18",
+                "f8be799de2843272",
+                "72275140ebe62da0",
+                "14d759080cd3eaf7"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0072,
+              "chars": 2939,
+              "chunk_ids": [
+                "6b1a93b745291b3e",
+                "f8be799de2843272",
+                "14d759080cd3eaf7",
+                "563609083666a42c",
+                "5984a9d930d28b89"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "both"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "reject a request to take more than we hold",
+            "gold": {
+              "file_path": "src/shop/inventory.py",
+              "qualname": "reserve_stock",
+              "start_line": 6,
+              "end_line": 10
+            },
+            "bm25": {
+              "rank": 5,
+              "latency_s": 0.0004,
+              "chars": 2548,
+              "chunk_ids": [
+                "14ea52071affc85a",
+                "58aa342cb9beb862",
+                "19bbb5aece7e888c",
+                "80548904994ccada",
+                "f8be799de2843272"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0073,
+              "chars": 2319,
+              "chunk_ids": [
+                "f8be799de2843272",
+                "1496e23b37c73b18",
+                "e1789d2bea94a469",
+                "6d9a4654a50a1b2f",
+                "bf604367975c2801"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0082,
+              "chars": 2977,
+              "chunk_ids": [
+                "f8be799de2843272",
+                "80548904994ccada",
+                "14ea52071affc85a",
+                "58aa342cb9beb862",
+                "1496e23b37c73b18"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "bm25",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "the value kept back from a salary",
+            "gold": {
+              "file_path": "src/shop/tax.py",
+              "qualname": "withholding",
+              "start_line": 12,
+              "end_line": 14
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0004,
+              "chars": 2418,
+              "chunk_ids": [
+                "3b8988d9f1a5b328",
+                "3cf7b785079c92c9",
+                "70e619a677c75e8e",
+                "13fb7ef7dd0669e1",
+                "45586cf036c88b08"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0065,
+              "chars": 2207,
+              "chunk_ids": [
+                "e5f3c9832eccd79c",
+                "70e619a677c75e8e",
+                "14d759080cd3eaf7",
+                "8e68f5e169874002",
+                "3732c4be6c8e08da"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 2,
+              "latency_s": 0.0073,
+              "chars": 2838,
+              "chunk_ids": [
+                "70e619a677c75e8e",
+                "e5f3c9832eccd79c",
+                "3cf7b785079c92c9",
+                "3b8988d9f1a5b328",
+                "14d759080cd3eaf7"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "both"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "a short list of the best performers",
+            "gold": {
+              "file_path": "src/shop/search.py",
+              "qualname": "rank_results",
+              "start_line": 12,
+              "end_line": 14
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0003,
+              "chars": 2096,
+              "chunk_ids": [
+                "fea34e40fb174b03",
+                "c22d9152fedf3fca",
+                "68e60664307c16e8",
+                "5984a9d930d28b89"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 4,
+              "latency_s": 0.0065,
+              "chars": 2301,
+              "chunk_ids": [
+                "c22d9152fedf3fca",
+                "7f585c4a8bccda05",
+                "fea34e40fb174b03",
+                "5bf487526180dd67",
+                "4c89b26be9efa938"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0068,
+              "chars": 2883,
+              "chunk_ids": [
+                "c22d9152fedf3fca",
+                "fea34e40fb174b03",
+                "5984a9d930d28b89",
+                "7f585c4a8bccda05",
+                "68e60664307c16e8"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "dense",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "drain the pending work",
+            "gold": {
+              "file_path": "src/shop/workers.py",
+              "qualname": "process_queue",
+              "start_line": 4,
+              "end_line": 6
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0003,
+              "chars": 800,
+              "chunk_ids": [
+                "ae3a81bc19a27989"
+              ],
+              "sources": [
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0063,
+              "chars": 2129,
+              "chunk_ids": [
+                "ae3a81bc19a27989",
+                "918e220d3836611a",
+                "65898935ff36fe09",
+                "89a76d8c9a304b3f",
+                "6d9a4654a50a1b2f"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0061,
+              "chars": 2578,
+              "chunk_ids": [
+                "ae3a81bc19a27989",
+                "918e220d3836611a",
+                "65898935ff36fe09",
+                "89a76d8c9a304b3f",
+                "6d9a4654a50a1b2f"
+              ],
+              "sources": [
+                "both",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "collect the jobs that did not finish",
+            "gold": {
+              "file_path": "src/shop/workers.py",
+              "qualname": "retry_failed_jobs",
+              "start_line": 8,
+              "end_line": 10
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0003,
+              "chars": 859,
+              "chunk_ids": [
+                "65898935ff36fe09"
+              ],
+              "sources": [
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.007,
+              "chars": 2207,
+              "chunk_ids": [
+                "65898935ff36fe09",
+                "bf604367975c2801",
+                "918e220d3836611a",
+                "ad1dd147e8c10df9",
+                "fc79e209d4d71a7b"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0067,
+              "chars": 2674,
+              "chunk_ids": [
+                "65898935ff36fe09",
+                "bf604367975c2801",
+                "918e220d3836611a",
+                "ad1dd147e8c10df9",
+                "fc79e209d4d71a7b"
+              ],
+              "sources": [
+                "both",
+                "dense",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "confirm a service is up",
+            "gold": {
+              "file_path": "src/shop/api.py",
+              "qualname": "health_check",
+              "start_line": 8,
+              "end_line": 10
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0004,
+              "chars": 2446,
+              "chunk_ids": [
+                "1a85f148cddee9db",
+                "70e619a677c75e8e",
+                "961d99e986988055",
+                "ac5807f19c3dfe13",
+                "be75d06cb1e449d5"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0064,
+              "chars": 2221,
+              "chunk_ids": [
+                "1a85f148cddee9db",
+                "676a81a4ea64e6a0",
+                "1ec080f5d72b5cbf",
+                "ac5807f19c3dfe13",
+                "918e220d3836611a"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0066,
+              "chars": 2804,
+              "chunk_ids": [
+                "1a85f148cddee9db",
+                "ac5807f19c3dfe13",
+                "be75d06cb1e449d5",
+                "70e619a677c75e8e",
+                "676a81a4ea64e6a0"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "count how many things are in a basket",
+            "gold": {
+              "file_path": "src/shop/analytics.py",
+              "qualname": "basket_size",
+              "start_line": 8,
+              "end_line": 10
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0006,
+              "chars": 2436,
+              "chunk_ids": [
+                "642e2eabae1a2094",
+                "ad1dd147e8c10df9",
+                "e30a99650d956db6",
+                "9bc14e3d69fbae8f",
+                "9643b60f941f73ea"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0069,
+              "chars": 2170,
+              "chunk_ids": [
+                "642e2eabae1a2094",
+                "e30a99650d956db6",
+                "ad1dd147e8c10df9",
+                "9bc14e3d69fbae8f",
+                "9643b60f941f73ea"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0077,
+              "chars": 2839,
+              "chunk_ids": [
+                "642e2eabae1a2094",
+                "ad1dd147e8c10df9",
+                "e30a99650d956db6",
+                "9bc14e3d69fbae8f",
+                "9643b60f941f73ea"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "both"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "sort products by how well they matched",
+            "gold": {
+              "file_path": "src/shop/search.py",
+              "qualname": "rank_results",
+              "start_line": 12,
+              "end_line": 14
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0003,
+              "chars": 1260,
+              "chunk_ids": [
+                "ecd347b5f9c29943",
+                "7f585c4a8bccda05"
+              ],
+              "sources": [
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 2,
+              "latency_s": 0.0067,
+              "chars": 2207,
+              "chunk_ids": [
+                "7f585c4a8bccda05",
+                "5bf487526180dd67",
+                "ecd347b5f9c29943",
+                "642e2eabae1a2094",
+                "e30a99650d956db6"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 3,
+              "latency_s": 0.0065,
+              "chars": 2732,
+              "chunk_ids": [
+                "7f585c4a8bccda05",
+                "ecd347b5f9c29943",
+                "5bf487526180dd67",
+                "642e2eabae1a2094",
+                "e30a99650d956db6"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "dense",
+                "dense",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "the amount kept from a wage",
+            "gold": {
+              "file_path": "src/shop/tax.py",
+              "qualname": "withholding",
+              "start_line": 12,
+              "end_line": 14
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0004,
+              "chars": 2436,
+              "chunk_ids": [
+                "3cf7b785079c92c9",
+                "80548904994ccada",
+                "6120a8ad8fec1f20",
+                "58aa342cb9beb862",
+                "5e910bf22b467ab8"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0064,
+              "chars": 2183,
+              "chunk_ids": [
+                "e5f3c9832eccd79c",
+                "5e910bf22b467ab8",
+                "3cf7b785079c92c9",
+                "70e619a677c75e8e",
+                "8e68f5e169874002"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0073,
+              "chars": 2861,
+              "chunk_ids": [
+                "3cf7b785079c92c9",
+                "5e910bf22b467ab8",
+                "58aa342cb9beb862",
+                "8e68f5e169874002",
+                "14d759080cd3eaf7"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "both"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "when a payment did not go through",
+            "gold": {
+              "file_path": "src/shop/payments.py",
+              "qualname": "payment_status",
+              "start_line": 12,
+              "end_line": 14
+            },
+            "bm25": {
+              "rank": 2,
+              "latency_s": 0.0003,
+              "chars": 2068,
+              "chunk_ids": [
+                "72275140ebe62da0",
+                "1ec080f5d72b5cbf",
+                "f3adcc0fb8ea81a3",
+                "80548904994ccada"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0067,
+              "chars": 2223,
+              "chunk_ids": [
+                "1ec080f5d72b5cbf",
+                "918e220d3836611a",
+                "72275140ebe62da0",
+                "621aaf9f0f65acca",
+                "111c4670586fb700"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0071,
+              "chars": 2823,
+              "chunk_ids": [
+                "1ec080f5d72b5cbf",
+                "72275140ebe62da0",
+                "f3adcc0fb8ea81a3",
+                "80548904994ccada",
+                "918e220d3836611a"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "give the money back for one item",
+            "gold": {
+              "file_path": "src/shop/refunds.py",
+              "qualname": "partial_refund",
+              "start_line": 10,
+              "end_line": 12
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0004,
+              "chars": 2707,
+              "chunk_ids": [
+                "0a769bc8c20a9c20",
+                "01663843ab928577",
+                "66c3a834007af692",
+                "14d759080cd3eaf7",
+                "9fe7140eaa098712"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0063,
+              "chars": 2283,
+              "chunk_ids": [
+                "8e68f5e169874002",
+                "14d759080cd3eaf7",
+                "72275140ebe62da0",
+                "6b1a93b745291b3e",
+                "01663843ab928577"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0076,
+              "chars": 2917,
+              "chunk_ids": [
+                "14d759080cd3eaf7",
+                "01663843ab928577",
+                "6b1a93b745291b3e",
+                "13fb7ef7dd0669e1",
+                "0a769bc8c20a9c20"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          }
+        ]
+      },
+      "tuned_reference": {
+        "recall@3": 0.8387,
+        "mrr": 0.7796
+      },
+      "cold_s": 2.305,
+      "warm_s": 0.006,
+      "rss_mb_before": 63.9,
+      "rss_mb_after": 272.8
+    },
+    "click": {
+      "role": "held-out (written from the public API, run once)",
+      "label": "pallets/click",
+      "license": "BSD-3-Clause",
+      "sha": "2247b35ea1c47c727d7a06e51fa280e12a863ff6",
+      "chunks": 864,
+      "files": 17,
+      "index_build_s": 1.5588,
+      "queries": 20,
+      "result": {
+        "summary": {
+          "queries": 20,
+          "bm25": {
+            "recall@1": 0.2,
+            "recall@3": 0.2,
+            "recall@5": 0.25,
+            "mrr": 0.21,
+            "no_result_rate": 0.0,
+            "mean_latency_s": 0.0143,
+            "mean_chars": 3449.2
+          },
+          "dense": {
+            "recall@1": 0.3,
+            "recall@3": 0.4,
+            "recall@5": 0.6,
+            "mrr": 0.395,
+            "no_result_rate": 0.0,
+            "mean_latency_s": 0.0088,
+            "mean_chars": 3090.7
+          },
+          "hybrid": {
+            "recall@1": 0.15,
+            "recall@3": 0.35,
+            "recall@5": 0.4,
+            "mrr": 0.2458,
+            "no_result_rate": 0.0,
+            "mean_latency_s": 0.0227,
+            "mean_chars": 3780
+          },
+          "dense_only_hits": 7,
+          "bm25_only_hits": 0,
+          "hybrid_adds_over_bm25": 3
+        },
+        "rows": [
+          {
+            "query": "print text with colour and styling",
+            "gold": {
+              "file_path": "src/click/termui.py",
+              "qualname": "secho",
+              "start_line": 780,
+              "end_line": 811
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0105,
+              "chars": 3379,
+              "chunk_ids": [
+                "adbe0318223815cf",
+                "f9b53dd9e24e1521",
+                "ada287a6df1494ab",
+                "a478122567a4fa2f",
+                "161b4f55cd72576b"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": null,
+              "latency_s": 0.0172,
+              "chars": 3147,
+              "chunk_ids": [
+                "bc703074a16257dd",
+                "a478122567a4fa2f",
+                "e0eeaa560655d320",
+                "4c216947c204bd7d",
+                "fd661239e4efb7e7"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0204,
+              "chars": 3735,
+              "chunk_ids": [
+                "a478122567a4fa2f",
+                "adbe0318223815cf",
+                "f9b53dd9e24e1521",
+                "161b4f55cd72576b",
+                "bc703074a16257dd"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "parse a timestamp written by the user",
+            "gold": {
+              "file_path": "src/click/types.py",
+              "qualname": "DateTime.convert",
+              "start_line": 566,
+              "end_line": 587
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0127,
+              "chars": 3229,
+              "chunk_ids": [
+                "68d3a796a6ae918a",
+                "d90560aff007c0ec",
+                "340e9724273db0a0",
+                "afa1693644fa3c4d",
+                "205b63a2e20451fd"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": null,
+              "latency_s": 0.008,
+              "chars": 2976,
+              "chunk_ids": [
+                "a1913dca3544249b",
+                "2f92e7d25768ab8f",
+                "d90560aff007c0ec",
+                "cad1044ac1aadfc9",
+                "a02aa9a0ceeffd31"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0231,
+              "chars": 3317,
+              "chunk_ids": [
+                "d90560aff007c0ec",
+                "a1913dca3544249b",
+                "68d3a796a6ae918a",
+                "2f92e7d25768ab8f",
+                "340e9724273db0a0"
+              ],
+              "sources": [
+                "both",
+                "dense",
+                "bm25",
+                "dense",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "accept a true or false value from the user",
+            "gold": {
+              "file_path": "src/click/types.py",
+              "qualname": "BoolParamType.convert",
+              "start_line": 870,
+              "end_line": 882
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0167,
+              "chars": 3489,
+              "chunk_ids": [
+                "d8436a56de6f1457",
+                "a4afc26da338156b",
+                "dae4efb31e566978",
+                "143e4bae34e6eb67",
+                "cedf92979bcfe78a"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 2,
+              "latency_s": 0.0075,
+              "chars": 2976,
+              "chunk_ids": [
+                "cedf92979bcfe78a",
+                "f43c9134c67b21b5",
+                "92e8cbede491e292",
+                "30a4b31f8155f5d3",
+                "f438415aa4a72908"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 4,
+              "latency_s": 0.024,
+              "chars": 3837,
+              "chunk_ids": [
+                "cedf92979bcfe78a",
+                "d8436a56de6f1457",
+                "a4afc26da338156b",
+                "f43c9134c67b21b5",
+                "dae4efb31e566978"
+              ],
+              "sources": [
+                "both",
+                "bm25",
+                "bm25",
+                "dense",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "reject bad input with a message and a non-zero status",
+            "gold": {
+              "file_path": "src/click/exceptions.py",
+              "qualname": "UsageError.show",
+              "start_line": 87,
+              "end_line": 111
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0121,
+              "chars": 3392,
+              "chunk_ids": [
+                "0084694aff58f0c5",
+                "f30f2a18af0eb6d8",
+                "780c15b343a4e274",
+                "96c52986e034a575",
+                "0bc7a50f603550cf"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": null,
+              "latency_s": 0.0096,
+              "chars": 3151,
+              "chunk_ids": [
+                "a11001db79347379",
+                "f438415aa4a72908",
+                "7421b28338a65de9",
+                "d57ac1f70e28e00b",
+                "1e200d854b1af9fb"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0203,
+              "chars": 3781,
+              "chunk_ids": [
+                "b03594b932b642c2",
+                "0084694aff58f0c5",
+                "a11001db79347379",
+                "f30f2a18af0eb6d8",
+                "f438415aa4a72908"
+              ],
+              "sources": [
+                "both",
+                "bm25",
+                "dense",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "show a friendly error when something goes wrong",
+            "gold": {
+              "file_path": "src/click/exceptions.py",
+              "qualname": "ClickException.show",
+              "start_line": 57,
+              "end_line": 65
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0123,
+              "chars": 3298,
+              "chunk_ids": [
+                "3d19b1215b325e03",
+                "afc4ae2876b38ba5",
+                "0e83f5e6a90e4056",
+                "c617763010b59e00",
+                "40b9d1bfa31a2f7e"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 4,
+              "latency_s": 0.0076,
+              "chars": 2891,
+              "chunk_ids": [
+                "afc4ae2876b38ba5",
+                "0e83f5e6a90e4056",
+                "3e22ebd1b138f4a5",
+                "3d19b1215b325e03",
+                "40b9d1bfa31a2f7e"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 2,
+              "latency_s": 0.0242,
+              "chars": 3537,
+              "chunk_ids": [
+                "afc4ae2876b38ba5",
+                "3d19b1215b325e03",
+                "0e83f5e6a90e4056",
+                "40b9d1bfa31a2f7e",
+                "3e22ebd1b138f4a5"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "restrict the input to a fixed set of allowed values",
+            "gold": {
+              "file_path": "src/click/types.py",
+              "qualname": "Choice.convert",
+              "start_line": 454,
+              "end_line": 476
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0188,
+              "chars": 3413,
+              "chunk_ids": [
+                "780c15b343a4e274",
+                "2570955372a843ca",
+                "af91f28054d77e24",
+                "01037a34632cffe8",
+                "4f3814c223809536"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": null,
+              "latency_s": 0.0083,
+              "chars": 3169,
+              "chunk_ids": [
+                "9e0f624a5c9105d3",
+                "a5288dc84d3370f0",
+                "37bec3e31493ebdf",
+                "a905b0918fd9ec02",
+                "1e200d854b1af9fb"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0244,
+              "chars": 3739,
+              "chunk_ids": [
+                "9e0f624a5c9105d3",
+                "780c15b343a4e274",
+                "a5288dc84d3370f0",
+                "2570955372a843ca",
+                "37bec3e31493ebdf"
+              ],
+              "sources": [
+                "both",
+                "bm25",
+                "dense",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "accept several values at once for one parameter",
+            "gold": {
+              "file_path": "src/click/types.py",
+              "qualname": "Tuple.convert",
+              "start_line": 1289,
+              "end_line": 1308
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0141,
+              "chars": 3470,
+              "chunk_ids": [
+                "4451b3b94661475b",
+                "6d86aae34f27acd7",
+                "d8436a56de6f1457",
+                "6104e8e475907296",
+                "eaced0b65b28c63e"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 5,
+              "latency_s": 0.0093,
+              "chars": 3183,
+              "chunk_ids": [
+                "1dbc7af5a5aa67f4",
+                "efafe1ec21e9895b",
+                "914d469f746a9d2d",
+                "01f6d4f5466bfc8b",
+                "8717237d77b9f845"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.025,
+              "chars": 3694,
+              "chunk_ids": [
+                "1dbc7af5a5aa67f4",
+                "4451b3b94661475b",
+                "efafe1ec21e9895b",
+                "6d86aae34f27acd7",
+                "914d469f746a9d2d"
+              ],
+              "sources": [
+                "dense",
+                "bm25",
+                "dense",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "render the list of options and their help text",
+            "gold": {
+              "file_path": "src/click/formatting.py",
+              "qualname": "HelpFormatter.write_dl",
+              "start_line": 229,
+              "end_line": 271
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0167,
+              "chars": 3566,
+              "chunk_ids": [
+                "dd75ed6dc2d96fba",
+                "30f5d288b89d2a1c",
+                "5fca184fb3dde931",
+                "14f0fb2cc1f82ee0",
+                "a2e2a56cbf56c048"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": null,
+              "latency_s": 0.008,
+              "chars": 3073,
+              "chunk_ids": [
+                "012c9b57521ca610",
+                "eb9947d5b362b780",
+                "78448784eaa8e675",
+                "a2e2a56cbf56c048",
+                "40b9d1bfa31a2f7e"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0257,
+              "chars": 3809,
+              "chunk_ids": [
+                "dd75ed6dc2d96fba",
+                "a2e2a56cbf56c048",
+                "012c9b57521ca610",
+                "30f5d288b89d2a1c",
+                "eb9947d5b362b780"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "dense",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "choose a text encoding that will work on this stream",
+            "gold": {
+              "file_path": "src/click/_compat.py",
+              "qualname": "get_best_encoding",
+              "start_line": 51,
+              "end_line": 56
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0152,
+              "chars": 3545,
+              "chunk_ids": [
+                "544065ff05c521a4",
+                "31d58920275dc765",
+                "744b27ddce52f335",
+                "303d26c7d512f74e",
+                "8b8ca7afcb88108f"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 4,
+              "latency_s": 0.0085,
+              "chars": 3202,
+              "chunk_ids": [
+                "303d26c7d512f74e",
+                "8b8ca7afcb88108f",
+                "544065ff05c521a4",
+                "e56f7164b67ac642",
+                "744b27ddce52f335"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0219,
+              "chars": 3950,
+              "chunk_ids": [
+                "544065ff05c521a4",
+                "303d26c7d512f74e",
+                "8b8ca7afcb88108f",
+                "744b27ddce52f335",
+                "31d58920275dc765"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "hand the running context to the decorated function",
+            "gold": {
+              "file_path": "src/click/decorators.py",
+              "qualname": "pass_context",
+              "start_line": 28,
+              "end_line": 36
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0194,
+              "chars": 3489,
+              "chunk_ids": [
+                "86d5faaf9aec227c",
+                "65899b54f9ab5311",
+                "587b9c537b05b928",
+                "31f68a364fb4e179",
+                "bf3621a4d19a9e2a"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0075,
+              "chars": 3157,
+              "chunk_ids": [
+                "1f9176b949589aa7",
+                "309cce7b90f1a954",
+                "587b9c537b05b928",
+                "18c4147eba8077f7",
+                "ff2786a0738d9590"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 2,
+              "latency_s": 0.0241,
+              "chars": 3827,
+              "chunk_ids": [
+                "587b9c537b05b928",
+                "1f9176b949589aa7",
+                "bf3621a4d19a9e2a",
+                "86d5faaf9aec227c",
+                "309cce7b90f1a954"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "combine the short flags of one option into a single token",
+            "gold": {
+              "file_path": "src/click/formatting.py",
+              "qualname": "join_options",
+              "start_line": 302,
+              "end_line": 320
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0153,
+              "chars": 3644,
+              "chunk_ids": [
+                "164bc76c2112e074",
+                "b7ba4123f380c8eb",
+                "41780e67411072dd",
+                "012c9b57521ca610",
+                "36f07a964db951ec"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 5,
+              "latency_s": 0.0104,
+              "chars": 3116,
+              "chunk_ids": [
+                "9bb5b13ebe5ec9e2",
+                "25de62561baffde1",
+                "3eaee4e7abe1331c",
+                "99221ba11a024e15",
+                "9dfdde016e756db5"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0243,
+              "chars": 3888,
+              "chunk_ids": [
+                "9bb5b13ebe5ec9e2",
+                "3eaee4e7abe1331c",
+                "164bc76c2112e074",
+                "b7ba4123f380c8eb",
+                "25de62561baffde1"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "bm25",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "turn bytes into text without losing characters",
+            "gold": {
+              "file_path": "src/click/utils.py",
+              "qualname": "make_str",
+              "start_line": 52,
+              "end_line": 59
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0141,
+              "chars": 3202,
+              "chunk_ids": [
+                "57c41f6126fc75ce",
+                "ddf657dc1e64afdb",
+                "5a367dbfabb25ea2",
+                "b3e3b834728de4b1",
+                "e5ad6e6fd7f61d67"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 2,
+              "latency_s": 0.0074,
+              "chars": 3129,
+              "chunk_ids": [
+                "303d26c7d512f74e",
+                "cfaa249c8bc522a2",
+                "8b8ca7afcb88108f",
+                "b2503813d3dfe1fd",
+                "2483901922b034b2"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0214,
+              "chars": 3682,
+              "chunk_ids": [
+                "d8d97236dd5ab59b",
+                "2b8c151806d52986",
+                "303d26c7d512f74e",
+                "57c41f6126fc75ce",
+                "ddf657dc1e64afdb"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "dense",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "check whether a charset only covers plain ascii",
+            "gold": {
+              "file_path": "src/click/_compat.py",
+              "qualname": "is_ascii_encoding",
+              "start_line": 43,
+              "end_line": 48
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0103,
+              "chars": 3339,
+              "chunk_ids": [
+                "9db327693adadd3a",
+                "31d58920275dc765",
+                "6a990b95873c2266",
+                "d28cd26305cbc9a8",
+                "c2dc5fe376debcdb"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0097,
+              "chars": 3128,
+              "chunk_ids": [
+                "9db327693adadd3a",
+                "4d817c9a1c5b9c9b",
+                "a905b0918fd9ec02",
+                "a73d42e716dbd1a1",
+                "587b2963c8d812ee"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0187,
+              "chars": 3726,
+              "chunk_ids": [
+                "9db327693adadd3a",
+                "267b9f0cf940ab0e",
+                "31d58920275dc765",
+                "4d817c9a1c5b9c9b",
+                "6a990b95873c2266"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "bm25",
+                "dense",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "open a file that the user named on the command line",
+            "gold": {
+              "file_path": "src/click/types.py",
+              "qualname": "File.convert",
+              "start_line": 984,
+              "end_line": 1027
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0162,
+              "chars": 3509,
+              "chunk_ids": [
+                "314ef2c92e302d55",
+                "17110fa30396ca86",
+                "d5e0c66343c294ad",
+                "028046f8b88be528",
+                "0c9ba0443950e455"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": null,
+              "latency_s": 0.0091,
+              "chars": 2778,
+              "chunk_ids": [
+                "905fd95e4673f3d6",
+                "45eec94d851d7ac1",
+                "5649c3e5129c69c7",
+                "9e8a39127a5d63e4",
+                "f442b30e70db2ecb"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0247,
+              "chars": 3632,
+              "chunk_ids": [
+                "45eec94d851d7ac1",
+                "314ef2c92e302d55",
+                "905fd95e4673f3d6",
+                "17110fa30396ca86",
+                "d5e0c66343c294ad"
+              ],
+              "sources": [
+                "both",
+                "bm25",
+                "dense",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "render one option''s help entry for the help screen",
+            "gold": {
+              "file_path": "src/click/core.py",
+              "qualname": "Option.get_help_record",
+              "start_line": 3589,
+              "end_line": 3612
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0152,
+              "chars": 3346,
+              "chunk_ids": [
+                "012c9b57521ca610",
+                "f7df64e9726d6a70",
+                "1a01ce98ff8cdb52",
+                "160e7649e662482c",
+                "41780e67411072dd"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": null,
+              "latency_s": 0.0087,
+              "chars": 3199,
+              "chunk_ids": [
+                "012c9b57521ca610",
+                "1a01ce98ff8cdb52",
+                "8ff84352606e519b",
+                "d5e0c66343c294ad",
+                "a2e2a56cbf56c048"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0236,
+              "chars": 3898,
+              "chunk_ids": [
+                "012c9b57521ca610",
+                "1a01ce98ff8cdb52",
+                "3ee615a9b5f1e99c",
+                "f7df64e9726d6a70",
+                "8ff84352606e519b"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "bm25",
+                "dense"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "print the usage line for a command",
+            "gold": {
+              "file_path": "src/click/formatting.py",
+              "qualname": "HelpFormatter.write_usage",
+              "start_line": 158,
+              "end_line": 202
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.0126,
+              "chars": 3501,
+              "chunk_ids": [
+                "54c0a7e2bd0eeaff",
+                "52e7e6213f3f0c40",
+                "569651838eb07b9e",
+                "30f5d288b89d2a1c",
+                "62879be596a2b96e"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": null,
+              "latency_s": 0.0079,
+              "chars": 3087,
+              "chunk_ids": [
+                "52e7e6213f3f0c40",
+                "54c0a7e2bd0eeaff",
+                "62879be596a2b96e",
+                "30f5d288b89d2a1c",
+                "40b9d1bfa31a2f7e"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": null,
+              "latency_s": 0.0206,
+              "chars": 3900,
+              "chunk_ids": [
+                "52e7e6213f3f0c40",
+                "54c0a7e2bd0eeaff",
+                "62879be596a2b96e",
+                "30f5d288b89d2a1c",
+                "569651838eb07b9e"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "both"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "take a value from the command line for a parameter",
+            "gold": {
+              "file_path": "src/click/core.py",
+              "qualname": "Parameter.consume_value",
+              "start_line": 2680,
+              "end_line": 2726
+            },
+            "bm25": {
+              "rank": null,
+              "latency_s": 0.018,
+              "chars": 3656,
+              "chunk_ids": [
+                "2bec779de49cb061",
+                "efafe1ec21e9895b",
+                "005972bf40a89dd3",
+                "0c9ba0443950e455",
+                "eeec1733e68eab6b"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0091,
+              "chars": 2979,
+              "chunk_ids": [
+                "143e4bae34e6eb67",
+                "005972bf40a89dd3",
+                "92e8cbede491e292",
+                "b62413b555cf49c8",
+                "1fa7cb2516b68254"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 3,
+              "latency_s": 0.0282,
+              "chars": 4026,
+              "chunk_ids": [
+                "005972bf40a89dd3",
+                "efafe1ec21e9895b",
+                "143e4bae34e6eb67",
+                "1fa7cb2516b68254",
+                "2bec779de49cb061"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "secho styled text",
+            "gold": {
+              "file_path": "src/click/termui.py",
+              "qualname": "secho",
+              "start_line": 780,
+              "end_line": 811
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0107,
+              "chars": 3466,
+              "chunk_ids": [
+                "ddf657dc1e64afdb",
+                "57c41f6126fc75ce",
+                "b3e3b834728de4b1",
+                "9954e130a122500d",
+                "11af5ae6530a878f"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0074,
+              "chars": 3150,
+              "chunk_ids": [
+                "ddf657dc1e64afdb",
+                "bc703074a16257dd",
+                "b3e3b834728de4b1",
+                "af080cb7ec9f2ea9",
+                "780c15b343a4e274"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0202,
+              "chars": 3799,
+              "chunk_ids": [
+                "ddf657dc1e64afdb",
+                "b3e3b834728de4b1",
+                "57c41f6126fc75ce",
+                "bc703074a16257dd",
+                "9954e130a122500d"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "dense",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "Choice convert values",
+            "gold": {
+              "file_path": "src/click/types.py",
+              "qualname": "Choice.convert",
+              "start_line": 454,
+              "end_line": 476
+            },
+            "bm25": {
+              "rank": 5,
+              "latency_s": 0.0109,
+              "chars": 3535,
+              "chunk_ids": [
+                "f5876d3b4f14754f",
+                "df38f02bb3851f13",
+                "a11001db79347379",
+                "2570955372a843ca",
+                "6151a79ed93cd3c9"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.007,
+              "chars": 3147,
+              "chunk_ids": [
+                "6151a79ed93cd3c9",
+                "df38f02bb3851f13",
+                "f5876d3b4f14754f",
+                "c8e26b9d262bd5a6",
+                "2570955372a843ca"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 3,
+              "latency_s": 0.0176,
+              "chars": 3905,
+              "chunk_ids": [
+                "f5876d3b4f14754f",
+                "df38f02bb3851f13",
+                "6151a79ed93cd3c9",
+                "2570955372a843ca",
+                "c8e26b9d262bd5a6"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "both"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          },
+          {
+            "query": "get_best_encoding stream",
+            "gold": {
+              "file_path": "src/click/_compat.py",
+              "qualname": "get_best_encoding",
+              "start_line": 51,
+              "end_line": 56
+            },
+            "bm25": {
+              "rank": 1,
+              "latency_s": 0.0147,
+              "chars": 3515,
+              "chunk_ids": [
+                "e56f7164b67ac642",
+                "303d26c7d512f74e",
+                "544065ff05c521a4",
+                "5b52b111176a8cd6",
+                "8b8ca7afcb88108f"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "dense": {
+              "rank": 1,
+              "latency_s": 0.0068,
+              "chars": 3176,
+              "chunk_ids": [
+                "e56f7164b67ac642",
+                "303d26c7d512f74e",
+                "5b52b111176a8cd6",
+                "8b8ca7afcb88108f",
+                "544065ff05c521a4"
+              ],
+              "sources": [
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25",
+                "bm25"
+              ],
+              "no_result": false,
+              "error": null
+            },
+            "hybrid": {
+              "rank": 1,
+              "latency_s": 0.0225,
+              "chars": 3918,
+              "chunk_ids": [
+                "e56f7164b67ac642",
+                "303d26c7d512f74e",
+                "5b52b111176a8cd6",
+                "544065ff05c521a4",
+                "8b8ca7afcb88108f"
+              ],
+              "sources": [
+                "both",
+                "both",
+                "both",
+                "both",
+                "both"
+              ],
+              "no_result": false,
+              "error": null
+            }
+          }
+        ]
+      },
+      "cache_disk_bytes": 5002395
+    }
+  }
+}
