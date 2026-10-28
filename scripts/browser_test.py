@@ -338,6 +338,103 @@ def run(base_url: str) -> int:
         page2.screenshot(path=str(SHOTS / "08-error.png"), full_page=True)
         page2.close()
 
+        # --- review status banners (V4.2/V4.3) -----------------------------
+        state_page = browser.new_page()
+        state_page.goto(base_url, wait_until="networkidle")
+        state_page.evaluate(
+            """
+            window.__report = function (over) {
+              var base = {
+                review_id: "synthetic", changed_files: [{file_path: "src/a.py",
+                  change_type: "modified", added_lines: [1]}],
+                static_findings: [], llm_findings: [], final_findings: [],
+                test_summary: {ran: false, skipped_reason: "", passed: 0, failed: 0,
+                               errors: 0, failed_tests: []},
+                llm_status: "ok", llm_note: "", model_name: "deepseek-flash",
+                tool_status: "ok", tool_calls: [], tool_rounds: 0,
+                tool_model_calls: 2, tool_model_failures: 0,
+                llm_prompt_tokens: 10, llm_completion_tokens: 2,
+                review_status: "completed",
+                completeness: {status: "completed", reason: "",
+                               tool_calls_requested: 2, tool_calls_executed: 2,
+                               tool_calls_used: 2, tool_calls_max: 4,
+                               tool_calls_denied: 0, tool_rounds_used: 2,
+                               tool_rounds_max: 3, findings_signal: "has_findings",
+                               duplicate_calls: 0, model_requests: 2,
+                               model_failures: 0, tool_errors: 0, tool_misses: 0,
+                               denied_requests: []}
+              };
+              for (var k in over) { base[k] = over[k]; }
+              window.__prGuardian.render({report: base});
+            };
+            """
+        )
+
+        def state_texts(overrides: str) -> tuple:
+            state_page.evaluate("window.__report(" + overrides + ")")
+            state_page.wait_for_timeout(80)
+            return (
+                state_page.locator("#completeness-banner").inner_text(),
+                state_page.locator("#llm-banner").inner_text(),
+            )
+
+        partial = ("{review_status: 'partial', llm_status: 'partial', "
+                   "completeness: {status: 'partial', reason: 'tool_budget_exhausted', "
+                   "tool_calls_requested: 6, tool_calls_executed: 4, tool_calls_max: 4, "
+                   "tool_calls_denied: 2, findings_signal: 'not_evaluated', "
+                   "denied_requests: [{tool: 'read_code_context', arguments: {}}]}}")
+        comp, llm = state_texts(partial)
+        check("partial banner says NOT a clean review", "NOT a clean review" in comp, comp[:70])
+        check("partial banner counts executed not requested", "4/4" in comp, comp[:90])
+        check("partial llm banner admits the model ran",
+              "did not finish" in llm and "deepseek-flash" in llm, llm[:90])
+        check("partial llm banner never says it did not run",
+              "did not run" not in llm, llm[:90])
+
+        with_finding = ("{review_status: 'partial', llm_status: 'partial', "
+                        "completeness: {status: 'partial', reason: 'tool_budget_exhausted', "
+                        "tool_calls_requested: 4, tool_calls_executed: 4, tool_calls_max: 4, "
+                        "tool_calls_denied: 0, findings_signal: 'has_findings'}, "
+                        "final_findings: [{id: 'llm-1', file_path: 'src/a.py', start_line: 1, "
+                        "end_line: 1, category: 'logic', severity: 'high', summary: 's', "
+                        "source: 'llm', verification_status: 'suspected', "
+                        "evidence_status: 'source_verified', claim_status: 'claim_unjudged'}], "
+                        "llm_findings: []}")
+        comp, llm = state_texts(with_finding)
+        check("partial with findings still says partial", "PARTIAL" in comp, comp[:70])
+        check("false-clean line absent when there is a finding",
+              "NOT a clean review" not in comp, comp[:70])
+        body = state_page.locator("#findings-body").inner_text()
+        check("verified finding shows claim not judged", "claim not judged" in body, body[:90])
+        check("verified finding is not shown as confirmed",
+              "confirmed" not in body.lower(), body[:90])
+
+        done = ("{review_status: 'completed', llm_status: 'ok', "
+                "completeness: {status: 'completed', reason: '', "
+                "tool_calls_requested: 2, tool_calls_executed: 2, tool_calls_max: 4, "
+                "tool_calls_denied: 0, findings_signal: "
+                "'no_findings_in_completed_review'}}")
+        state_page.evaluate("window.__report(" + done + ")")
+        state_page.wait_for_timeout(80)
+        comp = state_page.locator("#completeness-banner").inner_text()
+        check("completed with zero findings keeps the caveat",
+              "does not prove" in comp, comp[:90])
+
+        failed = ("{review_status: 'failed', llm_status: 'failed', "
+                  "completeness: {status: 'failed', reason: 'http:ConnectError'}}")
+        comp, llm = state_texts(failed)
+        check("failed llm banner says FAILED", "FAILED" in llm, llm[:80])
+        check("failed llm banner is not the did-not-run text",
+              "did not run" not in llm, llm[:80])
+
+        not_run = ("{review_status: 'not_run', llm_status: 'not_configured', "
+                   "model_name: 'none', llm_note: 'No API key is configured.', "
+                   "completeness: {status: 'not_run', reason: 'no_api_key'}}")
+        comp, llm = state_texts(not_run)
+        check("not_run says only the AI review is missing",
+              "AI review did not run" in llm and "Ruff and pytest" in llm, llm[:110])
+        state_page.close()
+
         browser.close()
 
     failed = [r for r in results if not r[1]]

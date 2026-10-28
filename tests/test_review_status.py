@@ -4,7 +4,6 @@ No model calls. Every case drives pipeline.run_review with a stubbed reviewer wh
 trace is the source of truth for the status.
 """
 
-import json
 
 import pytest
 
@@ -240,13 +239,86 @@ def test_ruff_findings_are_deterministic_not_llm_evidence():
     assert checked.verification_status == VerificationStatus.CONFIRMED
 
 
-def test_old_report_still_parses_with_the_new_fields():
+def test_old_report_without_status_is_unknown_not_completed():
+    """No execution records means unknown; claiming "completed" would be a lie."""
     from pr_guardian.models import ReviewReport
 
     legacy = {"review_id": "x", "repository": "d", "base_ref": "m", "head_ref": "h",
               "model_name": "none", "created_at": "2026-01-01T00:00:00Z"}
     report = ReviewReport.model_validate(legacy)
-    assert report.review_status == "completed"
-    assert report.completeness.status == "completed"
-    assert json.loads(report.model_dump_json())["completeness"]["findings_signal"] \
-        == "not_evaluated"
+    assert report.review_status == "unknown"
+    assert report.completeness.status == "unknown"
+    assert report.completeness.reason == "migrated_from_legacy_report"
+    assert report.completeness.findings_signal == "not_evaluated"
+
+
+def test_legacy_partial_report_migrates_to_partial():
+    from pr_guardian.models import ReviewReport
+
+    base = {"review_id": "x", "repository": "d", "base_ref": "m", "head_ref": "h",
+            "model_name": "deepseek-flash", "created_at": "2026-01-01T00:00:00Z",
+            "llm_status": "partial", "llm_prompt_tokens": 1200,
+            "tool_model_calls": 4, "tool_status": "tool_limit"}
+    report = ReviewReport.model_validate(base)
+    assert report.review_status == "partial"
+    assert report.completeness.status == "partial"
+    assert report.completeness.findings_signal == "not_evaluated"
+    assert report.llm_prompt_tokens == 1200     # untouched by migration
+
+
+def test_legacy_statuses_map_and_explicit_new_status_wins():
+    from pr_guardian.models import ReviewReport
+
+    base = {"review_id": "x", "repository": "d", "base_ref": "m", "head_ref": "h",
+            "model_name": "m", "created_at": "2026-01-01T00:00:00Z"}
+    expected = {"ok": "completed", "partial": "partial", "failed": "failed",
+                "not_configured": "not_run", "disabled_by_public_policy": "not_run",
+                "disabled_by_request": "not_run"}
+    for llm_status, want in expected.items():
+        report = ReviewReport.model_validate({**base, "llm_status": llm_status})
+        assert report.review_status == want, llm_status
+
+    explicit = ReviewReport.model_validate(
+        {**base, "llm_status": "ok", "review_status": "partial",
+         "completeness": {"status": "partial", "reason": "round_limit_reached"}})
+    assert explicit.review_status == "partial"
+    assert explicit.completeness.reason == "round_limit_reached"
+
+
+def test_four_executed_and_two_denied_are_counted_separately(demo_repo, monkeypatch):
+    """4 executions + 2 refusals against a cap of 4 is 4/4 used, not 6/4."""
+    codebase = TrustedCodebase.from_git(demo_repo, DEMO_BRANCH)
+    first = {"file_path": "src/discount.py", "start_line": 1, "end_line": 6}
+    trace = [
+        _call(1, "read_code_context", first, "hit", "a"),
+        _call(1, "read_code_context", first, "hit", "b"),
+        _call(2, "read_code_context", {"file_path": "src/x.py"}, "hit", "c"),
+        _call(2, "read_code_context", {"file_path": "src/y.py"}, "hit", "d"),
+        _call(3, "read_code_context", {"file_path": "src/z.py"}, "budget_denied", ""),
+        _call(3, "search_code", {"query": "x"}, "budget_denied", ""),
+    ]
+    report = _run(demo_repo, monkeypatch,
+                  _result(codebase, "tool_limit", [], trace,
+                          registry=_registry_with_read(codebase)))
+    c = report.completeness
+    assert c.tool_calls_requested == 6
+    assert c.tool_calls_executed == 4
+    assert c.tool_calls_denied == 2
+    assert c.tool_calls_used == 4          # compatibility alias
+    assert c.tool_calls_max == 4
+    assert c.reason == "tool_budget_exhausted"
+    # duplicates count executed repeats only: call a/b are identical and ran twice
+    assert c.duplicate_calls == 1
+
+
+def test_round_limit_is_reported_separately_from_call_budget(demo_repo, monkeypatch):
+    codebase = TrustedCodebase.from_git(demo_repo, DEMO_BRANCH)
+    trace = [_call(1, "read_code_context", {"file_path": "src/a.py"}, "hit", "a"),
+             _call(2, "read_code_context", {"file_path": "src/b.py"}, "hit", "b"),
+             _call(3, "read_code_context", {"file_path": "src/c.py"}, "hit", "c")]
+    report = _run(demo_repo, monkeypatch,
+                  _result(codebase, "tool_limit", [], trace,
+                          registry=_registry_with_read(codebase)))
+    assert report.completeness.status == "partial"
+    assert report.completeness.tool_calls_denied == 0
+    assert report.completeness.reason == "round_limit_reached"

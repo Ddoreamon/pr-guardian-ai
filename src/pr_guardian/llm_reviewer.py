@@ -59,6 +59,9 @@ class LLMResult:
     latency_s: float = 0.0
     usage: dict[str, int] | None = None
     error: str = ""
+    # provider traffic actually attempted, and how many of those failed
+    attempts: int = 0
+    failures: int = 0
 
 
 def _build_user_prompt(diff_text: str, files: list[ChangedFile]) -> str:
@@ -111,11 +114,11 @@ def review_with_llm(
     except httpx.HTTPError as exc:
         return LLMResult([], [f"LLM step failed: {type(exc).__name__}."], False,
                          model=model, latency_s=round(time.monotonic() - started, 3),
-                         error=f"http:{type(exc).__name__}")
+                         error=f"http:{type(exc).__name__}", attempts=1, failures=1)
     except (KeyError, IndexError, ValueError):
         return LLMResult([], ["LLM step failed: unexpected response shape."], False,
                          model=model, latency_s=round(time.monotonic() - started, 3),
-                         error="bad_response_shape")
+                         error="bad_response_shape", attempts=1, failures=1)
 
     latency = round(time.monotonic() - started, 3)
 
@@ -123,7 +126,8 @@ def review_with_llm(
         parsed = _LLMOutput.model_validate(json.loads(content))
     except (json.JSONDecodeError, ValidationError):
         return LLMResult([], ["LLM output failed schema validation; no findings kept."], False,
-                         model=model, latency_s=latency, usage=usage, error="schema_invalid")
+                         model=model, latency_s=latency, usage=usage, error="schema_invalid",
+                         attempts=1)
 
     findings = [
         ReviewFinding(
@@ -143,7 +147,7 @@ def review_with_llm(
         for i, f in enumerate(parsed.findings, start=1)
     ]
     return LLMResult(findings, [f"LLM model: {model}"], True,
-                     model=model, latency_s=latency, usage=usage)
+                     model=model, latency_s=latency, usage=usage, attempts=1)
 
 
 def _normalise_usage(raw: object) -> dict[str, int] | None:

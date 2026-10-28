@@ -23,10 +23,13 @@ def _completeness(cfg: Settings, llm_status: str, tool_status: str, tool_result,
     from .models import ReviewCompleteness
 
     denied = [c for c in tool_calls if c.outcome == "budget_denied"]
-    errors = [c for c in tool_calls if c.outcome == "error"]
-    misses = [c for c in tool_calls if c.outcome == "miss"]
+    executed = [c for c in tool_calls if c.outcome != "budget_denied"]
+    errors = [c for c in executed if c.outcome == "error"]
+    misses = [c for c in executed if c.outcome == "miss"]
+    # duplicates are counted over *executed* calls: a refused request never ran,
+    # so it must not be reported as wasted tool work
     seen: dict[tuple, int] = {}
-    for call in tool_calls:
+    for call in executed:
         key = (call.name, json.dumps(call.arguments, sort_keys=True, default=str))
         seen[key] = seen.get(key, 0) + 1
     duplicates = sum(count - 1 for count in seen.values() if count > 1)
@@ -41,7 +44,15 @@ def _completeness(cfg: Settings, llm_status: str, tool_status: str, tool_result,
         reason = (tool_result.error if tool_result is not None and tool_result.error
                   else llm_status)
     elif tool_status == "tool_limit" or llm_status == "partial":
-        status, reason = "partial", "tool_budget_exhausted"
+        status = "partial"
+        rounds_used = getattr(tool_result, "rounds", 0) if tool_result else 0
+        if denied:
+            reason = "tool_budget_exhausted"
+        elif rounds_used and rounds_used >= cfg.max_tool_rounds:
+            # the round cap ended the investigation, not the call budget
+            reason = "round_limit_reached"
+        else:
+            reason = "partial_unknown_reason"
     else:
         status, reason = "completed", ""
 
@@ -57,7 +68,9 @@ def _completeness(cfg: Settings, llm_status: str, tool_status: str, tool_result,
         status=status, reason=reason,
         tool_rounds_used=getattr(tool_result, "rounds", 0) if tool_result else 0,
         tool_rounds_max=cfg.max_tool_rounds,
-        tool_calls_used=len(tool_calls),
+        tool_calls_requested=len(tool_calls),
+        tool_calls_executed=len(executed),
+        tool_calls_used=len(executed),
         tool_calls_max=cfg.max_tool_calls,
         tool_calls_denied=len(denied),
         denied_requests=[{"tool": c.name, "arguments": c.arguments} for c in denied][:8],
@@ -215,6 +228,9 @@ def run_review(
     tool_model_calls = 0
     tool_model_failures = 0
     tool_rounds = 0
+    # the non-tool path also talks to the provider; count it the same way
+    llm_attempts = 0
+    llm_failures = 0
     tool_result = None
     if not use_llm:
         llm_status, llm_note = "disabled_by_request", "LLM step disabled for this review."
@@ -255,6 +271,8 @@ def run_review(
             llm_note = f"{llm_note} ({tool_result.error})".strip()
     else:
         result = review_with_llm(diff_text, files, settings=cfg)
+        llm_attempts = getattr(result, "attempts", 0)
+        llm_failures = getattr(result, "failures", 0)
         llm_findings = result.findings
         usage = result.usage or {}
         prompt_tokens = int(usage.get("prompt_tokens", 0))
@@ -284,8 +302,10 @@ def run_review(
     final = final_findings(validated)
     trusted = [f for f in final
                if f.evidence_status in {EVIDENCE_VERIFIED, EVIDENCE_DETERMINISTIC}]
+    model_requests = tool_model_calls if tool_result is not None else llm_attempts
+    model_failures = tool_model_failures if tool_result is not None else llm_failures
     completeness = _completeness(cfg, llm_status, tool_status, tool_result,
-                                 tool_calls, tool_model_calls, tool_model_failures,
+                                 tool_calls, model_requests, model_failures,
                                  prompt_tokens, completion_tokens, len(final))
 
     deterministic = [f for f in final if f.evidence_status == EVIDENCE_DETERMINISTIC]

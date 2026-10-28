@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ChangeType(str, Enum):
@@ -111,11 +111,15 @@ class ReviewCompleteness(BaseModel):
     to its configured end, never that the code was proven correct.
     """
 
-    # completed | partial | failed | not_run
+    # completed | partial | failed | not_run | unknown (legacy report without records)
     status: str = "completed"
     reason: str = ""
     tool_rounds_used: int = 0
     tool_rounds_max: int = 0
+    # requested = everything the model asked for; executed = what really ran
+    tool_calls_requested: int = 0
+    tool_calls_executed: int = 0
+    # kept for compatibility: same value as tool_calls_executed
     tool_calls_used: int = 0
     tool_calls_max: int = 0
     tool_calls_denied: int = 0
@@ -127,6 +131,16 @@ class ReviewCompleteness(BaseModel):
     duplicate_calls: int = 0
     # not_evaluated | no_findings_in_completed_review
     findings_signal: str = "not_evaluated"
+
+
+_LEGACY_LLM_STATUS = {
+    "ok": "completed",
+    "partial": "partial",
+    "failed": "failed",
+    "not_configured": "not_run",
+    "disabled_by_public_policy": "not_run",
+    "disabled_by_request": "not_run",
+}
 
 
 class ReviewReport(BaseModel):
@@ -166,3 +180,38 @@ class ReviewReport(BaseModel):
     source_verified_findings: list[ReviewFinding] = Field(default_factory=list)
     source_unverified_findings: list[ReviewFinding] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_legacy_status(cls, data):
+        """Derive a completion state for reports written before V4.2.
+
+        A legacy report carries `llm_status` but no execution records. Mapping it
+        is honest; inventing `completed` when nothing is known would not be, so a
+        report with no status at all becomes `unknown`.
+        """
+        if not isinstance(data, dict):
+            return data
+        if "review_status" in data and "completeness" in data:
+            return data
+        migrated = dict(data)
+        legacy = migrated.get("llm_status")
+        if "review_status" not in migrated:
+            migrated["review_status"] = _LEGACY_LLM_STATUS.get(legacy, "unknown")
+        if "completeness" not in migrated:
+            status = migrated["review_status"]
+            findings = migrated.get("final_findings") or []
+            if status == "unknown":
+                signal = "not_evaluated"
+            elif status != "completed":
+                signal = "has_findings" if findings else "not_evaluated"
+            elif findings:
+                signal = "has_findings"
+            else:
+                signal = "no_findings_in_completed_review"
+            migrated["completeness"] = {
+                "status": status,
+                "reason": "migrated_from_legacy_report",
+                "findings_signal": signal,
+            }
+        return migrated
