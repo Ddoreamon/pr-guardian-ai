@@ -1,0 +1,117 @@
+{
+  "main": "8a8a84cc57d351c282d727c68d09705d619cc47f",
+  "rows": [
+    {
+      "label": "PR #1 Function Calling",
+      "branch": "feature/v2-function-calling",
+      "head": "14c61082f38a",
+      "commits": 15,
+      "files": 87,
+      "in_v45": true,
+      "subjects": [
+        "docs(v2): independent audit archive, strict F1, stage closure",
+        "results(v3): frozen held-out run (exploratory), 6 pairs / 12 variants",
+        "fix(benchmark): restore the repo-scoped git helper (aborted held-out run, 0 calls)",
+        "feat(benchmark): record per-case tool traces and experiment metadata",
+        "fix(v2.3): correct pair-consistency baseline, split clean into two classes",
+        "docs(v2.2): audited dev run, human adjudication, full findings retained"
+      ]
+    },
+    {
+      "label": "PR #2 MCP",
+      "branch": "feature/v2-mcp-server",
+      "head": "dd03e0fdc314",
+      "commits": 19,
+      "files": 98,
+      "in_v45": true,
+      "subjects": [
+        "chore(mcp): redact host paths in artefacts, whitelist the child environment",
+        "feat(mcp): real DeepSeek->MCP->Finding smoke test and stage report",
+        "fix(mcp): enforce the schema, separate latency from payloads, harden lifecycle",
+        "feat(mcp): real MCP server and client over stdio, reusing the trusted tools",
+        "docs(v2): independent audit archive, strict F1, stage closure",
+        "results(v3): frozen held-out run (exploratory), 6 pairs / 12 variants"
+      ]
+    },
+    {
+      "label": "PR #3 Repository RAG",
+      "branch": "feature/v3-repo-rag",
+      "head": "9659536aaae4",
+      "commits": 24,
+      "files": 111,
+      "in_v45": true,
+      "subjects": [
+        "fix(rag): re-derive cache metadata, decide hits on what the model sees",
+        "feat(rag): real DeepSeek -> search_code -> read -> Finding smoke test",
+        "feat(rag): larger retrieval evaluation (103 chunks, 51 frozen queries)",
+        "fix(rag): verify the index cache, cap tool output, split unparsable files",
+        "feat(rag): repository-level keyword index and search_code tool",
+        "chore(mcp): redact host paths in artefacts, whitelist the child environment"
+      ]
+    },
+    {
+      "label": "PR #4 Hybrid Dense",
+      "branch": "feature/v3-hybrid-rag",
+      "head": "54eb047b0938",
+      "commits": 26,
+      "files": 120,
+      "in_v45": false,
+      "subjects": [
+        "chore(hybrid): archive the negative result, remove local paths, record the decision",
+        "feat(hybrid): local dense retrieval, RRF fusion, and an honest evaluation",
+        "fix(rag): re-derive cache metadata, decide hits on what the model sees",
+        "feat(rag): real DeepSeek -> search_code -> read -> Finding smoke test",
+        "feat(rag): larger retrieval evaluation (103 chunks, 51 frozen queries)",
+        "fix(rag): verify the index cache, cap tool output, split unparsable files"
+      ]
+    },
+    {
+      "label": "PR #5 Evidence/Completeness",
+      "branch": "feature/v4-agent-reliability",
+      "head": "59f354538b5d",
+      "commits": 28,
+      "files": 123,
+      "in_v45": true,
+      "subjects": [
+        "fix(v4.2): distinct call counts, honest UI states, legacy status migration",
+        "feat(v4.2): review completeness state, finding groups, and the use_llm fix",
+        "fix(v4.1): only fully delivered lines of this commit can be cited",
+        "feat(v4.1): structured evidence provenance for AI findings",
+        "fix(rag): re-derive cache metadata, decide hits on what the model sees",
+        "feat(rag): real DeepSeek -> search_code -> read -> Finding smoke test"
+      ]
+    },
+    {
+      "label": "PR #6 Budget/Planner",
+      "branch": "feature/v4-budget-efficiency",
+      "head": "8fbb75ff112c",
+      "commits": 30,
+      "files": 129,
+      "in_v45": true,
+      "subjects": [
+        "docs(v4.3): audit the real tool traces, freeze the dev cases, No-Go on the cache",
+        "fix(ui): state what actually ran in every review-status banner",
+        "fix(v4.2): distinct call counts, honest UI states, legacy status migration",
+        "feat(v4.2): review completeness state, finding groups, and the use_llm fix",
+        "fix(v4.1): only fully delivered lines of this commit can be cited",
+        "feat(v4.1): structured evidence provenance for AI findings"
+      ]
+    },
+    {
+      "label": "PR #7 Sufficiency",
+      "branch": "feature/v4-evidence-sufficiency",
+      "head": "6689645a47d1",
+      "commits": 34,
+      "files": 160,
+      "in_v45": true,
+      "subjects": [
+        "fix(v4.5): deletion-only duties, replay-verifiable evidence, shadow replay CLI",
+        "fix(v4.5): harden contract derivation, audit the metrics, add robustness set",
+        "feat(v4.5): evidence obligation model, sufficiency gate, offline evaluation",
+        "feat(v4.4): frozen six-case evaluation, real baseline, and a No-Go planner",
+        "docs(v4.3): audit the real tool traces, freeze the dev cases, No-Go on the cache",
+        "fix(ui): state what actually ran in every review-status banner"
+      ]
+    }
+  ]
+}
