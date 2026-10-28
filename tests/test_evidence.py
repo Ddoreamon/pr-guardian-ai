@@ -217,15 +217,18 @@ def test_content_removed_by_the_output_budget_is_not_citable(repo):
     registry.record(record, payload)
     assert [e.end_line for e in registry.entries] == [3]
 
+    # a search hit is a candidate: it can never prove a line was read
     kept = EvidenceRef(ref=codebase.snapshot_sha, file_path="src/shipping.py",
                        start_line=2, end_line=3, tool_call_id="call_search_1")
     dropped = EvidenceRef(ref=codebase.snapshot_sha, file_path="src/shipping.py",
                           start_line=4, end_line=6, tool_call_id="call_search_1")
     assert validate_ref(kept, registry, codebase.snapshot_sha,
-                        set(codebase.source_files()))[0] == EVIDENCE_VERIFIED
+                        set(codebase.source_files())) == (EVIDENCE_UNVERIFIED,
+                                                          "candidate_only")
     assert validate_ref(dropped, registry, codebase.snapshot_sha,
                         set(codebase.source_files()))[0] == EVIDENCE_UNVERIFIED
     assert registry.entries[0].truncated is True
+    assert registry.entries[0].citable is False
 
 
 @pytest.mark.parametrize("outcome", ["miss", "error", "budget_denied"])
