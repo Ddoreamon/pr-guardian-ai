@@ -77,6 +77,7 @@ class ToolCallRecordModel(BaseModel):
     result_chars: int = 0
     latency_s: float = 0.0
     matched: int = 0
+    call_id: str = ""
 
 
 class ReviewReport(BaseModel):

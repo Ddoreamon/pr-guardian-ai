@@ -147,6 +147,8 @@ class ToolCallRecord:
     result_chars: int = 0
     latency_s: float = 0.0
     matched: int = 0
+    # the provider's tool_call_id this result was sent back for
+    call_id: str = ""
 
     def as_dict(self) -> dict:
         return {
@@ -160,6 +162,7 @@ class ToolCallRecord:
             "result_chars": self.result_chars,
             "latency_s": self.latency_s,
             "matched": self.matched,
+            "call_id": self.call_id,
         }
 
 
@@ -339,7 +342,8 @@ def review_with_tools(
                 status = "tool_limit"
                 continue
 
-            record, payload_out = _execute(name, arguments, codebase, round_index)
+            record, payload_out = _execute(name, arguments, codebase, round_index,
+                                       call_id=call_id)
             trace.append(record)
             messages.append({"role": "tool", "tool_call_id": call_id,
                              "content": wrap_tool_output(payload_out)})
@@ -427,7 +431,16 @@ def _parse_call(call: dict) -> tuple[str, dict]:
 
 
 def _execute(name: str, arguments: dict, codebase,
-             round_index: int) -> tuple[ToolCallRecord, dict]:
+             round_index: int,
+             call_id: str = "") -> tuple[ToolCallRecord, dict]:
+    """Execute one call and stamp it with the provider's tool_call_id."""
+    record, payload = _execute_inner(name, arguments, codebase, round_index)
+    record.call_id = call_id
+    return record, payload
+
+
+def _execute_inner(name: str, arguments: dict, codebase,
+                   round_index: int) -> tuple[ToolCallRecord, dict]:
     started = time.monotonic()
     elapsed = lambda: round(time.monotonic() - started, 4)
 
