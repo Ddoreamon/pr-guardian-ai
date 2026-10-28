@@ -431,8 +431,81 @@ def run(base_url: str) -> int:
                    "model_name: 'none', llm_note: 'No API key is configured.', "
                    "completeness: {status: 'not_run', reason: 'no_api_key'}}")
         comp, llm = state_texts(not_run)
-        check("not_run says only the AI review is missing",
-              "AI review did not run" in llm and "Ruff and pytest" in llm, llm[:110])
+        check("not_run names what did and did not run",
+              "AI review did not run" in llm and
+              "Ruff result shown here is real" in llm and
+              "pytest did not run" in llm, llm[:140])
+        # --- V4.3 wording fixes -------------------------------------------
+        no_tests = ("{review_status: 'not_run', llm_status: 'not_configured', "
+                    "model_name: 'none', llm_note: 'No API key is configured.', "
+                    "test_summary: {ran: false, skipped_reason: 'not requested', "
+                    "passed: 0, failed: 0, errors: 0, failed_tests: []}, "
+                    "completeness: {status: 'not_run', reason: 'no_api_key'}}")
+        comp, llm = state_texts(no_tests)
+        check("not_run does not claim pytest ran when it did not",
+              "pytest did not run" in llm and "Ruff and pytest results" not in llm,
+              llm[:120])
+
+        with_tests = ("{review_status: 'not_run', llm_status: 'not_configured', "
+                      "model_name: 'none', "
+                      "test_summary: {ran: true, passed: 3, failed: 0, errors: 0, "
+                      "failed_tests: []}, "
+                      "completeness: {status: 'not_run', reason: 'no_api_key'}}")
+        comp, llm = state_texts(with_tests)
+        check("not_run says both Ruff and pytest ran when they did",
+              "Ruff and pytest results shown here are real" in llm, llm[:120])
+
+        unknown = ("{review_status: 'unknown', llm_status: null, model_name: 'none', "
+                   "completeness: {status: 'unknown', "
+                   "reason: 'migrated_from_legacy_report', "
+                   "findings_signal: 'not_evaluated'}}")
+        comp, llm = state_texts(unknown)
+        check("unknown status says completion is undeterminable",
+              "Completion state unknown" in comp, comp[:80])
+        check("unknown status never says the review did not run",
+              "did not run" not in comp and "did not run" not in llm, llm[:90])
+
+        rounds = ("{review_status: 'partial', llm_status: 'partial', "
+                  "completeness: {status: 'partial', reason: 'round_limit_reached', "
+                  "tool_calls_requested: 3, tool_calls_executed: 3, tool_calls_max: 4, "
+                  "tool_calls_denied: 0, tool_rounds_used: 3, tool_rounds_max: 3, "
+                  "findings_signal: 'not_evaluated'}}")
+        comp, llm = state_texts(rounds)
+        check("round-limit partial blames the round limit, not the call budget",
+              "round limit" in comp and "tool budget ran out" not in comp, comp[:110])
+
+        partial_finding = ("{review_status: 'partial', llm_status: 'partial', "
+                           "completeness: {status: 'partial', reason: "
+                           "'tool_budget_exhausted', tool_calls_requested: 5, "
+                           "tool_calls_executed: 4, tool_calls_max: 4, "
+                           "tool_calls_denied: 1, findings_signal: 'has_findings'}, "
+                           "final_findings: [{id: 'llm-1', file_path: 'src/a.py', "
+                           "start_line: 1, end_line: 1, category: 'logic', "
+                           "severity: 'high', summary: 'reported hypothesis', "
+                           "source: 'llm', verification_status: 'suspected', "
+                           "evidence_status: 'source_verified', "
+                           "claim_status: 'claim_unjudged'}], "
+                           "llm_findings: [{id: 'llm-1', file_path: 'src/a.py', "
+                           "start_line: 1, end_line: 1, summary: 'reported hypothesis', "
+                           "source: 'llm', verification_status: 'suspected'}]}")
+        state_page.evaluate("window.__report(" + partial_finding + ")")
+        state_page.wait_for_timeout(80)
+        llm_body = state_page.locator("#llm-body").inner_text()
+        check("partial keeps the findings it produced",
+              "reported hypothesis" in llm_body, llm_body[:90])
+        check("partial does not say the findings were never evaluated",
+              "not evaluated" not in llm_body.lower(), llm_body[:90])
+        check("partial explains coverage is incomplete",
+              "incomplete" in llm_body.lower(), llm_body[:110])
+
+        state_page.evaluate("window.__report(" + no_tests + ")")
+        state_page.wait_for_timeout(80)
+        page_text = state_page.locator("body").inner_text()
+        check("banners do not contradict each other",
+              not ("AI review did not run" in page_text and
+                   "AI review ran with model" in page_text),
+              page_text[:100])
+
         state_page.close()
 
         browser.close()

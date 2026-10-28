@@ -147,12 +147,22 @@
 
   /* ---- rendering results ----------------------------------------------- */
 
+  function partialReasonText(reason) {
+    if (reason === "round_limit_reached") {
+      return "the round limit was reached before the investigation finished";
+    }
+    if (reason === "tool_budget_exhausted") {
+      return "the tool budget ran out before the investigation finished";
+    }
+    return "the review did not finish";
+  }
+
   function llmStatusText(status) {
     return {
       ok: "Completed",
       enabled: "Completed",
       failed: "Failed",
-      partial: "Partial (tool budget exhausted)",
+      partial: "Partial (investigation stopped early)",
       not_configured: "Not evaluated",
       disabled_by_public_policy: "Not evaluated (public policy)",
       disabled_by_request: "Not evaluated (disabled)"
@@ -191,10 +201,15 @@
       return;
     }
     var parts = [];
+    if (status === "unknown") {
+      box.textContent = "Completion state unknown: this report predates execution " +
+        "records, so it cannot be shown as a completed review. The findings are " +
+        "kept exactly as recorded.";
+      show(box, true);
+      return;
+    }
     if (status === "partial") {
-      parts.push("PARTIAL review: " + (c.reason === "tool_budget_exhausted"
-        ? "the tool budget ran out before the investigation finished"
-        : (c.reason || "the review did not finish")));
+      parts.push("PARTIAL review: " + partialReasonText(c.reason));
       var executed = (c.tool_calls_executed != null ? c.tool_calls_executed
         : (c.tool_calls_used || 0));
       parts.push(executed + "/" + (c.tool_calls_max || 0) + " tool calls executed, " +
@@ -217,6 +232,13 @@
   function renderLlmBanner(report) {
     var banner = $("llm-banner");
     var status = report.llm_status;
+    if (!status) {
+      banner.textContent = "This historical report does not record whether the AI " +
+        "review ran, so its AI status is unknown. Nothing here should be read as " +
+        "either a completed AI review or one that never started.";
+      show(banner, true);
+      return;
+    }
     if (status === "ok") {
       banner.textContent = "The AI review ran with model " + report.model_name +
         ". Its findings are marked suspected until a human accepts them.";
@@ -237,10 +259,14 @@
       show(banner, true);
       return;
     }
+    var ran = (report.test_summary || {}).ran;
+    var staticNote = ran
+      ? "The Ruff and pytest results shown here are real and did run; only the AI " +
+        "review is missing."
+      : "The Ruff result shown here is real and did run; pytest did not run for " +
+        "this review, and the AI review did not run either.";
     banner.textContent = "The AI review did not run (" + (report.llm_note ||
-      "no API key is configured on this server") +
-      "). The Ruff and pytest results shown here are real and did run; only the " +
-      "AI review is missing.";
+      "no API key is configured on this server") + "). " + staticNote;
     show(banner, true);
   }
 
@@ -288,7 +314,8 @@
   function renderLLM(report) {
     var body = $("llm-body");
     var status = report.llm_status;
-    if (status !== "ok" && status !== "enabled") {
+    var partial = status === "partial";
+    if (!partial && status !== "ok" && status !== "enabled") {
       body.innerHTML = '<p><span class="badge st-noteval">not evaluated</span> ' +
         esc(llmStatusText(status)) + "</p><p class=\"muted\">" +
         esc(report.llm_note || "No model call was made for this review.") + "</p>";
@@ -296,12 +323,24 @@
     }
     var items = report.llm_findings || [];
     if (!items.length) {
+      if (partial) {
+        body.innerHTML = '<p><span class="badge st-suspected">incomplete</span> ' +
+          "The model reported no issues before the investigation stopped early, " +
+          "so this is NOT evidence that the change is clean.</p>";
+        return;
+      }
       body.innerHTML = '<p><span class="badge st-confirmed">completed</span> ' +
         "The model reported no issues.</p>" +
         '<p class="muted">Reporting nothing is a valid outcome for a clean change.</p>';
       return;
     }
-    var html = '<p class="muted">' + items.length +
+    var prefix = "";
+    if (partial) {
+      prefix = '<p><span class="badge st-suspected">incomplete coverage</span> ' +
+        "The model stopped early; the hypotheses below are what it managed to " +
+        "report, not a complete review.</p>";
+    }
+    var html = prefix + '<p class="muted">' + items.length +
       ' hypothesis(es) from <code>' + esc(report.model_name) + "</code>:</p><ul>";
     items.forEach(function (f) {
       html += "<li><code>" + esc(f.file_path) + ":" + f.start_line + "</code> — " +
