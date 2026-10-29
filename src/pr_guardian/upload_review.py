@@ -56,7 +56,8 @@ def _write_files(root: Path, files: list[UploadedFile]) -> None:
     for item in files:
         target = safe_target(root, item.path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(item.content)
+        # write the normalised text (BOM stripped) so the analyser sees valid UTF-8
+        target.write_bytes(item.text.encode("utf-8"))
 
 
 def kill_process_tree(proc: subprocess.Popen) -> None:

@@ -26,20 +26,31 @@ from pr_guardian.upload_heuristics import scan_tree
 
 
 def _ruff(work: Path) -> tuple[str, list[dict]]:
-    """Run Ruff over the work directory. Ruff parses; it does not execute."""
+    """Run Ruff over the work directory.
+
+    Ruff only parses; it never executes the files. The return value distinguishes every
+    outcome, because "Ruff failed" must never be read as "no lint findings":
+
+        ok          the check ran and produced JSON (the list may be empty)
+        empty       the check produced no output at all
+        timeout     it exceeded RUFF_TIMEOUT_S and was killed
+        unavailable the interpreter could not start Ruff at all
+        exit_error  the process failed (Ruff writes nothing usable)
+        unparsable  the output was not JSON
+        unexpected  the JSON was not the expected list
+    """
+    command = [sys.executable, "-m", "ruff", "check", "--isolated", "--no-cache",
+               "--output-format", "json", "--exit-zero", str(work)]
     try:
-        proc = subprocess.run(
-            [sys.executable, "-m", "ruff", "check", "--isolated", "--no-cache",
-             "--output-format", "json", "--exit-zero", str(work)],
-            capture_output=True, text=True, timeout=RUFF_TIMEOUT_S, check=False,
-            cwd=str(work), env={"PATH": "", "PYTHONHOME": ""},
-        )
+        proc = subprocess.run(command, capture_output=True, text=True,
+                              timeout=RUFF_TIMEOUT_S, check=False, cwd=str(work),
+                              env={"PATH": "", "PYTHONHOME": ""})
     except subprocess.TimeoutExpired:
         return "timeout", []
-    except OSError as exc:
-        return f"error:{exc}", []
-    if proc.returncode != 0 and proc.returncode != 0:
-        pass
+    except (OSError, ValueError):
+        return "unavailable", []
+    if proc.returncode != 0:
+        return "exit_error", []
     text = proc.stdout.strip()
     if not text:
         return "empty", []

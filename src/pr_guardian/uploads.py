@@ -83,9 +83,11 @@ def _check_extension(path: str) -> None:
 
 def _decode(path: str, content: bytes) -> str:
     try:
-        return content.decode("utf-8")
+        text = content.decode("utf-8")
     except UnicodeDecodeError as exc:
         _reject("bad_encoding", f"{path!r} is not valid UTF-8 ({exc.reason})")
+    # A UTF-8 BOM is common in Windows-authored files and breaks ast.parse.
+    return text.removeprefix("\ufeff")
 
 
 def _check_duplicates(paths: list[str]) -> None:

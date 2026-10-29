@@ -1,0 +1,369 @@
+{
+  "cases": [
+    {
+      "id": "A_csv_report",
+      "title": "CSV → JSON sales summary (single file)",
+      "license": "self-authored, MIT",
+      "files": 1,
+      "lines": 35,
+      "upload_mode": "files",
+      "review_status": "completed",
+      "analysis": {
+        "ast_status": "ok",
+        "ruff_status": "ok",
+        "worker_status": "ok",
+        "ai_status": "not_run",
+        "files_parsed": 1,
+        "files_with_syntax_errors": 0,
+        "detail": ""
+      },
+      "ruff_findings": 3,
+      "heuristic_findings": 1,
+      "total_findings": 4,
+      "unlisted_findings": [],
+      "human_review": [
+        {
+          "rule": "F401",
+          "file": "csv_report.py",
+          "verdict": "valid",
+          "actionable": "yes",
+          "note": "unused OrderedDict import",
+          "detected": true,
+          "line": 6,
+          "summary": "`collections.OrderedDict` imported but unused",
+          "explanation": "Reported by Ruff, a deterministic linter.",
+          "suggestion": "",
+          "in_range": true
+        },
+        {
+          "rule": "F541",
+          "file": "csv_report.py",
+          "verdict": "valid",
+          "actionable": "yes",
+          "note": "f-string without placeholders",
+          "detected": true,
+          "line": 28,
+          "summary": "f-string without any placeholders",
+          "explanation": "Reported by Ruff, a deterministic linter.",
+          "suggestion": "",
+          "in_range": true
+        },
+        {
+          "rule": "UP006",
+          "file": "csv_report.py",
+          "verdict": "valid",
+          "actionable": "yes",
+          "note": "mutable default argument",
+          "detected": true,
+          "line": 9,
+          "summary": "a mutable default argument is shared between calls",
+          "explanation": "Matched a statically visible code pattern. This is a heuristic signal, not a proven defect.",
+          "suggestion": "Default to None and build the container inside the function.",
+          "in_range": true
+        },
+        {
+          "rule": "B006",
+          "file": "csv_report.py",
+          "verdict": "duplicate",
+          "actionable": "yes",
+          "note": "same defect as UP006, different rule",
+          "detected": true,
+          "line": 9,
+          "summary": "Do not use mutable data structures for argument defaults",
+          "explanation": "Reported by Ruff, a deterministic linter.",
+          "suggestion": "",
+          "in_range": true
+        }
+      ],
+      "missed": [
+        "next(reader) skips the first data row: DictReader already consumed the header",
+        "float() on a malformed amount raises with no handler"
+      ],
+      "fixed_status": "completed",
+      "disappeared": {
+        "F401": true,
+        "F541": true,
+        "UP006": true,
+        "B006": true
+      },
+      "accept_status": 200,
+      "reject_status": 200,
+      "export_markdown_status": 200,
+      "export_json_status": 200,
+      "export_has_attachment": true,
+      "metrics": {
+        "findings_total": 4,
+        "valid": 3,
+        "duplicate": 1,
+        "false_positive": 0,
+        "needs_review": 0,
+        "distinct_valid_issues": 3,
+        "denominator": "all findings returned by the enabled checks"
+      },
+      "elapsed_s": 0.2
+    },
+    {
+      "id": "B_fastapi_service",
+      "title": "FastAPI inventory service (single file)",
+      "license": "self-authored, MIT",
+      "files": 1,
+      "lines": 36,
+      "upload_mode": "files",
+      "review_status": "completed",
+      "analysis": {
+        "ast_status": "ok",
+        "ruff_status": "ok",
+        "worker_status": "ok",
+        "ai_status": "not_run",
+        "files_parsed": 1,
+        "files_with_syntax_errors": 0,
+        "detail": ""
+      },
+      "ruff_findings": 4,
+      "heuristic_findings": 1,
+      "total_findings": 5,
+      "unlisted_findings": [
+        "I001",
+        "E722",
+        "BLE001"
+      ],
+      "human_review": [
+        {
+          "rule": "F401",
+          "file": "api.py",
+          "verdict": "valid",
+          "actionable": "yes",
+          "note": "unused os import",
+          "detected": true,
+          "line": 3,
+          "summary": "`os` imported but unused",
+          "explanation": "Reported by Ruff, a deterministic linter.",
+          "suggestion": "",
+          "in_range": true
+        },
+        {
+          "rule": "UP005",
+          "file": "api.py",
+          "verdict": "valid",
+          "actionable": "yes",
+          "note": "bare except hides real errors",
+          "detected": true,
+          "line": 26,
+          "summary": "a bare `except:` also catches KeyboardInterrupt and SystemExit",
+          "explanation": "Matched a statically visible code pattern. This is a heuristic signal, not a proven defect.",
+          "suggestion": "Catch the specific exception types you can handle.",
+          "in_range": true
+        },
+        {
+          "rule": "I001",
+          "file": "api.py",
+          "line": 3,
+          "detected": true,
+          "verdict": "valid",
+          "actionable": "yes",
+          "note": "import order (style, low value)",
+          "summary": "Import block is un-sorted or un-formatted",
+          "explanation": "Reported by Ruff, a deterministic linter.",
+          "suggestion": "",
+          "in_range": true
+        },
+        {
+          "rule": "E722",
+          "file": "api.py",
+          "line": 26,
+          "detected": true,
+          "verdict": "duplicate",
+          "actionable": "yes",
+          "note": "Ruff's own bare-except rule; same defect as UP005",
+          "summary": "Do not use bare `except`",
+          "explanation": "Reported by Ruff, a deterministic linter.",
+          "suggestion": "",
+          "in_range": true
+        },
+        {
+          "rule": "BLE001",
+          "file": "api.py",
+          "line": 35,
+          "detected": true,
+          "verdict": "valid",
+          "actionable": "yes",
+          "note": "delete handler catches every exception and leaks its text",
+          "summary": "Do not catch blind exception: `Exception`",
+          "explanation": "Reported by Ruff, a deterministic linter.",
+          "suggestion": "",
+          "in_range": true
+        }
+      ],
+      "missed": [
+        "quantity accepts negative values; no validation",
+        "delete handler returns the exception text to the client",
+        "path parameter is untyped, so every name is a string id"
+      ],
+      "fixed_status": "completed",
+      "disappeared": {
+        "F401": true,
+        "UP005": true
+      },
+      "accept_status": 200,
+      "reject_status": 200,
+      "export_markdown_status": 200,
+      "export_json_status": 200,
+      "export_has_attachment": true,
+      "metrics": {
+        "findings_total": 5,
+        "valid": 4,
+        "duplicate": 1,
+        "false_positive": 0,
+        "needs_review": 0,
+        "distinct_valid_issues": 4,
+        "denominator": "all findings returned by the enabled checks"
+      },
+      "elapsed_s": 0.2
+    },
+    {
+      "id": "C_inventory_pkg",
+      "title": "Inventory package (multi-file, ZIP)",
+      "license": "self-authored, MIT",
+      "files": 4,
+      "lines": 55,
+      "upload_mode": "zip",
+      "review_status": "completed",
+      "analysis": {
+        "ast_status": "ok",
+        "ruff_status": "ok",
+        "worker_status": "ok",
+        "ai_status": "not_run",
+        "files_parsed": 4,
+        "files_with_syntax_errors": 0,
+        "detail": ""
+      },
+      "ruff_findings": 3,
+      "heuristic_findings": 2,
+      "total_findings": 5,
+      "unlisted_findings": [
+        "B006",
+        "RUF100",
+        "PLW1510"
+      ],
+      "human_review": [
+        {
+          "rule": "UP002",
+          "file": "inventory/service.py",
+          "verdict": "valid",
+          "actionable": "yes",
+          "note": "shell=True with a caller-controlled path",
+          "detected": true,
+          "line": 20,
+          "summary": "subprocess is called with shell=True",
+          "explanation": "Matched a statically visible code pattern. This is a heuristic signal, not a proven defect.",
+          "suggestion": "Pass an argument list and leave shell=False; never interpolate untrusted values into a shell string.",
+          "in_range": true
+        },
+        {
+          "rule": "UP006",
+          "file": "inventory/models.py",
+          "verdict": "valid",
+          "actionable": "yes",
+          "note": "mutable default accumulates across calls",
+          "detected": true,
+          "line": 12,
+          "summary": "a mutable default argument is shared between calls",
+          "explanation": "Matched a statically visible code pattern. This is a heuristic signal, not a proven defect.",
+          "suggestion": "Default to None and build the container inside the function.",
+          "in_range": true
+        },
+        {
+          "rule": "B006",
+          "file": "inventory/models.py",
+          "line": 12,
+          "detected": true,
+          "verdict": "duplicate",
+          "actionable": "yes",
+          "note": "Ruff's version of UP006, same defect",
+          "summary": "Do not use mutable data structures for argument defaults",
+          "explanation": "Reported by Ruff, a deterministic linter.",
+          "suggestion": "",
+          "in_range": true
+        },
+        {
+          "rule": "RUF100",
+          "file": "inventory/service.py",
+          "line": 5,
+          "detected": true,
+          "verdict": "false_positive",
+          "actionable": "no",
+          "note": "flags the deliberate noqa; an artefact of isolated mode",
+          "summary": "Unused `noqa` directive (unused: `F401`)",
+          "explanation": "Reported by Ruff, a deterministic linter.",
+          "suggestion": "",
+          "in_range": true
+        },
+        {
+          "rule": "PLW1510",
+          "file": "inventory/service.py",
+          "line": 20,
+          "detected": true,
+          "verdict": "valid",
+          "actionable": "yes",
+          "note": "subprocess.run without check=True silences failures",
+          "summary": "`subprocess.run` without explicit `check` argument",
+          "explanation": "Reported by Ruff, a deterministic linter.",
+          "suggestion": "",
+          "in_range": true
+        }
+      ],
+      "missed": [
+        "cli ignores the report subprocess return code and exit status",
+        "discount_all reuses the shared out list between calls (same root cause)"
+      ],
+      "fixed_status": "completed",
+      "disappeared": {
+        "UP002": true,
+        "UP006": true
+      },
+      "accept_status": 200,
+      "reject_status": 200,
+      "export_markdown_status": 200,
+      "export_json_status": 200,
+      "export_has_attachment": true,
+      "metrics": {
+        "findings_total": 5,
+        "valid": 3,
+        "duplicate": 1,
+        "false_positive": 1,
+        "needs_review": 0,
+        "distinct_valid_issues": 3,
+        "denominator": "all findings returned by the enabled checks"
+      },
+      "elapsed_s": 0.3
+    }
+  ],
+  "security": {
+    "temp_dirs_left": 0,
+    "source_fragments_in_server_log": 0,
+    "server_log_checked": true
+  },
+  "browser": {
+    "status_line": "Analysis complete: 1 file(s), 4 finding(s). Tests were not run: uploaded code is never executed. (AST ok · Ruff ok · worker ok · AI not_run)",
+    "summary": "high 0 · medium 4 · low 0 · Ruff findings are lint evidence; UPxxx patterns are suspected heuristics.",
+    "rendered_findings": 4
+  },
+  "config": {
+    "enabled": true,
+    "public_mode": false,
+    "ai_enabled": false,
+    "limits": {
+      "max_files": 25,
+      "max_file_bytes": 262144,
+      "max_total_bytes": 4194304,
+      "max_zip_bytes": 8388608,
+      "max_request_bytes": 13631488
+    }
+  },
+  "public_instance": {
+    "reachable": true,
+    "config_status": 404,
+    "page_status": 404,
+    "uploads_exposed": false
+  }
+}

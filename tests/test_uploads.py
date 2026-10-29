@@ -395,3 +395,12 @@ def test_demo_page_and_api_still_work(monkeypatch):
         assert http.get("/").status_code == 200
         payload = http.get("/api/cases").json()
         assert len(payload["cases"]) == 3
+
+
+def test_utf8_bom_is_tolerated():
+    """Windows-authored files often start with a BOM; it must not break parsing."""
+    files = collect_from_files([("bom.py", "\ufeffx = 1\n".encode())])
+    assert files[0].text == "x = 1\n"
+    report = run_upload_review(files, settings())
+    assert report.upload_analysis.ast_status == "ok"
+    assert report.review_status == "completed"
