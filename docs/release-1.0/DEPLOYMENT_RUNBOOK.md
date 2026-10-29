@@ -107,6 +107,10 @@ equal the merge commit from §5 and the peeled commit of RC2.
 **7.2 Independent — served-content fingerprint.**
 
 ```bash
+# run this from a clone that has the release tags and the helper script:
+# the helper is NOT part of the rc2 tree (it was added on release/1.0-approval),
+# so use that branch, or main once the release merge has landed.
+git switch release/1.0-approval
 python scripts/verify_deployed_build.py \
   --base-url https://<host> \
   --ref v1.0.0-rc2 \

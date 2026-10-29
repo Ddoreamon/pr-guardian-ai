@@ -104,7 +104,7 @@ except for step 5 and step 7, where a second person is required).
 | | |
 |---|---|
 | Primary source | Render deploy record: the **deployed commit** must equal the merge commit from step 5 |
-| Independent check | `python scripts/verify_deployed_build.py --base-url https://<host> --ref v1.0.0-rc2 --expect-text "Tests run only against the trusted, bundled demo repository"` |
+| Independent check | from a `release/1.0-approval` checkout (the helper is not in the rc2 tree): `python scripts/verify_deployed_build.py --base-url https://<host> --ref v1.0.0-rc2 --expect-text "Tests run only against the trusted, bundled demo repository"` |
 | Expected | `status: match`, exit 0; `health.version == 1.0.0`; `public_mode: true`; `llm_status: not_configured`; footer `PR Guardian v1.0.0` |
 | Demo | run `boundary-bug` (real Ruff/pytest, AI "Not Evaluated") and `clean` (0 findings, wording says absence is not proof) |
 | Exports | download JSON + Markdown; grep for `sk-`, `C:\Users`, `/Users/`, `OneDrive` → none |
