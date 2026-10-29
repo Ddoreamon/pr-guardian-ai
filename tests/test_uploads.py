@@ -311,13 +311,16 @@ def test_uploads_disabled_by_default(monkeypatch):
     assert response.json()["error"] == "uploads_disabled"
 
 
-def test_public_mode_requires_the_extra_acknowledgement(monkeypatch):
+def test_public_mode_always_refuses_uploads(monkeypatch):
     monkeypatch.setenv("PR_GUARDIAN_UPLOAD_ENABLED", "1")
     monkeypatch.setenv("PR_GUARDIAN_PUBLIC_MODE", "1")
-    monkeypatch.setenv("PR_GUARDIAN_UPLOAD_PUBLIC", "0")
-    response = TestClient(app).post(
-        "/api/uploads", files=[("files", ("a.py", GOOD, "text/x-python"))])
-    assert response.status_code == 403
+    for ack in ("0", "1"):
+        monkeypatch.setenv("PR_GUARDIAN_UPLOAD_PUBLIC", ack)
+        with TestClient(app) as http:
+            response = http.post(
+                "/api/uploads", files=[("files", ("a.py", GOOD, "text/x-python"))])
+            assert response.status_code == 403, f"ack={ack} must still be refused"
+            assert http.get("/api/uploads/config").json()["enabled"] is False
 
 
 def test_http_upload_round_trip(monkeypatch):
@@ -404,3 +407,13 @@ def test_utf8_bom_is_tolerated():
     report = run_upload_review(files, settings())
     assert report.upload_analysis.ast_status == "ok"
     assert report.review_status == "completed"
+
+
+def test_upload_page_is_disabled_by_default(monkeypatch):
+    """Without the opt-in, the page renders but says analysis is off."""
+    monkeypatch.setenv("PR_GUARDIAN_UPLOAD_ENABLED", "0")
+    with TestClient(app) as http:
+        page = http.get("/upload")
+        assert page.status_code == 200
+        assert "disabled on this instance" in page.text
+        assert http.get("/api/uploads/config").json()["enabled"] is False

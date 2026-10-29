@@ -59,9 +59,10 @@ MAX_REQUEST_BYTES = MAX_TOTAL_BYTES + MAX_ARCHIVE_UPLOAD_BYTES + 1024 * 1024
 
 
 def uploads_allowed(cfg: Settings) -> bool:
-    if not cfg.upload_enabled:
+    """Uploads are local-only: a public instance refuses them regardless of flags."""
+    if cfg.public_mode:
         return False
-    return not (cfg.public_mode and not cfg.upload_public_ack)
+    return cfg.upload_enabled
 
 
 def _limits() -> dict:

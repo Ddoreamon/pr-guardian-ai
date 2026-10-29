@@ -70,7 +70,7 @@ class Settings:
     # V1.1: untrusted upload analysis; off by default, separately gated in public mode
     upload_enabled: bool = False
     upload_ai_enabled: bool = False
-    # public deployments must opt in twice: enabled + this acknowledgement
+    # retained for compatibility; public mode refuses uploads regardless of this flag
     upload_public_ack: bool = False
     # bounded analyser concurrency; extra requests get a 503 instead of queueing
     upload_concurrency: int = 2
