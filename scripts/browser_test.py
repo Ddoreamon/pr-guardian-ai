@@ -10,6 +10,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -60,6 +61,10 @@ def run(base_url: str) -> int:
         # --- visitor notice + committed benchmark link ---------------------
         notice = page.locator("#demo-notice")
         check("demo notice shown", notice.count() == 1)
+        scope_text = page.locator("#trusted-scope").inner_text()
+        check("page states the tested scope",
+              "Tests run only against the trusted, bundled demo repository" in scope_text,
+              scope_text.replace("\n", " ")[:120])
         notice_text = notice.inner_text().lower()
         check("benchmark report link present",
               page.locator('#demo-notice a[href*="docs/benchmark-results/heldout-llm/REPORT.md"]').count() == 1)
@@ -124,6 +129,8 @@ def run(base_url: str) -> int:
         finding_text = pytest_card.inner_text()
         check("finding is confirmed", "CONFIRMED" in finding_text.upper())
         check("finding is from pytest", "pytest" in finding_text)
+        check("tool trace hidden in V1 mode",
+              "hidden" in (page.locator("#trace-panel").get_attribute("class") or "hidden"))
         page.screenshot(path=str(SHOTS / "03-results.png"), full_page=True)
 
         # --- human approval ----------------------------------------------
@@ -212,6 +219,102 @@ def run(base_url: str) -> int:
               "2" in page.locator("#tests-body").inner_text())
         page.screenshot(path=str(SHOTS / "06-injection.png"), full_page=True)
 
+
+        # --- tool trace panel ---------------------------------------------
+        # UI fixture: the review response is stubbed so the panel can be tested
+        # deterministically. This is a test double, never shown to a visitor.
+        trace_fixture = {
+            "review_id": "fixture-trace",
+            "case": {"case_id": "boundary-bug", "title": "fixture", "expectation": "fixture"},
+            "approvals": {},
+            "files": [],
+            "report": {
+                "review_id": "fixture-trace", "repository": "demo-repo",
+                "base_ref": "main", "head_ref": "feature/boundary-bug",
+                "model_name": "fixture-model", "changed_files": [],
+                "static_findings": [], "llm_findings": [
+                    {"id": "llm-1", "file_path": "src/discount.py", "start_line": 6,
+                     "end_line": 6, "category": "boundary", "severity": "medium",
+                     "summary": "threshold became exclusive", "explanation": "",
+                     "evidence": "", "suggested_fix": "",
+                     "source": "llm", "verification_status": "suspected"},
+                ],
+                "final_findings": [
+                    {"id": "llm-1", "file_path": "src/discount.py", "start_line": 6,
+                     "end_line": 6, "category": "boundary", "severity": "medium",
+                     "summary": "threshold became exclusive", "explanation": "",
+                     "evidence": "", "suggested_fix": "",
+                     "source": "llm", "verification_status": "suspected"},
+                ],
+                "notes": [], "test_summary": {"ran": False, "skipped_reason": "fixture"},
+                "llm_status": "partial", "llm_note": "",
+                "tool_status": "tool_limit",
+                "tool_model_calls": 3, "tool_rounds": 2,
+                "tool_calls": [
+                    {"round": 1, "name": "read_code_context",
+                     "arguments": {"file_path": "src/discount.py", "start_line": 1, "end_line": 20},
+                     "ok": True, "outcome": "hit", "error_code": "", "error_message": "",
+                     "result_chars": 420, "latency_s": 0.004, "matched": 0},
+                    {"round": 1, "name": "find_symbol_definition",
+                     "arguments": {"symbol": "DISCOUNT_RATE"}, "ok": True,
+                     "outcome": "miss", "error_code": "", "error_message": "",
+                     "result_chars": 95, "latency_s": 0.002, "matched": 0},
+                    {"round": 2, "name": "read_code_context",
+                     "arguments": {"file_path": "tests/test_discount.py", "start_line": 1, "end_line": 5},
+                     "ok": False, "outcome": "error", "error_code": "denied_path",
+                     "error_message": "reading this path is not permitted",
+                     "result_chars": 0, "latency_s": 0.001, "matched": 0},
+                    {"round": 2, "name": "read_code_context",
+                     "arguments": {"file_path": "src/discount.py", "start_line": 21, "end_line": 30},
+                     "ok": False, "outcome": "budget_denied", "error_code": "budget_exceeded",
+                     "error_message": "tool call budget exhausted",
+                     "result_chars": 0, "latency_s": 0.0, "matched": 0},
+                ],
+            },
+        }
+
+        trace_page = browser.new_page(viewport={"width": 1280, "height": 900})
+        trace_page.goto(base_url, wait_until="networkidle")
+        trace_page.route("**/api/reviews", lambda route: route.fulfill(
+            status=200, content_type="application/json", body=json.dumps(trace_fixture)))
+        trace_page.locator('.case-card[data-case-id="boundary-bug"]').click()
+        trace_page.wait_for_selector(".diff-file", timeout=15000)
+        trace_page.locator("#run-btn").click()
+        trace_page.wait_for_selector("#results-panel:not(.hidden)", timeout=30000)
+        expect(trace_page.locator("#trace-panel")).to_be_visible(timeout=10000)
+
+        meta = trace_page.locator("#trace-meta").inner_text()
+        check("trace meta shows rounds and counts", "2 round" in meta and "4 tool call" in meta, meta[:110])
+        body_text = trace_page.locator("#trace-body").inner_text()
+        check("trace lists tool names", "read_code_context" in body_text and
+              "find_symbol_definition" in body_text)
+        check("trace shows validated arguments", "src/discount.py" in body_text)
+        check("trace marks a hit", "context retrieved" in body_text)
+        check("trace marks a miss distinctly", "no usable context found" in body_text)
+        check("trace shows the error code", "denied_path" in body_text.lower())
+        check("trace shows budget denial", "budget denied" in body_text.lower())
+        check("trace flags partial completion", "partial result" in body_text.lower())
+        check("trace links final output to findings",
+              "threshold became exclusive" in body_text and "suspected" in body_text.lower())
+        check("trace groups by model round", "model round 1" in body_text.lower()
+              and "model round 2" in body_text.lower())
+
+        # collapsible
+        trace_page.locator("#trace-panel > summary").click()
+        collapsed = trace_page.locator("#trace-panel").get_attribute("open") is None
+        check("trace panel collapses", collapsed)
+        trace_page.locator("#trace-panel > summary").click()
+        trace_page.screenshot(path=str(SHOTS / "11-tool-trace.png"), full_page=True)
+
+        # mobile rendering of the trace
+        trace_page.set_viewport_size({"width": 390, "height": 844})
+        trace_page.wait_for_timeout(200)
+        overflow = trace_page.evaluate(
+            "document.documentElement.scrollWidth - document.documentElement.clientWidth")
+        check("trace panel has no mobile overflow", overflow <= 2, f"overflow={overflow}px")
+        trace_page.screenshot(path=str(SHOTS / "12-tool-trace-mobile.png"), full_page=True)
+        trace_page.close()
+
         # --- mobile layout ------------------------------------------------
         mobile = browser.new_page(viewport={"width": 390, "height": 844})
         mobile.goto(base_url, wait_until="networkidle")
@@ -238,6 +341,176 @@ def run(base_url: str) -> int:
               "hidden" in (page2.locator("#results-panel").get_attribute("class") or ""))
         page2.screenshot(path=str(SHOTS / "08-error.png"), full_page=True)
         page2.close()
+
+        # --- review status banners (V4.2/V4.3) -----------------------------
+        state_page = browser.new_page()
+        state_page.goto(base_url, wait_until="networkidle")
+        state_page.evaluate(
+            """
+            window.__report = function (over) {
+              var base = {
+                review_id: "synthetic", changed_files: [{file_path: "src/a.py",
+                  change_type: "modified", added_lines: [1]}],
+                static_findings: [], llm_findings: [], final_findings: [],
+                test_summary: {ran: false, skipped_reason: "", passed: 0, failed: 0,
+                               errors: 0, failed_tests: []},
+                llm_status: "ok", llm_note: "", model_name: "deepseek-flash",
+                tool_status: "ok", tool_calls: [], tool_rounds: 0,
+                tool_model_calls: 2, tool_model_failures: 0,
+                llm_prompt_tokens: 10, llm_completion_tokens: 2,
+                review_status: "completed",
+                completeness: {status: "completed", reason: "",
+                               tool_calls_requested: 2, tool_calls_executed: 2,
+                               tool_calls_used: 2, tool_calls_max: 4,
+                               tool_calls_denied: 0, tool_rounds_used: 2,
+                               tool_rounds_max: 3, findings_signal: "has_findings",
+                               duplicate_calls: 0, model_requests: 2,
+                               model_failures: 0, tool_errors: 0, tool_misses: 0,
+                               denied_requests: []}
+              };
+              for (var k in over) { base[k] = over[k]; }
+              window.__prGuardian.render({report: base});
+            };
+            """
+        )
+
+        def state_texts(overrides: str) -> tuple:
+            state_page.evaluate("window.__report(" + overrides + ")")
+            state_page.wait_for_timeout(80)
+            return (
+                state_page.locator("#completeness-banner").inner_text(),
+                state_page.locator("#llm-banner").inner_text(),
+            )
+
+        partial = ("{review_status: 'partial', llm_status: 'partial', "
+                   "completeness: {status: 'partial', reason: 'tool_budget_exhausted', "
+                   "tool_calls_requested: 6, tool_calls_executed: 4, tool_calls_max: 4, "
+                   "tool_calls_denied: 2, findings_signal: 'not_evaluated', "
+                   "denied_requests: [{tool: 'read_code_context', arguments: {}}]}}")
+        comp, llm = state_texts(partial)
+        check("partial banner says NOT a clean review", "NOT a clean review" in comp, comp[:70])
+        check("partial banner counts executed not requested", "4/4" in comp, comp[:90])
+        check("partial llm banner admits the model ran",
+              "did not finish" in llm and "deepseek-flash" in llm, llm[:90])
+        check("partial llm banner never says it did not run",
+              "did not run" not in llm, llm[:90])
+
+        with_finding = ("{review_status: 'partial', llm_status: 'partial', "
+                        "completeness: {status: 'partial', reason: 'tool_budget_exhausted', "
+                        "tool_calls_requested: 4, tool_calls_executed: 4, tool_calls_max: 4, "
+                        "tool_calls_denied: 0, findings_signal: 'has_findings'}, "
+                        "final_findings: [{id: 'llm-1', file_path: 'src/a.py', start_line: 1, "
+                        "end_line: 1, category: 'logic', severity: 'high', summary: 's', "
+                        "source: 'llm', verification_status: 'suspected', "
+                        "evidence_status: 'source_verified', claim_status: 'claim_unjudged'}], "
+                        "llm_findings: []}")
+        comp, llm = state_texts(with_finding)
+        check("partial with findings still says partial", "PARTIAL" in comp, comp[:70])
+        check("false-clean line absent when there is a finding",
+              "NOT a clean review" not in comp, comp[:70])
+        body = state_page.locator("#findings-body").inner_text()
+        check("verified finding shows claim not judged", "claim not judged" in body, body[:90])
+        check("verified finding is not shown as confirmed",
+              "confirmed" not in body.lower(), body[:90])
+
+        done = ("{review_status: 'completed', llm_status: 'ok', "
+                "completeness: {status: 'completed', reason: '', "
+                "tool_calls_requested: 2, tool_calls_executed: 2, tool_calls_max: 4, "
+                "tool_calls_denied: 0, findings_signal: "
+                "'no_findings_in_completed_review'}}")
+        state_page.evaluate("window.__report(" + done + ")")
+        state_page.wait_for_timeout(80)
+        comp = state_page.locator("#completeness-banner").inner_text()
+        check("completed with zero findings keeps the caveat",
+              "does not prove" in comp, comp[:90])
+
+        failed = ("{review_status: 'failed', llm_status: 'failed', "
+                  "completeness: {status: 'failed', reason: 'http:ConnectError'}}")
+        comp, llm = state_texts(failed)
+        check("failed llm banner says FAILED", "FAILED" in llm, llm[:80])
+        check("failed llm banner is not the did-not-run text",
+              "did not run" not in llm, llm[:80])
+
+        not_run = ("{review_status: 'not_run', llm_status: 'not_configured', "
+                   "model_name: 'none', llm_note: 'No API key is configured.', "
+                   "completeness: {status: 'not_run', reason: 'no_api_key'}}")
+        comp, llm = state_texts(not_run)
+        check("not_run names what did and did not run",
+              "AI review did not run" in llm and
+              "Ruff result shown here is real" in llm and
+              "pytest did not run" in llm, llm[:140])
+        # --- V4.3 wording fixes -------------------------------------------
+        no_tests = ("{review_status: 'not_run', llm_status: 'not_configured', "
+                    "model_name: 'none', llm_note: 'No API key is configured.', "
+                    "test_summary: {ran: false, skipped_reason: 'not requested', "
+                    "passed: 0, failed: 0, errors: 0, failed_tests: []}, "
+                    "completeness: {status: 'not_run', reason: 'no_api_key'}}")
+        comp, llm = state_texts(no_tests)
+        check("not_run does not claim pytest ran when it did not",
+              "pytest did not run" in llm and "Ruff and pytest results" not in llm,
+              llm[:120])
+
+        with_tests = ("{review_status: 'not_run', llm_status: 'not_configured', "
+                      "model_name: 'none', "
+                      "test_summary: {ran: true, passed: 3, failed: 0, errors: 0, "
+                      "failed_tests: []}, "
+                      "completeness: {status: 'not_run', reason: 'no_api_key'}}")
+        comp, llm = state_texts(with_tests)
+        check("not_run says both Ruff and pytest ran when they did",
+              "Ruff and pytest results shown here are real" in llm, llm[:120])
+
+        unknown = ("{review_status: 'unknown', llm_status: null, model_name: 'none', "
+                   "completeness: {status: 'unknown', "
+                   "reason: 'migrated_from_legacy_report', "
+                   "findings_signal: 'not_evaluated'}}")
+        comp, llm = state_texts(unknown)
+        check("unknown status says completion is undeterminable",
+              "Completion state unknown" in comp, comp[:80])
+        check("unknown status never says the review did not run",
+              "did not run" not in comp and "did not run" not in llm, llm[:90])
+
+        rounds = ("{review_status: 'partial', llm_status: 'partial', "
+                  "completeness: {status: 'partial', reason: 'round_limit_reached', "
+                  "tool_calls_requested: 3, tool_calls_executed: 3, tool_calls_max: 4, "
+                  "tool_calls_denied: 0, tool_rounds_used: 3, tool_rounds_max: 3, "
+                  "findings_signal: 'not_evaluated'}}")
+        comp, llm = state_texts(rounds)
+        check("round-limit partial blames the round limit, not the call budget",
+              "round limit" in comp and "tool budget ran out" not in comp, comp[:110])
+
+        partial_finding = ("{review_status: 'partial', llm_status: 'partial', "
+                           "completeness: {status: 'partial', reason: "
+                           "'tool_budget_exhausted', tool_calls_requested: 5, "
+                           "tool_calls_executed: 4, tool_calls_max: 4, "
+                           "tool_calls_denied: 1, findings_signal: 'has_findings'}, "
+                           "final_findings: [{id: 'llm-1', file_path: 'src/a.py', "
+                           "start_line: 1, end_line: 1, category: 'logic', "
+                           "severity: 'high', summary: 'reported hypothesis', "
+                           "source: 'llm', verification_status: 'suspected', "
+                           "evidence_status: 'source_verified', "
+                           "claim_status: 'claim_unjudged'}], "
+                           "llm_findings: [{id: 'llm-1', file_path: 'src/a.py', "
+                           "start_line: 1, end_line: 1, summary: 'reported hypothesis', "
+                           "source: 'llm', verification_status: 'suspected'}]}")
+        state_page.evaluate("window.__report(" + partial_finding + ")")
+        state_page.wait_for_timeout(80)
+        llm_body = state_page.locator("#llm-body").inner_text()
+        check("partial keeps the findings it produced",
+              "reported hypothesis" in llm_body, llm_body[:90])
+        check("partial does not say the findings were never evaluated",
+              "not evaluated" not in llm_body.lower(), llm_body[:90])
+        check("partial explains coverage is incomplete",
+              "incomplete" in llm_body.lower(), llm_body[:110])
+
+        state_page.evaluate("window.__report(" + no_tests + ")")
+        state_page.wait_for_timeout(80)
+        page_text = state_page.locator("body").inner_text()
+        check("banners do not contradict each other",
+              not ("AI review did not run" in page_text and
+                   "AI review ran with model" in page_text),
+              page_text[:100])
+
+        state_page.close()
 
         browser.close()
 

@@ -1,389 +1,254 @@
 # PR Guardian — Evidence-Based AI Code Review
 
-PR Guardian reviews a Python pull request and produces a report where every
-claim is traceable. Deterministic tools (Ruff, pytest) supply evidence, a
-language model may propose *suspected* issues, a validator rejects anything it
-cannot anchor to the diff, and a human accepts or rejects what remains.
+**v1.0.0** · Python 3.12 · FastAPI · MIT
+
+PR Guardian reviews a Python pull request and returns findings a reviewer can audit:
+every AI claim is tied to source lines that were actually delivered to the model, and
+every review states whether it finished, ran out of budget, or did not run at all.
+
+Most "AI code review" demos ask a model for an opinion and print it. PR Guardian asks
+a different question first — *what evidence does this review actually have?* — and
+refuses to dress a partial review up as a clean one.
+
+| | |
+|---|---|
+| **Public demo** | **https://pr-guardian-ai-uodn.onrender.com** |
+| Live model calls there | **off** (`PR_GUARDIAN_ALLOW_LIVE_LLM=0`). It runs the V1 build: Ruff + pytest evidence, no paid AI. |
+| Local AI mode | your own DeepSeek (or any OpenAI-compatible) key, see [Run it locally](#run-it-locally) |
+| This repository | 1.0.0, not yet deployed — the footer of any deployment reports its own running version |
+
+> The public instance is **not** running this 1.0 build. The page footer reports the
+> version it actually runs; nothing here claims otherwise.
+
+---
+
+## Contents
+
+1. [The problem](#the-problem)
+2. [How it differs from an LLM review demo](#how-it-differs-from-an-llm-review-demo)
+3. [Architecture](#architecture)
+4. [Stack](#stack)
+5. [Screenshots](#screenshots)
+6. [Public demo vs local AI mode](#public-demo-vs-local-ai-mode)
+7. [Function calling, MCP and BM25](#function-calling-mcp-and-bm25)
+8. [Evidence provenance and review completeness](#evidence-provenance-and-review-completeness)
+9. [Results, and what they do not say](#results-and-what-they-do-not-say)
+10. [Run it locally](#run-it-locally)
+11. [Tests, CI and security](#tests-ci-and-security)
+12. [Experimental work and negative results](#experimental-work-and-negative-results)
+
+---
+
+## The problem
+
+A diff review has two failure modes that look identical in a chat transcript:
+
+* the model found nothing because the change is fine;
+* the model found nothing because it never read the code that mattered.
+
+A review that cannot tell those apart is not evidence. PR Guardian makes the second
+case visible: it records what the model was shown, pins every read to one commit,
+groups findings by whether their evidence was delivered, and reports the process state
+(`completed` / `partial` / `failed` / `not_run` / `unknown`) separately from any defect
+verdict.
 
 **The design principle: AI proposes, tools prove, validation filters, humans decide.**
 
-![Review results](docs/screenshots/03-results.png)
+## How it differs from an LLM review demo
 
----
-
-## Live demo vs. measured AI results — please read this first
-
-| | Where | What runs | What it proves |
-|---|---|---|---|
-| **Online demo** | **https://pr-guardian-ai-uodn.onrender.com** | Ruff + pytest only. **Live model calls are disabled** (`PR_GUARDIAN_ALLOW_LIVE_LLM=0` on the public instance). | The pipeline, the evidence handling, validation and human approval work end to end. |
-| **Real AI evaluation** | Committed artefacts in this repo: [held-out report](docs/benchmark-results/heldout-llm/REPORT.md), [raw JSON](docs/benchmark-results/heldout-llm/results.json), [smoke detail](docs/llm-smoke-results.json) | Real `deepseek-flash` calls, 17 frozen held-out cases, run locally. | Measured detection quality (precision / recall / F1 / false-alarm rate). |
-
-The hosted demo deliberately does **not** call a paid model: it is public, so it
-would be someone else's bill. Its AI panel therefore says *Not Evaluated*, which
-is an honest status, not an error. Every number quoted in the benchmark section
-below came from the local run, never from the hosted instance.
-
-> Free Render instances sleep after 15 minutes idle; the first request can take
-> about a minute. The demo repository is rebuilt at startup, so nothing is stale
-> after a wake-up.
-
----
-
-## What it does
-
-Given a git diff between two refs, the pipeline:
-
-1. Parses the diff into changed files and new-file line numbers.
-2. Runs Ruff on the changed Python files (JSON output).
-3. Optionally runs the trusted test suite on the head revision and records
-   pass/fail counts and failing test names.
-4. Asks an LLM for behavioural defects, with a strict JSON schema and explicit
-   instructions to ignore instructions embedded in code.
-5. Validates every finding: the file must exist, the line must fall inside the
-   changed lines, duplicates are merged, invalid severities and shell-like
-   "fixes" are dropped.
-6. Marks each finding `confirmed` (backed by a tool) or `suspected` (model
-   hypothesis). A model finding can never mark itself confirmed.
-7. Renders Markdown/JSON, and in the web UI lets a human accept or reject each
-   finding before export.
-
-### Demo cases in the web UI
-
-| Case | What it shows | Expected outcome |
-|---|---|---|
-| Boundary defect in discount rule | `>= 100` changed to `> 100` | pytest failure reported as **confirmed** |
-| Behaviour-preserving refactor | constants extracted | **no findings** (false alarms would be visible) |
-| Prompt-injection comment | comment tells the reviewer to ignore its rules | instruction ignored, real test results still reported |
-
-Ruff does **not** flag the boundary bug. That is the point: behavioural defects
-need evidence that linting cannot produce.
-
-| Diff with line numbers | Approval + export |
+| Generic LLM demo | PR Guardian |
 |---|---|
-| ![Diff](docs/screenshots/02-diff.png) | ![Approval](docs/screenshots/04-approval.png) |
-
----
+| one prompt, free-text answer | structured findings with file, line span and severity |
+| "the model says line 42 is wrong" | the cited lines were delivered to the model in this commit, or the claim is marked unverified |
+| silent truncation | a citation only counts when every line arrived in full |
+| "no issues found" | `partial` / `not_run` are separate states, and partial never means clean |
+| no tools | read-only tools (`read_code_context`, `find_symbol_definition`, `search_code`) over a pinned Git snapshot, on a `src/**/*.py` allowlist |
+| trust the model's tool use | every tool call is budgeted, recorded and replayable |
 
 ## Architecture
 
 ```
-git diff ──► diff parser ──► context + changed line numbers
-                                    │
-                    ┌───────────────┼────────────────┐
-                    ▼               ▼                ▼
-                  Ruff           pytest           LLM reviewer
-              (confirmed)      (confirmed)        (suspected)
-                    └───────────────┼────────────────┘
-                                    ▼
-                          finding validator
-                (file exists · line in diff · dedupe ·
-                 no self-confirmation · no shell advice)
-                                    ▼
-                     Markdown / JSON report
-                                    ▼
-                        human accept / reject
+        ┌──────────────┐   diff + changed files   ┌────────────────────┐
+Git ───▶│ GitSnapshot  │─────────────────────────▶│ deterministic pass │
+        │ (pinned SHA) │                          │ Ruff · pytest      │
+        └──────┬───────┘                          └─────────┬──────────┘
+               │ tool payloads (ref = SHA)                   │ findings
+               ▼                                             ▼
+        ┌──────────────┐   tool_calls   ┌──────────────┐  ┌──────────────┐
+        │ read-only    │◀──────────────▶│ model loop   │─▶│ Evidence     │
+        │ tools / MCP  │  tool results  │ (DeepSeek)   │  │ Registry     │
+        └──────────────┘                └──────────────┘  └──────┬───────┘
+               │ BM25 index over src/**/*.py                      │
+               ▼                                                  ▼
+        ┌──────────────┐                                  ┌────────────────┐
+        │ search_code  │                                  │ verify citations│
+        └──────────────┘                                  │ completeness    │
+                                                          └────────┬───────┘
+                                                                   ▼
+                                                     ReviewReport → API · UI · export
 ```
 
-Code layout:
+Key invariants:
 
-```
-src/pr_guardian/   review engine (CLI + library)
-  git_reader.py      diff parsing, ref validation, limits
-  static_analysis.py Ruff JSON → findings
-  test_runner.py     pytest on a head worktree (trusted repos only)
-  llm_reviewer.py    structured model call, schema validation
-  validator.py       the trust layer
-  pipeline.py        orchestration shared by CLI and web
-  settings.py        env/.env configuration
-app/               FastAPI + Jinja2 web UI (templates, static, store, export)
-benchmark/         37 labelled PR cases, evaluator, ground-truth verifier
-tests/             99 pytest tests
-scripts/           browser acceptance suite, real-LLM smoke test
-```
+* every tool read is served from **one commit**, and every payload carries that SHA;
+* the model can only read `src/**/*.py` — tests, docs, `.env`, symlinks and paths
+  outside `src/` are refused;
+* search hits are **candidates**, never evidence;
+* a finding whose citation is not fully delivered is kept, but marked unverified.
 
----
+## Stack
 
-## Quick start
+Python 3.12 · FastAPI · Jinja2 + vanilla JS · Pydantic v2 · httpx · Ruff · pytest ·
+BM25 (own implementation, no embedding model) · MCP Python SDK 2.3.0 (stdio) ·
+Playwright (UI checks) · GitHub Actions · Render (free tier).
 
-```bash
-uv venv --python 3.12 .venv
-uv pip install --python .venv/Scripts/python.exe -e ".[dev]"    # Windows
-# uv pip install --python .venv/bin/python -e ".[dev]"          # macOS/Linux
+## Screenshots
 
-cp .env.example .env        # optional: add an API key to enable the AI step
-
-# web UI
-.venv/Scripts/python.exe -m uvicorn app.main:app --port 8765
-# open http://127.0.0.1:8765
-
-# CLI on the bundled demo repository
-.venv/Scripts/python.exe demo/build_fixtures.py ../demo-repo
-.venv/Scripts/python.exe -m pr_guardian.cli review \
-    --repo ../demo-repo --base main --head feature/boundary-bug --run-tests
-```
-
-The web UI works fully **without** an API key: it shows real Ruff and pytest
-results and labels the AI panel *Not Evaluated*.
-
----
-
-## Configuration
-
-Environment variables (or a `.env` file in the working directory):
-
-| Variable | Meaning | Default |
-|---|---|---|
-| `PR_GUARDIAN_API_KEY` | key for an OpenAI-compatible endpoint | empty → AI step not evaluated |
-| `PR_GUARDIAN_BASE_URL` | provider base URL (`PR_GUARDIAN_API_BASE` also accepted) | `https://api.openai.com/v1` |
-| `PR_GUARDIAN_MODEL` | model name | `gpt-4o-mini` |
-| `PR_GUARDIAN_PUBLIC_MODE` | `1` on a public deployment | `0` |
-| `PR_GUARDIAN_ALLOW_LIVE_LLM` | allow real calls while in public mode | `0` |
-| `PR_GUARDIAN_ALLOW_TEST_EXECUTION` | `0` disables pytest entirely | `1` |
-| `PR_GUARDIAN_MAX_LIVE_LLM_CALLS` | hard budget per process | `50` |
-
-Any provider exposing `POST {base_url}/chat/completions` with
-`response_format: {"type": "json_object"}` works. If your provider does not
-support JSON mode, the response will fail schema validation and the app reports
-"LLM output failed schema validation" rather than inventing findings.
-
----
-
-## Benchmark
-
-**37 original cases** written for this project: 25 real defects and 12 clean
-pull requests, across boundary conditions, null handling, exception handling,
-state updates, logic branches, API validation and data filtering. Split 20 dev /
-17 held-out; held-out is never used to tune prompts.
-
-Ground truth is verified mechanically — every label is checked by running that
-case's own tests:
-
-```bash
-python -m benchmark.verify_ground_truth   # 37 cases, 0 mismatches
-```
-
-Evaluation rules are fixed before measuring:
-
-* Methods see the diff and source file only. **The ground-truth test file is
-  removed from the diff** unless a method is explicitly named `+tests`.
-* **PR-level**: a PR is "flagged" if the method reports anything on the changed
-  module. **Finding-level**: a finding is a true positive only if it lands on a
-  changed line; one defect matches at most once.
-* Style lints (`F841`, `E501`, …) are declared *incidental* up front and never
-  counted as detecting a behavioural defect.
-* Undefined ratios (zero denominators) are reported as `n/a`, never as 0.
-
-Method definitions:
-
-| Method | What it is |
+| Diff view | Findings with evidence badges |
 |---|---|
-| `ruff-only` | Ruff static analysis only. |
-| `llm-only` | **Raw** model output. The validator is *not* applied, so this measures the model alone. |
-| `combined` | Ruff + model + validator — what the shipped pipeline actually reports. |
-| `combined+tests` | Combined plus pytest evidence. Reported separately because the test file is visible to the method in this condition. |
+| ![diff](docs/screenshots/02-diff.png) | ![results](docs/screenshots/03-results.png) |
 
-### Measured results
+| Clean PR wording | Tool trace |
+|---|---|
+| ![clean](docs/screenshots/05-clean-pr.png) | ![trace](docs/screenshots/11-tool-trace.png) |
 
-Model: **`deepseek-flash`** via `https://api.deepseek.com`, `temperature=0`.
-Held-out evaluation (17 frozen cases, never used for prompt tuning):
+More in [`docs/screenshots/`](docs/screenshots).
 
-| Method | Split | Cases (bug/clean) | TP | FP | FN | Precision | Recall | F1 | Clean false-alarm | Location accuracy |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Ruff-only | dev | 20 (17/3) | 0 | 0 | 17 | n/a | 0.00% | n/a | 0.00% | 0.00% |
-| Ruff-only | heldout | 17 (8/9) | 0 | 0 | 8 | n/a | 0.00% | n/a | 0.00% | 0.00% |
-| LLM-only | heldout | 17 (8/9) | 7 | 1 | 1 | 87.50% | 87.50% | 87.50% | 11.11% | 87.50% |
-| Combined | heldout | 17 (8/9) | 8 | 1 | 0 | 88.89% | 100.00% | 94.12% | 11.11% | 100.00% |
+## Public demo vs local AI mode
 
-Token usage (provider-reported) and schema validity for the held-out run:
+| | Public demo | Local AI mode |
+|---|---|---|
+| URL / command | https://pr-guardian-ai-uodn.onrender.com | `uvicorn app.main:app` on your machine |
+| Runs Ruff + pytest | yes | yes |
+| Calls a paid model | **no** (`ALLOW_LIVE_LLM=0`) | yes, with **your** key |
+| AI panel | "Not Evaluated" — honest, not an error | real findings, with evidence status |
+| Which repo can be reviewed | the three preset demo cases only | the same preset demo cases (this build does not accept arbitrary repositories) |
 
-| Method | LLM calls | Schema-valid | Validator dropped | Prompt tokens | Completion tokens | Mean model latency |
-|---|---|---|---|---|---|---|
-| LLM-only | 17 | 17/17 (100%) | 0 | 5,423 | 6,916 | 3.00 s |
-| Combined | 17 | 17/17 (100%) | 0 | 5,423 | 8,405 | 3.40 s |
+The public instance is deliberately boring: it can review only the self-authored demo
+cases, it never spends money, and it says "Not Evaluated" rather than inventing an AI
+answer.
 
-Every detection was checked by hand against the injected defect, e.g. combined
-reported *"Discount threshold changed to >= 101 on a float value, excluding totals
-between 100 and 101"*, *"Port 0 is now accepted as valid"*, and *"Retry loop
-hardcoded to a single iteration, ignoring the `attempts` parameter"* — each
-matches its case's ground truth.
+## Function calling, MCP and BM25
 
-**Cost** is not reported as a number: the provider returns tokens but not price,
-and no price table was configured. Set `PR_GUARDIAN_PRICE_INPUT_PER_M` and
-`PR_GUARDIAN_PRICE_OUTPUT_PER_M` to have the tool compute it. Guessing a price
-would make the figure unverifiable.
+**Function calling** (`PR_GUARDIAN_TOOL_CALLS_ENABLED=1`, default off) lets the model
+ask for evidence instead of guessing:
 
-### Failure cases (held-out)
+* `read_code_context(file, start, end)` — numbered lines from the snapshot;
+* `find_symbol_definition(symbol)` — the definition that matters;
+* `search_code(query, top_k)` — BM25 over `src/**/*.py`.
 
-| Method | Case | Type | What happened |
-|---|---|---|---|
-| LLM-only | DISCOUNT-04 | miss | threshold moved to `>= 101` was not reported |
-| LLM-only | INVENTORY-04 | false alarm | flagged a refactor as "two separate `stock.get` reads" — style, not a defect |
-| Combined | RANKING-03 | false alarm | claimed the `n <= 0` → `n < 0` change "no longer hits the early-return guard", but `ordered[:0]` already returned `[]` for `n = 0`, so behaviour is identical |
+Calls are budgeted (`MAX_TOOL_ROUNDS`, `MAX_TOOL_CALLS`) and every call is recorded in
+`ReviewReport.tool_calls` with its outcome (`hit`, `miss`, `error`, `budget_denied`).
 
-Dev smoke (5 cases, `scripts/llm_smoke_test.py`): 3 buggy cases → 2 detected;
-2 clean cases → 1 false alarm; schema valid 5/5; 4,891 tokens. The dev false
-alarm was a plausible-but-unverified concern about `casefold()` Unicode folding;
-the dev miss was a removed `None` guard.
+**MCP** (`PR_GUARDIAN_TOOL_BACKEND=mcp`) exposes the same three tools over a local
+stdio MCP server, with a whitelisted child environment (the API key is not passed to
+it). Local and MCP backends return byte-identical payloads — covered by tests.
 
-### Honest caveats about these numbers
+**BM25** indexes `src/**/*.py` at the pinned commit, cached by SHA and verified on
+reuse. No embedding model, no vector database: retrieval is deterministic, inspectable
+and cheap. A dense/hybrid experiment was run and **rejected** — see [negative
+results](#experimental-work-and-negative-results).
 
-* **Run-to-run variance is real.** An earlier held-out run (before per-case
-  capture was added) measured LLM-only at TP 8 / FP 1 / FN 0 and Combined at
-  TP 8 / FP 1 / FN 0 — i.e. 88.89% precision, 100% recall. The difference between
-  the two runs is sampling noise, not a change in method. Treat ±1 case as the
-  noise band at this sample size.
-* **Ruff and the validator added nothing on held-out in these runs.** Ruff
-  produced zero findings on the behavioural defects, and the validator dropped
-  zero findings. So the gap between LLM-only and Combined here is not evidence
-  that validation improves precision — with n=17 and this noise level, it is not
-  measurable. The validator's value is demonstrated by unit tests (self-confirmation,
-  hallucinated files, forbidden fix advice), not by this benchmark.
-* **The same diff can produce different AI output across runs.** In one recorded
-  web-UI run on the demo boundary case the model flagged the defect; in another it
-  reported nothing. This is why model findings are labelled *suspected* and require
-  human acceptance.
-* **The dataset is small and synthetic** — 37 hand-written cases over small
-  modules. It measures behavioural-defect detection, nothing broader.
+## Evidence provenance and review completeness
 
-**How to read the Ruff row.** This dataset was built to test *behavioural*
-defects, which static linting is not designed to catch, so 0% recall here says
-"Ruff cannot find this class of bug" — not "Ruff is useless for code review".
-Ruff remains valuable for the style, import and hygiene problems it does catch;
-the two incidental lint hits found in the dev split were correctly excluded from
-detection scoring.
+**Provenance (V4.1).** Each AI finding carries `evidence_refs`. A ref is verified only
+when the file is in the allowlist, the range lies inside lines that arrived in full,
+the SHA matches the registry, and the delivering tool call exists. Verified findings
+are **`suspected`** with **`claim_unjudged`** — delivered evidence, not a proven
+defect. Findings with no verifiable citation stay visible and marked unverified.
 
-Precision is `n/a` for Ruff-only because it raised no findings at all; a ratio
-with an empty denominator is undefined, and reporting 0% or 100% would be
-misleading.
+**Completeness (V4.2).** Every report states what the process actually did:
 
-### Reproducing
+| `review_status` | Meaning |
+|---|---|
+| `completed` | the review ran to the end of its plan |
+| `partial` | stopped early — tool budget exhausted or round limit reached; findings shown are incomplete coverage |
+| `failed` | the model call failed |
+| `not_run` | AI disabled or not configured; Ruff/pytest results are still real |
+| `unknown` | historical report without execution records |
+
+Call counts are kept separate: requested / executed / denied / errored. "partial" is
+never rendered as "clean".
+
+## Results, and what they do not say
+
+All numbers below come from **self-authored synthetic repositories**. They measure
+whether the pipeline works, not how it performs on real code review.
+
+| Method | Split | Cases | TP | FP | FN | Precision | Recall | F1 | Clean false alarm |
+|---|---|---|---|---|---|---|---|---|---|
+| Ruff-only | held-out | 17 (8/9) | 0 | 0 | 8 | n/a | 0 % | n/a | 0 % |
+| LLM-only | held-out | 17 (8/9) | 7 | 1 | 1 | 87.50 % | 87.50 % | 87.50 % | 11.11 % |
+| Combined | held-out | 17 (8/9) | 8 | 1 | 0 | 88.89 % | 100 % | 94.12 % | 11.11 % |
+
+Read this as: *on 17 synthetic held-out cases, the combined pipeline caught 8 of 8
+seeded defects and raised one false alarm on 9 clean cases.* With n = 17 that is a
+smoke signal; it is **not** production accuracy, and it must not be quoted as such.
+
+Other measured results, including the negative ones:
+
+* BM25 retrieval: hit-rate study on 103 chunks / 51 frozen queries — a small-corpus
+  measurement, not a general retrieval claim;
+* dense + RRF hybrid: **No-Go**, archived with its evaluation;
+* exact-repeat tool cache: **No-Go** — 0 repeats in 37 real recorded calls;
+* evidence-first planner: **No-Go** — fewer calls, but one required evidence range was
+  lost, which fails the "no weaker proof" rule;
+* offline evidence-sufficiency gate: research prototype, not wired into the product.
+
+## Run it locally
 
 ```bash
-# 1-case live check, then a cost-capped 5-case smoke on the dev split
-python scripts/llm_smoke_test.py --limit 1
-python scripts/llm_smoke_test.py --limit 5
-
-# frozen held-out evaluation (34 model calls)
-python -m benchmark.evaluate --split heldout --methods llm-only,combined \
-    --out docs/benchmark-results/heldout-llm
+git clone https://github.com/Ddoreamon/pr-guardian-ai
+cd pr-guardian-ai
+python -m venv .venv && . .venv/Scripts/activate    # Linux/macOS: source .venv/bin/activate
+pip install -e ".[dev]"
+cp .env.example .env                                # optional: add your key for AI review
+uvicorn app.main:app --port 8000
 ```
 
-Artefacts: [`docs/benchmark-results/heldout-llm/`](docs/benchmark-results/heldout-llm)
-(report, per-case CSV, raw JSON) and
-[`docs/llm-smoke-results.json`](docs/llm-smoke-results.json).
+Open http://127.0.0.1:8000, pick a demo case, review it.
 
----
-
-## Testing
+For real AI review, set in `.env` (never commit it):
 
 ```bash
-python -m pytest -q                      # 99 tests
+PR_GUARDIAN_API_KEY=<your-key>        # your key, never committed
+PR_GUARDIAN_BASE_URL=https://api.deepseek.com
+PR_GUARDIAN_MODEL=deepseek-chat
+PR_GUARDIAN_ALLOW_LIVE_LLM=1
+PR_GUARDIAN_TOOL_CALLS_ENABLED=1      # optional: function calling
+```
+
+Without a key the app still works: Ruff and pytest evidence stay real and the AI panel
+says "Not Evaluated".
+
+## Tests, CI and security
+
+```bash
+pytest -q                                        # unit, API, MCP, evidence, version
 ruff check src tests demo benchmark app scripts
-
-# browser acceptance suite (needs the server running)
-python -m uvicorn app.main:app --port 8765 &
-python scripts/browser_test.py           # 42 checks (43 with a live model)
+python scripts/browser_test.py --base-url http://127.0.0.1:8000   # 76 UI checks
 ```
 
-| Suite | Count | Covers |
+* CI: lint + tests, and a Playwright browser job on every push and PR.
+* Security: the API key never reaches logs, reports, exports or the MCP child process;
+  tool reads are allowlisted and SHA-pinned; the public deployment runs with live
+  model calls off; exports contain no host paths or credentials.
+* Reports and exports are plain JSON/Markdown; no database, no background jobs.
+
+## Experimental work and negative results
+
+Kept in the repository on purpose — a review tool that hides its failed experiments is
+not auditable.
+
+| Work | Outcome | Document |
 |---|---|---|
-| Unit — diff parser, validator, LLM (mocked), metrics, settings, test-runner | 74 | parsing, trust rules, zero-division, schema failures, cost policy |
-| API — FastAPI endpoints | 25 | health, cases, diff, review, decisions, exports, error codes |
-| Browser — Playwright | 42–43 | real interactions, exports, mobile layout, error banner, live-model mode |
+| Dense retrieval + RRF hybrid | No-Go, excluded from the product | `feature/v3-hybrid-rag` (branch), `docs/rag-stage-v2.md` |
+| Exact-repeat tool cache | No-Go: 0 exact repeats in 37 calls | [`docs/v4.3-budget-efficiency.md`](docs/v4.3-budget-efficiency.md) |
+| Evidence-first planner prompt | No-Go: lost a required evidence range | [`docs/v4.4-comparison.md`](docs/v4.4-comparison.md) |
+| Evidence sufficiency gate | research prototype, offline only | [`docs/v4.5-decision.md`](docs/v4.5-decision.md) |
+| Shadow replay | offline script, not in the review path | [`docs/v4.5-shadow-mode.md`](docs/v4.5-shadow-mode.md) |
 
-Latest local run: **99 passed**; browser suite **42/42** (no API key) and
-**43/43** (live model configured) — the suite adapts to the server's mode.
-
----
-
-## Security model
-
-**This is a demo, not a hardened service.**
-
-* The web API accepts only a preset `case_id`. It never accepts a filesystem
-  path, git URL or ref, so no arbitrary repository is read.
-* pytest runs only against the demo repository this project builds itself. A
-  subprocess timeout is **not** a sandbox; `PR_GUARDIAN_ALLOW_TEST_EXECUTION=0`
-  disables it entirely.
-* Git is invoked with argument lists, never `shell=True`; refs are validated and
-  leading `-` is rejected.
-* LLM output must satisfy a Pydantic schema. Findings are location-checked and
-  can never self-confirm. Suggested fixes containing shell-like commands are
-  dropped.
-* Prompt injection in code comments is treated as data and covered by a test.
-  A prompt-level defence reduces but does not eliminate this risk.
-* API keys are read from the environment only; they are never logged or included
-  in reports.
-* Public deployments default to no live model calls. With
-  `PR_GUARDIAN_ALLOW_LIVE_LLM=1`, a global call budget
-  (`PR_GUARDIAN_MAX_LIVE_LLM_CALLS`) caps spend.
-
----
-
-## Limitations
-
-* **Measured on one model** (`deepseek-flash`) with 17 held-out cases. That is
-  enough to show the pipeline works end to end, not enough to compare models or
-  to claim state-of-the-art detection.
-* **Run-to-run variance of about one case** at this sample size; a single run's
-  precision/recall should not be read as a stable property of the system.
-* Cost is not reported as a figure, because no price table was configured.
-* The benchmark is small (37 cases). Results are indicative, and the dataset was
-  written by the same person who wrote the pipeline — an author bias that real
-  PR data would not have.
-* The dataset models behavioural defects in small modules; it is not a sample of
-  real-world pull requests.
-* Reviews are held in memory and lost on restart; there is no database.
-* Only single-repository, single-language (Python) diffs are supported.
-* The web UI reviews only its three built-in cases.
-
----
-
-## Known-unbuilt
-
-Web-based GitHub PR import, LangGraph state/interrupts, a database, and posting
-comments back to GitHub are **not implemented**. The UI is intentionally scoped to
-preset cases.
-
----
-
-## Deployment (Render)
-
-**Live instance:** https://pr-guardian-ai-uodn.onrender.com (Free plan, manual
-Web Service, `pip install -e .` + `uvicorn app.main:app --host 0.0.0.0 --port $PORT`).
-
-`render.yaml` in this repo also encodes the same configuration for Blueprint
-deploys: preset cases only, live LLM off, pytest restricted to the trusted demo
-repository.
-
-Public-instance environment variables that matter:
-
-| Key | Value | Effect |
-|---|---|---|
-| `PR_GUARDIAN_PUBLIC_MODE` | `1` | public deployment policy |
-| `PR_GUARDIAN_ALLOW_LIVE_LLM` | `0` | no paid model calls, even if a key exists |
-| `PR_GUARDIAN_MAX_LIVE_LLM_CALLS` | `25` | hard cap if the flag is ever enabled |
-| `PR_GUARDIAN_ALLOW_TEST_EXECUTION` | `1` | runs pytest only on the self-authored demo repo |
-| `PYTHON_VERSION` | `3.12.7` | Render needs a fully qualified version |
-
-To enable live model review on the deployed instance you would set
-`PR_GUARDIAN_API_KEY` as a secret **and** `PR_GUARDIAN_ALLOW_LIVE_LLM=1`. That is
-deliberately left off here, because a public URL spending someone's API budget is
-not a demo — it is a liability. The real-model evidence lives in the committed
-artefacts instead.
-
-Verify any deployment with:
-
-```bash
-curl -s https://<host>/health
-# {"status":"ok","llm_status":"not_configured","public_mode":true,
-#  "test_execution":true,"demo_repo_ready":true,"demo_repo_error":"","cases":3}
-```
-
-`demo_repo_ready` must be `true`; if it is `false`, the build image lacks `git` or
-the demo repository could not be created, and the page will say so.
-
----
+Release audit and integration plan: [`docs/release-1.0/`](docs/release-1.0).
 
 ## License
 

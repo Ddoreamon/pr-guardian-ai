@@ -1,0 +1,21 @@
+method,pair_id,variant,split,mechanism,label,flagged,located,semantic,correct_location,correct_semantic,findings,tool_calls,tool_hits,tool_misses,tool_errors,tool_budget,model_attempts,model_failures,prompt_tokens,completion_tokens,latency_s,status,note,finding_text
+v1-diff-only,P1,a,dev,M1,bug,False,False,False,False,False,0,0,0,0,0,0,1,0,301,302,2.646,ok,,
+v1-diff-only,P1,b,dev,M1,clean,False,False,False,True,True,0,0,0,0,0,0,1,0,301,1095,7.445,ok,,
+v1-diff-only,P2,a,dev,M2,bug,False,False,False,False,False,0,0,0,0,0,0,1,0,299,1306,9.105,ok,,
+v1-diff-only,P2,b,dev,M2,clean,False,False,False,True,True,0,0,0,0,0,0,1,0,299,910,6.616,ok,,
+v1-diff-only,P3,a,dev,M3,bug,True,True,True,True,True,1,0,0,0,0,0,1,0,290,428,3.016,ok,,"L7 Empty-query branch now returns None, violating the declared list[dict] return contract"
+v1-diff-only,P3,b,dev,M3,clean,True,True,False,False,False,1,0,0,0,0,0,1,0,290,360,2.659,ok,,"L7 search() now returns None instead of an empty list, violating its declared `list[dict]` re"
+v1-diff-only,P4,a,dev,M4,bug,True,True,True,True,True,1,0,0,0,0,0,1,0,307,678,4.635,ok,,L8 Off-by-one: qty equal to limit is now rejected
+v1-diff-only,P4,b,dev,M4,clean,True,True,False,False,False,1,0,0,0,0,0,1,0,307,616,4.024,ok,,L8 Inclusive boundary changed to exclusive: qty == limit is now rejected
+v1-diff-only,P5,a,dev,M5,bug,True,True,True,True,True,1,0,0,0,0,0,1,0,308,460,3.0,ok,,"L7 Exception type changed from ValueError to LookupError, breaking callers that catch ValueEr"
+v1-diff-only,P5,b,dev,M5,clean,True,True,False,False,False,1,0,0,0,0,0,1,0,308,535,3.843,ok,,"L7 Insufficient-stock error now raises LookupError, changing the exception contract and miscl"
+v2-tools,P1,a,dev,M1,bug,True,True,True,True,True,1,3,3,0,0,0,3,0,3942,643,5.98,ok,,"L7 calculate() passes an unsupported keyword argument `strict` to apply_rate, which takes onl"
+v2-tools,P1,b,dev,M1,clean,False,False,False,True,True,0,3,3,0,0,0,3,0,4004,234,3.686,ok,,
+v2-tools,P2,a,dev,M2,bug,True,True,True,True,True,1,4,4,0,0,0,3,0,4585,890,6.392,ok,,"L7 tax_for now passes a cents value into convert(), which expects dollars, inflating tax by 1"
+v2-tools,P2,b,dev,M2,clean,True,True,False,False,False,1,3,3,0,0,0,2,0,2541,907,5.709,ok,,"L7 to_cents is an identity function, so the change is a no-op and tax is still computed as if"
+v2-tools,P3,a,dev,M3,bug,True,True,True,True,True,1,2,2,0,0,0,3,0,3486,459,4.166,ok,,"L7 Empty-query branch now returns None instead of an empty list, violating the declared retur"
+v2-tools,P3,b,dev,M3,clean,True,True,False,False,False,1,2,2,0,0,0,2,0,2297,513,3.837,ok,,"L4 search() now returns None for an empty query instead of an empty list, violating its decla"
+v2-tools,P4,a,dev,M4,bug,True,True,True,True,True,1,4,3,0,1,0,4,0,5062,809,6.991,tool_limit,,"L8 Inclusive boundary dropped: qty == limit is now rejected, contradicting the documented ""wi"
+v2-tools,P4,b,dev,M4,clean,False,False,False,True,True,0,3,3,0,0,0,3,0,4137,739,6.908,ok,,
+v2-tools,P5,a,dev,M5,bug,True,True,True,True,True,1,2,2,0,0,0,2,0,2333,959,6.881,ok,,"L7 Exception type for insufficient stock changed from ValueError to LookupError, altering the"
+v2-tools,P5,b,dev,M5,clean,True,True,False,False,False,1,2,2,0,0,0,2,0,2341,636,5.323,ok,,"L7 Insufficient-stock condition now raises LookupError instead of ValueError, breaking caller"

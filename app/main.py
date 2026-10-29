@@ -21,6 +21,7 @@ from pr_guardian.diff_view import get_display_diff, parse_display_diff
 from pr_guardian.git_reader import GitReaderError
 from pr_guardian.pipeline import run_review
 from pr_guardian.settings import get_settings, load_dotenv
+from pr_guardian.version import __version__
 
 from .demo_cases import BASE_BRANCH, CASES_BY_ID, DEMO_CASES, demo_repo
 from .export import to_json, to_markdown
@@ -46,7 +47,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="PR Guardian", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="PR Guardian", version=__version__, lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 
@@ -127,7 +128,8 @@ def index(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"cases": _case_payload(), "config": _config_payload()},
+        context={"cases": _case_payload(), "config": _config_payload(),
+                 "version": __version__},
     )
 
 
@@ -137,6 +139,7 @@ def health() -> JSONResponse:
     return JSONResponse(
         {
             "status": "ok",
+            "version": __version__,
             "llm_status": cfg.llm_status(),
             "public_mode": cfg.public_mode,
             "test_execution": cfg.allow_test_execution,

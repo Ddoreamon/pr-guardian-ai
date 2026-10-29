@@ -6,11 +6,108 @@ real analysis result, never a canned response.
 
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 import uuid
 from pathlib import Path
 
+from .agent_tools import TrustedCodebase
+
+
+def _completeness(cfg: Settings, llm_status: str, tool_status: str, tool_result,
+                  tool_calls: list, model_calls: int, model_failures: int,
+                  prompt_tokens: int, completion_tokens: int,
+                  finding_count: int):
+    """Derive the process state from what actually happened."""
+    from .models import ReviewCompleteness
+
+    denied = [c for c in tool_calls if c.outcome == "budget_denied"]
+    executed = [c for c in tool_calls if c.outcome != "budget_denied"]
+    errors = [c for c in executed if c.outcome == "error"]
+    misses = [c for c in executed if c.outcome == "miss"]
+    # duplicates are counted over *executed* calls: a refused request never ran,
+    # so it must not be reported as wasted tool work
+    seen: dict[tuple, int] = {}
+    for call in executed:
+        key = (call.name, json.dumps(call.arguments, sort_keys=True, default=str))
+        seen[key] = seen.get(key, 0) + 1
+    duplicates = sum(count - 1 for count in seen.values() if count > 1)
+
+    made_a_call = (model_calls > 0 or prompt_tokens > 0 or completion_tokens > 0
+                   or llm_status in {"ok", "partial", "failed"})
+    if not made_a_call and llm_status in {"not_configured", "disabled_by_public_policy",
+                                          "disabled_by_request"}:
+        status, reason = "not_run", llm_status
+    elif llm_status == "failed" or tool_status in {"model_error", "schema_invalid"}:
+        status = "failed"
+        reason = (tool_result.error if tool_result is not None and tool_result.error
+                  else llm_status)
+    elif tool_status == "tool_limit" or llm_status == "partial":
+        status = "partial"
+        rounds_used = getattr(tool_result, "rounds", 0) if tool_result else 0
+        if denied:
+            reason = "tool_budget_exhausted"
+        elif rounds_used and rounds_used >= cfg.max_tool_rounds:
+            # the round cap ended the investigation, not the call budget
+            reason = "round_limit_reached"
+        else:
+            reason = "partial_unknown_reason"
+    else:
+        status, reason = "completed", ""
+
+    if status == "completed" and finding_count == 0:
+        signal = "no_findings_in_completed_review"
+    elif status == "partial" and finding_count == 0:
+        # a partial review that reported nothing is NOT a clean review
+        signal = "not_evaluated"
+    else:
+        signal = "has_findings"
+
+    return ReviewCompleteness(
+        status=status, reason=reason,
+        tool_rounds_used=getattr(tool_result, "rounds", 0) if tool_result else 0,
+        tool_rounds_max=cfg.max_tool_rounds,
+        tool_calls_requested=len(tool_calls),
+        tool_calls_executed=len(executed),
+        tool_calls_used=len(executed),
+        tool_calls_max=cfg.max_tool_calls,
+        tool_calls_denied=len(denied),
+        denied_requests=[{"tool": c.name, "arguments": c.arguments} for c in denied][:8],
+        model_requests=model_calls,
+        model_failures=model_failures,
+        tool_errors=len(errors),
+        tool_misses=len(misses),
+        duplicate_calls=duplicates,
+        findings_signal=signal,
+    )
+
+
+def _reported_model(cfg: Settings, llm_status: str, prompt_tokens: int,
+                    completion_tokens: int, tool_model_calls: int) -> str:
+    """Name the model only when a request was really made."""
+    made_a_call = (
+        tool_model_calls > 0
+        or prompt_tokens > 0
+        or completion_tokens > 0
+        or llm_status in {"ok", "failed", "partial"}
+    )
+    return cfg.model if made_a_call else "none"
+
+
+def _tool_backend(cfg: Settings, repo: Path, head: str):
+    """Return (backend, needs_close). Local is the default; MCP is opt-in."""
+    if cfg.tool_backend == "mcp":
+        from .mcp_client import MCPToolBackend
+
+        return MCPToolBackend(repo, head), True
+    return TrustedCodebase.from_git(repo, head), False
+from .evidence import (
+    EVIDENCE_DETERMINISTIC,
+    EVIDENCE_VERIFIED,
+    registry_fingerprint,
+    verify_findings,
+)
 from .git_reader import read_changed_files, validate_ref
 from .llm_reviewer import review_with_llm
 from .models import (
@@ -18,11 +115,13 @@ from .models import (
     ReviewFinding,
     ReviewReport,
     TestSummary,
+    ToolCallRecordModel,
     VerificationStatus,
 )
 from .settings import Settings, get_settings
 from .static_analysis import run_ruff
 from .test_runner import run_pytest_on_worktree
+from .tool_calling import review_with_tools
 from .validator import final_findings, validate_findings
 
 
@@ -122,11 +221,62 @@ def run_review(
     llm_findings: list[ReviewFinding] = []
     llm_status = cfg.llm_status()
     llm_note = ""
+    tool_status = "disabled"
+    prompt_tokens = 0
+    completion_tokens = 0
+    tool_calls: list[ToolCallRecordModel] = []
+    tool_model_calls = 0
+    tool_model_failures = 0
+    tool_rounds = 0
+    # the non-tool path also talks to the provider; count it the same way
+    llm_attempts = 0
+    llm_failures = 0
+    tool_result = None
     if not use_llm:
         llm_status, llm_note = "disabled_by_request", "LLM step disabled for this review."
+    elif cfg.tool_calls_enabled:
+        # Tools read the immutable snapshot of the ref under review, not the worktree.
+        backend, needs_close = _tool_backend(cfg, repo, head)
+        try:
+            tool_result = review_with_tools(
+                diff_text, files, backend, cfg,
+                max_rounds=cfg.max_tool_rounds, max_tool_calls=cfg.max_tool_calls,
+            )
+        finally:
+            if needs_close:
+                backend.close()
+        llm_findings = tool_result.findings
+        notes += tool_result.notes
+        llm_note = tool_result.notes[0] if tool_result.notes else ""
+        tool_status = tool_result.status
+        tool_model_calls = tool_result.model_calls
+        tool_model_failures = tool_result.model_failures
+        tool_rounds = tool_result.rounds
+        tool_calls = [ToolCallRecordModel(**r.as_dict()) for r in tool_result.trace]
+        usage = tool_result.usage or {}
+        prompt_tokens = int(usage.get("prompt_tokens", 0))
+        completion_tokens = int(usage.get("completion_tokens", 0))
+        if tool_result.status == "not_configured":
+            llm_status = "not_configured"
+        elif tool_result.status == "disabled":
+            llm_status = "disabled_by_public_policy"
+        elif tool_result.status == "tool_limit":
+            # budget ran out: successful investigation, incomplete coverage
+            llm_status = "partial" if tool_result.schema_valid else "failed"
+        elif tool_result.schema_valid:
+            llm_status = "ok"
+        else:
+            llm_status = "failed"
+        if tool_result.error:
+            llm_note = f"{llm_note} ({tool_result.error})".strip()
     else:
         result = review_with_llm(diff_text, files, settings=cfg)
+        llm_attempts = getattr(result, "attempts", 0)
+        llm_failures = getattr(result, "failures", 0)
         llm_findings = result.findings
+        usage = result.usage or {}
+        prompt_tokens = int(usage.get("prompt_tokens", 0))
+        completion_tokens = int(usage.get("completion_tokens", 0))
         notes += result.notes
         llm_note = result.notes[0] if result.notes else ""
         if not cfg.llm_configured:
@@ -138,19 +288,66 @@ def run_review(
         else:
             llm_status = "failed"
 
-    validated = validate_findings(static + llm_findings, files)
+    # ---- evidence provenance ------------------------------------------------
+    # The allowlist and the pinned SHA come from the same trusted codebase the
+    # tools use, whatever backend served them (local or MCP).
+    scope = TrustedCodebase.from_git(repo, head)
+    snapshot_sha = scope.snapshot_sha
+    allowed_paths = set(scope.source_files())
+    registry = getattr(tool_result, "registry", None) if tool_result is not None else None
+    llm_findings = verify_findings(llm_findings, registry, snapshot_sha, allowed_paths)
+    static_verified = verify_findings(static, None, snapshot_sha, allowed_paths)
+
+    validated = validate_findings(static_verified + llm_findings, files)
+    final = final_findings(validated)
+    trusted = [f for f in final
+               if f.evidence_status in {EVIDENCE_VERIFIED, EVIDENCE_DETERMINISTIC}]
+    model_requests = tool_model_calls if tool_result is not None else llm_attempts
+    model_failures = tool_model_failures if tool_result is not None else llm_failures
+    completeness = _completeness(cfg, llm_status, tool_status, tool_result,
+                                 tool_calls, model_requests, model_failures,
+                                 prompt_tokens, completion_tokens, len(final))
+
+    deterministic = [f for f in final if f.evidence_status == EVIDENCE_DETERMINISTIC]
+    source_verified = [f for f in final if f.evidence_status == EVIDENCE_VERIFIED]
+    source_unverified = [f for f in final
+                         if f.evidence_status not in {EVIDENCE_DETERMINISTIC,
+                                                      EVIDENCE_VERIFIED}]
+
     return ReviewReport(
         review_id=uuid.uuid4().hex[:12],
         repository=repo.name,
         base_ref=base,
         head_ref=head,
-        model_name=cfg.model if llm_status in {"ok", "failed"} else "none",
+        # a partial run really did call the model: naming it "none" would hide
+        # that tokens were spent and that the review is incomplete
+        model_name=_reported_model(cfg, llm_status, prompt_tokens, completion_tokens,
+                                   tool_model_calls),
         changed_files=files,
         static_findings=static,
         llm_findings=llm_findings,
-        final_findings=final_findings(validated),
+        final_findings=final,
+        evidence_verified=sum(1 for f in final if f.evidence_status == EVIDENCE_VERIFIED),
+        evidence_unverified=sum(1 for f in final
+                                if f.evidence_status not in {EVIDENCE_VERIFIED,
+                                                             EVIDENCE_DETERMINISTIC}),
+        trusted_findings=trusted,
+        evidence_sources=registry.summary() if registry is not None else [],
+        evidence_registry_fingerprint=registry_fingerprint(registry) if registry else "",
+        review_status=completeness.status,
+        completeness=completeness,
+        deterministic_findings=deterministic,
+        source_verified_findings=source_verified,
+        source_unverified_findings=source_unverified,
         notes=notes,
         test_summary=test_summary,
         llm_status=llm_status,
         llm_note=llm_note,
+        llm_prompt_tokens=prompt_tokens,
+        llm_completion_tokens=completion_tokens,
+        tool_status=tool_status,
+        tool_calls=tool_calls,
+        tool_model_calls=tool_model_calls,
+        tool_model_failures=tool_model_failures,
+        tool_rounds=tool_rounds,
     )

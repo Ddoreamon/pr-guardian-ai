@@ -225,3 +225,23 @@ def test_export_unknown_review_is_404():
 def test_export_bad_format_rejected(boundary_review):
     rid = boundary_review["review_id"]
     assert client.get(f"/api/reviews/{rid}/export?format=xml").status_code == 422
+
+def test_index_has_tool_trace_container():
+    html = client.get("/").text
+    assert 'id="trace-panel"' in html
+    assert 'id="trace-body"' in html
+
+
+def test_v1_review_has_no_tool_calls(boundary_review):
+    """V1 must not invent a tool trace."""
+    report = boundary_review["report"]
+    assert report["tool_status"] == "disabled"
+    assert report["tool_calls"] == []
+    assert report["tool_model_calls"] == 0
+    assert report["tool_rounds"] == 0
+
+def test_page_states_the_tested_scope():
+    """The public page must say which repository pytest is allowed to run against."""
+    client = TestClient(app)
+    html = client.get("/").text
+    assert "Tests run only against the trusted, bundled demo repository" in html

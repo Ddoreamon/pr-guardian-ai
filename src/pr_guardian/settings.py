@@ -10,6 +10,11 @@ Supported variables:
   PR_GUARDIAN_ALLOW_LIVE_LLM       1 = allow real model calls in public mode
   PR_GUARDIAN_ALLOW_TEST_EXECUTION 1 = allow pytest on the trusted demo repo
   PR_GUARDIAN_MAX_LIVE_LLM_CALLS   global cap for live model calls (default 50)
+  PR_GUARDIAN_TOOL_CALLS_ENABLED   1 = let the model call read-only tools (V2, default off)
+  PR_GUARDIAN_MAX_TOOL_ROUNDS      max model turns in the tool loop (default 3, max 5)
+  PR_GUARDIAN_MAX_TOOL_CALLS       max tool executions per review (default 4, max 8)
+  PR_GUARDIAN_TOOL_BACKEND         local (default) or mcp: transport for the tools
+  PR_GUARDIAN_EVIDENCE_PLANNER     1 = evidence-first planning guidance (V4.4, default off)
 """
 
 from __future__ import annotations
@@ -50,6 +55,14 @@ class Settings:
     allow_live_llm: bool
     allow_test_execution: bool
     max_live_llm_calls: int
+    tool_calls_enabled: bool = False
+    max_tool_rounds: int = 3
+    max_tool_calls: int = 4
+    # "local" (default) calls TrustedCodebase in-process; "mcp" goes through an
+    # MCP stdio session. Same tools, same safety code, different transport.
+    tool_backend: str = "local"
+    # V4.4: opt-in evidence-first planning guidance; default stays exactly as before
+    evidence_planner: bool = False
 
     @property
     def llm_configured(self) -> bool:
@@ -71,6 +84,11 @@ class Settings:
         return "enabled"
 
 
+def _tool_backend() -> str:
+    raw = (os.environ.get("PR_GUARDIAN_TOOL_BACKEND") or "local").strip().lower()
+    return raw if raw in {"local", "mcp"} else "local"
+
+
 def get_settings() -> Settings:
     return Settings(
         api_key=os.environ.get("PR_GUARDIAN_API_KEY", "").strip(),
@@ -84,4 +102,10 @@ def get_settings() -> Settings:
         allow_live_llm=_flag("PR_GUARDIAN_ALLOW_LIVE_LLM"),
         allow_test_execution=_flag("PR_GUARDIAN_ALLOW_TEST_EXECUTION", default=True),
         max_live_llm_calls=int(os.environ.get("PR_GUARDIAN_MAX_LIVE_LLM_CALLS", "50") or 50),
+        # V2: read-only tool calling is opt-in so V1 behaviour is unchanged by default.
+        tool_calls_enabled=_flag("PR_GUARDIAN_TOOL_CALLS_ENABLED", default=False),
+        max_tool_rounds=max(1, min(int(os.environ.get("PR_GUARDIAN_MAX_TOOL_ROUNDS", "3") or 3), 5)),
+        max_tool_calls=max(1, min(int(os.environ.get("PR_GUARDIAN_MAX_TOOL_CALLS", "4") or 4), 8)),
+        tool_backend=_tool_backend(),
+        evidence_planner=_flag("PR_GUARDIAN_EVIDENCE_PLANNER", default=False),
     )

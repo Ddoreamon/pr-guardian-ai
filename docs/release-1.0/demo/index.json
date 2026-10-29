@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "results": [
+    {
+      "label": "A_bug_static",
+      "case": "boundary-bug",
+      "status": "not_run",
+      "findings": 1,
+      "verified": 0,
+      "head": "f9052669230f38ccf7ced8f6642c87c793150c3c",
+      "mode": "public mode: Ruff + pytest evidence, no model call"
+    },
+    {
+      "label": "B_clean_static",
+      "case": "clean",
+      "status": "not_run",
+      "findings": 0,
+      "verified": 0,
+      "head": "8852c5248919bf76bbeb5403e7109798634c9dc5",
+      "mode": "public mode: Ruff + pytest evidence, no model call"
+    },
+    {
+      "label": "C_partial_ai",
+      "case": "boundary-bug",
+      "status": "partial",
+      "findings": 2,
+      "verified": 1,
+      "head": "f9052669230f38ccf7ced8f6642c87c793150c3c",
+      "mode": "local AI mode: real DeepSeek call, tool budget forced to 1 so the review stops early"
+    }
+  ]
+}

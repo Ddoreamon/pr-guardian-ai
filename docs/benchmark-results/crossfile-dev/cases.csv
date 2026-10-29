@@ -1,0 +1,9 @@
+method,case_id,split,category,has_bug,flagged,findings,tp,fp,located,tool_calls,tool_calls_ok,tool_rounds,prompt_tokens,completion_tokens,latency_s,status,error,tool_errors,finding_notes
+v1-no-tools,XF-01,dev,cross_file_config,True,False,0,0,0,False,0,0,0,316,203,1.872,ok,,,
+v1-no-tools,XF-02,dev,cross_file_constant_confusion,True,True,1,1,0,True,0,0,0,315,308,2.133,ok,,,L25 tax_for now computes tax using DISCOUNT_RATE instead of TAX_RATE
+v1-no-tools,XF-03,dev,cross_file_validation_contract,True,True,1,1,0,True,0,0,0,318,422,3.236,ok,,,"L17 line_total no longer validates qty, allowing zero/negative/non-integer quantities"
+v1-no-tools,XF-04,dev,clean_formatting,False,False,0,0,0,,0,0,0,336,49,1.064,ok,,,
+v2-tools,XF-01,dev,cross_file_config,True,False,0,0,0,False,4,4,3,3901,535,5.203,ok,,,
+v2-tools,XF-02,dev,cross_file_constant_confusion,True,True,1,1,0,True,3,3,3,4243,702,5.963,ok,,,"L25 tax_for uses DISCOUNT_RATE instead of TAX_RATE, halving the sales tax returned"
+v2-tools,XF-03,dev,cross_file_validation_contract,True,True,1,1,0,True,3,3,3,4386,826,6.693,ok,,,"L16 Removal of the quantity guard makes line_total silently accept zero, negative, float, or bool quanti"
+v2-tools,XF-04,dev,clean_formatting,False,False,0,0,0,,3,3,3,4184,482,4.725,ok,,,

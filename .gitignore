@@ -10,3 +10,8 @@ dist/
 build/
 benchmark/results/
 nohup.out
+.msg
+.gitcommitmsg
+
+# repository index cache (per commit SHA)
+.cache/

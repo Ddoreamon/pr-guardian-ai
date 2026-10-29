@@ -1,0 +1,49 @@
+{
+  "secret_hits": [
+    ".env.example: PR_GUARDIAN_API_KEY\\s*=\\s*['\\\"]?[A-Za-z0-9]",
+    "tests/test_agent_tools.py: PR_GUARDIAN_API_KEY\\s*=\\s*['\\\"]?[A-Za-z0-9]",
+    "tests/test_contrast.py: api_key\\s*=\\s*['\\\"]sk-",
+    "tests/test_mcp_protocol.py: PR_GUARDIAN_API_KEY\\s*=\\s*['\\\"]?[A-Za-z0-9]",
+    "tests/test_tool_calling.py: PR_GUARDIAN_API_KEY\\s*=\\s*['\\\"]?[A-Za-z0-9]"
+  ],
+  "host_path_hits": [],
+  "history_secret_hits": [],
+  "export_leak_files": [],
+  "allowlist_lines": [
+    "src/pr_guardian/agent_tools.py:8:Access is limited to `src/**/*.py` files tracked in that commit. Everything else",
+    "src/pr_guardian/agent_tools.py:9:(tests, docs, credentials, hidden paths, symlinks, anything outside `src/`) is",
+    "src/pr_guardian/agent_tools.py:33:ALLOWED_PREFIX = \"src/\"",
+    "src/pr_guardian/agent_tools.py:35:# Defence in depth: even inside src/, these are refused.",
+    "src/pr_guardian/agent_tools.py:199:    \"\"\"Tools restricted to `src/**/*.py` tracked at one commit.\"\"\""
+  ],
+  "transport": {
+    "mcp_stdio_lines": [
+      "src/pr_guardian/mcp_client.py:1:\"\"\"MCP client helpers: a real stdio session, plus a sync facade for the agent.",
+      "src/pr_guardian/mcp_client.py:3:`open_client` speaks the actual protocol to `pr_guardian.mcp_server` over stdio \u2014",
+      "src/pr_guardian/mcp_client.py:70:    \"\"\"Open a real MCP session over stdio.\"\"\"",
+      "src/pr_guardian/mcp_server.py:1:\"\"\"MCP server exposing the two read-only review tools over stdio.",
+      "src/pr_guardian/mcp_server.py:30:from mcp.server.stdio import stdio_server"
+    ],
+    "public_mode_lines": [
+      "src/pr_guardian/settings.py:54:    public_mode: bool",
+      "src/pr_guardian/settings.py:76:        return (not self.public_mode) or self.allow_live_llm",
+      "src/pr_guardian/settings.py:101:        public_mode=_flag(\"PR_GUARDIAN_PUBLIC_MODE\"),"
+    ]
+  },
+  "dependencies": {
+    "declared": [
+      "pydantic>=2.7",
+      "httpx>=0.27",
+      "ruff>=0.5",
+      "fastapi>=0.115",
+      "uvicorn>=0.30",
+      "jinja2>=3.1",
+      "python-multipart>=0.0.9",
+      "pytest>=8",
+      "pytest-json-report>=1.5",
+      "mcp==2.3.0",
+      "playwright>=1.45",
+      "psutil>=5.9"
+    ]
+  }
+}

@@ -1,0 +1,950 @@
+{
+  "summary": {
+    "assessment_version": "v4.5.2",
+    "profiles_scored": 33,
+    "status_accuracy": 1.0,
+    "false_sufficient": 0,
+    "false_insufficient": 0,
+    "false_sufficient_cases": [],
+    "false_insufficient_cases": [],
+    "unknown_rate": 0.0222,
+    "obligation_kind_precision": 1.0,
+    "obligation_kind_recall": 1.0,
+    "mean_assessment_ms": 69.82,
+    "mean_derive_ms": 329.48,
+    "cases": 45
+  },
+  "rows": [
+    {
+      "set": "dev",
+      "arm": "baseline",
+      "case": "B1-cents",
+      "label": "bug",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 3,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 3,
+      "assessment_ms": 242.9,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "baseline",
+      "case": "B2-kwarg",
+      "label": "bug",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 2,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 2,
+      "assessment_ms": 321.85,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "baseline",
+      "case": "B3-exception",
+      "label": "bug",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 2,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 2,
+      "assessment_ms": 292.6,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "baseline",
+      "case": "C1-kwarg",
+      "label": "clean",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 1,
+      "assessment_ms": 270.16,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "baseline",
+      "case": "C2-identity",
+      "label": "clean",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 2,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 2,
+      "assessment_ms": 258.02,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "baseline",
+      "case": "C3-refactor",
+      "label": "clean",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 1,
+      "assessment_ms": 256.12,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "planner",
+      "case": "B1-cents",
+      "label": "bug",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 3,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 3,
+      "assessment_ms": 252.42,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "planner",
+      "case": "B2-kwarg",
+      "label": "bug",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 2,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 2,
+      "assessment_ms": 271.52,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "planner",
+      "case": "B3-exception",
+      "label": "bug",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 2,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 2,
+      "assessment_ms": 225.32,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "planner",
+      "case": "C1-kwarg",
+      "label": "clean",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 1,
+      "assessment_ms": 236.04,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "planner",
+      "case": "C2-identity",
+      "label": "clean",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 2,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 2,
+      "assessment_ms": 271.02,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "dev",
+      "arm": "planner",
+      "case": "C3-refactor",
+      "label": "clean",
+      "status": "sufficient",
+      "expected": null,
+      "kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 1,
+      "assessment_ms": 241.87,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "held-out",
+      "arm": "complete",
+      "case": "H1-signature",
+      "label": "",
+      "status": "sufficient",
+      "expected": "sufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 3,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 3,
+      "assessment_ms": 0.21,
+      "derive_ms": 332.57,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "held-out",
+      "arm": "callee-only",
+      "case": "H1-signature",
+      "label": "",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 3,
+      "missing": [
+        "ob-8122ce7f87",
+        "ob-23634cf8f6"
+      ],
+      "unknown": [],
+      "fulfilled": 1,
+      "assessment_ms": 0.17,
+      "derive_ms": 332.57,
+      "explanation": "required evidence was not delivered for: ob-8122ce7f87, ob-23634cf8f6"
+    },
+    {
+      "set": "negative",
+      "arm": "wrong-sha",
+      "case": "H1-signature",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-ff73d366c2",
+        "ob-8122ce7f87",
+        "ob-23634cf8f6"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 332.57,
+      "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
+    },
+    {
+      "set": "negative",
+      "arm": "truncated-read",
+      "case": "H1-signature",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-ff73d366c2",
+        "ob-8122ce7f87",
+        "ob-23634cf8f6"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 332.57,
+      "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
+    },
+    {
+      "set": "negative",
+      "arm": "search-only",
+      "case": "H1-signature",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-ff73d366c2",
+        "ob-8122ce7f87",
+        "ob-23634cf8f6"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 332.57,
+      "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
+    },
+    {
+      "set": "held-out",
+      "arm": "complete",
+      "case": "H2-return",
+      "label": "",
+      "status": "sufficient",
+      "expected": "sufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 3,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 3,
+      "assessment_ms": 0.2,
+      "derive_ms": 341.91,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "held-out",
+      "arm": "callee-only",
+      "case": "H2-return",
+      "label": "",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 3,
+      "missing": [
+        "ob-8122ce7f87",
+        "ob-23634cf8f6"
+      ],
+      "unknown": [],
+      "fulfilled": 1,
+      "assessment_ms": 0.14,
+      "derive_ms": 341.91,
+      "explanation": "required evidence was not delivered for: ob-8122ce7f87, ob-23634cf8f6"
+    },
+    {
+      "set": "negative",
+      "arm": "wrong-sha",
+      "case": "H2-return",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-ff73d366c2",
+        "ob-8122ce7f87",
+        "ob-23634cf8f6"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 341.91,
+      "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
+    },
+    {
+      "set": "negative",
+      "arm": "truncated-read",
+      "case": "H2-return",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-ff73d366c2",
+        "ob-8122ce7f87",
+        "ob-23634cf8f6"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 341.91,
+      "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
+    },
+    {
+      "set": "negative",
+      "arm": "search-only",
+      "case": "H2-return",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-ff73d366c2",
+        "ob-8122ce7f87",
+        "ob-23634cf8f6"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 341.91,
+      "explanation": "required evidence was not delivered for: ob-ff73d366c2, ob-8122ce7f87, ob-23634cf8f6"
+    },
+    {
+      "set": "held-out",
+      "arm": "complete",
+      "case": "H3-dynamic",
+      "label": "",
+      "status": "unknown",
+      "expected": "unknown",
+      "kinds": [
+        "modified_definition",
+        "unknown_dependency"
+      ],
+      "expected_kinds": [
+        "modified_definition",
+        "unknown_dependency"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [
+        "ob-c9656ce66b"
+      ],
+      "fulfilled": 1,
+      "assessment_ms": 0.15,
+      "derive_ms": 296.1,
+      "explanation": "required evidence is covered, but dynamic constructs mean the obligation set cannot be proven complete: ob-c9656ce66b"
+    },
+    {
+      "set": "negative",
+      "arm": "wrong-sha",
+      "case": "H3-dynamic",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "modified_definition",
+        "unknown_dependency"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-f37ff538fc"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 296.1,
+      "explanation": "required evidence was not delivered for: ob-f37ff538fc"
+    },
+    {
+      "set": "negative",
+      "arm": "truncated-read",
+      "case": "H3-dynamic",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "modified_definition",
+        "unknown_dependency"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-f37ff538fc"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 296.1,
+      "explanation": "required evidence was not delivered for: ob-f37ff538fc"
+    },
+    {
+      "set": "negative",
+      "arm": "search-only",
+      "case": "H3-dynamic",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "modified_definition",
+        "unknown_dependency"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-f37ff538fc"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 296.1,
+      "explanation": "required evidence was not delivered for: ob-f37ff538fc"
+    },
+    {
+      "set": "held-out",
+      "arm": "complete",
+      "case": "H4-multicaller",
+      "label": "",
+      "status": "sufficient",
+      "expected": "sufficient",
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 3,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 3,
+      "assessment_ms": 0.21,
+      "derive_ms": 351.04,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "held-out",
+      "arm": "one-caller",
+      "case": "H4-multicaller",
+      "label": "",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 3,
+      "missing": [
+        "ob-519f1d0775"
+      ],
+      "unknown": [],
+      "fulfilled": 2,
+      "assessment_ms": 0.16,
+      "derive_ms": 351.04,
+      "explanation": "required evidence was not delivered for: ob-519f1d0775"
+    },
+    {
+      "set": "negative",
+      "arm": "wrong-sha",
+      "case": "H4-multicaller",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-cc5a682a3b",
+        "ob-519f1d0775",
+        "ob-76c7de7cfb"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 351.04,
+      "explanation": "required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb"
+    },
+    {
+      "set": "negative",
+      "arm": "truncated-read",
+      "case": "H4-multicaller",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-cc5a682a3b",
+        "ob-519f1d0775",
+        "ob-76c7de7cfb"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 351.04,
+      "explanation": "required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb"
+    },
+    {
+      "set": "negative",
+      "arm": "search-only",
+      "case": "H4-multicaller",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "callee_contract",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-cc5a682a3b",
+        "ob-519f1d0775",
+        "ob-76c7de7cfb"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 351.04,
+      "explanation": "required evidence was not delivered for: ob-cc5a682a3b, ob-519f1d0775, ob-76c7de7cfb"
+    },
+    {
+      "set": "held-out",
+      "arm": "complete",
+      "case": "H5-config",
+      "label": "",
+      "status": "sufficient",
+      "expected": "sufficient",
+      "kinds": [
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 1,
+      "assessment_ms": 0.16,
+      "derive_ms": 340.56,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "negative",
+      "arm": "wrong-sha",
+      "case": "H5-config",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-72ca274f5a"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 340.56,
+      "explanation": "required evidence was not delivered for: ob-72ca274f5a"
+    },
+    {
+      "set": "negative",
+      "arm": "truncated-read",
+      "case": "H5-config",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-72ca274f5a"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 340.56,
+      "explanation": "required evidence was not delivered for: ob-72ca274f5a"
+    },
+    {
+      "set": "negative",
+      "arm": "search-only",
+      "case": "H5-config",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-72ca274f5a"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 340.56,
+      "explanation": "required evidence was not delivered for: ob-72ca274f5a"
+    },
+    {
+      "set": "held-out",
+      "arm": "complete",
+      "case": "H6-local",
+      "label": "",
+      "status": "sufficient",
+      "expected": "sufficient",
+      "kinds": [
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 1,
+      "assessment_ms": 0.14,
+      "derive_ms": 311.52,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "held-out",
+      "arm": "search-only",
+      "case": "H6-local",
+      "label": "",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-cf1617404f"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.1,
+      "derive_ms": 311.52,
+      "explanation": "required evidence was not delivered for: ob-cf1617404f"
+    },
+    {
+      "set": "negative",
+      "arm": "wrong-sha",
+      "case": "H6-local",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-cf1617404f"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 311.52,
+      "explanation": "required evidence was not delivered for: ob-cf1617404f"
+    },
+    {
+      "set": "negative",
+      "arm": "truncated-read",
+      "case": "H6-local",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-cf1617404f"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 311.52,
+      "explanation": "required evidence was not delivered for: ob-cf1617404f"
+    },
+    {
+      "set": "negative",
+      "arm": "search-only",
+      "case": "H6-local",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-cf1617404f"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 311.52,
+      "explanation": "required evidence was not delivered for: ob-cf1617404f"
+    },
+    {
+      "set": "held-out",
+      "arm": "complete",
+      "case": "H7-same-file",
+      "label": "",
+      "status": "sufficient",
+      "expected": "sufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 2,
+      "missing": [],
+      "unknown": [],
+      "fulfilled": 2,
+      "assessment_ms": 0.19,
+      "derive_ms": 328.17,
+      "explanation": "every derived obligation was covered by delivered source lines; this proves coverage of the duties, not correctness of the code"
+    },
+    {
+      "set": "held-out",
+      "arm": "callee-only",
+      "case": "H7-same-file",
+      "label": "",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "expected_kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 2,
+      "missing": [
+        "ob-5dd067b9ab"
+      ],
+      "unknown": [],
+      "fulfilled": 1,
+      "assessment_ms": 0.14,
+      "derive_ms": 328.17,
+      "explanation": "required evidence was not delivered for: ob-5dd067b9ab"
+    },
+    {
+      "set": "negative",
+      "arm": "wrong-sha",
+      "case": "H7-same-file",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-d81a39d8a0",
+        "ob-5dd067b9ab"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 328.17,
+      "explanation": "required evidence was not delivered for: ob-d81a39d8a0, ob-5dd067b9ab"
+    },
+    {
+      "set": "negative",
+      "arm": "truncated-read",
+      "case": "H7-same-file",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-d81a39d8a0",
+        "ob-5dd067b9ab"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 328.17,
+      "explanation": "required evidence was not delivered for: ob-d81a39d8a0, ob-5dd067b9ab"
+    },
+    {
+      "set": "negative",
+      "arm": "search-only",
+      "case": "H7-same-file",
+      "status": "insufficient",
+      "expected": "insufficient",
+      "kinds": [
+        "caller_usage",
+        "modified_definition"
+      ],
+      "required": 1,
+      "missing": [
+        "ob-d81a39d8a0",
+        "ob-5dd067b9ab"
+      ],
+      "unknown": [],
+      "fulfilled": 0,
+      "assessment_ms": 0.0,
+      "derive_ms": 328.17,
+      "explanation": "required evidence was not delivered for: ob-d81a39d8a0, ob-5dd067b9ab"
+    }
+  ]
+}

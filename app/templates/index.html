@@ -27,7 +27,11 @@
 <section class="panel" id="case-panel">
   <div class="panel-head">
     <h2>1 · Choose a demo change</h2>
-    <p class="hint">Three preset pull requests on a trusted, self-authored repository.</p>
+    <p class="hint" id="trusted-scope">
+      Tests run only against the trusted, bundled demo repository.
+      Three preset pull requests, self-authored; no arbitrary repository is ever read
+      or executed.
+    </p>
   </div>
   <div class="case-grid" id="case-grid">
     {% for c in cases %}
@@ -73,6 +77,7 @@
     <h2>4 · Results</h2>
     <p class="hint" id="result-summary"></p>
   </div>
+  <p class="banner" id="completeness-banner" hidden></p>
 
   <div class="result-grid">
     <div class="result-card" id="card-ruff">
@@ -96,6 +101,14 @@
   </p>
   <div id="findings-body" class="findings"></div>
 
+  <details class="trace-panel hidden" id="trace-panel">
+    <summary>
+      <span class="trace-title">Agent tool trace</span>
+      <span class="trace-meta" id="trace-meta"></span>
+    </summary>
+    <div class="trace-body" id="trace-body"></div>
+  </details>
+
   <div class="export-row">
     <label class="check">
       <input type="checkbox" id="approved-only">
@@ -106,6 +119,11 @@
     <span class="muted" id="approval-summary"></span>
   </div>
 </section>
+
+<footer class="muted" id="page-footer">
+  PR Guardian v{{ version }} — the footer reports the running build, which can be
+  older than the repository while a deploy is pending.
+</footer>
 
 <script>
   window.PR_GUARDIAN_CONFIG = {{ config | tojson }};

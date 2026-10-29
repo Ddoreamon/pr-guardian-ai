@@ -147,11 +147,22 @@
 
   /* ---- rendering results ----------------------------------------------- */
 
+  function partialReasonText(reason) {
+    if (reason === "round_limit_reached") {
+      return "the round limit was reached before the investigation finished";
+    }
+    if (reason === "tool_budget_exhausted") {
+      return "the tool budget ran out before the investigation finished";
+    }
+    return "the review did not finish";
+  }
+
   function llmStatusText(status) {
     return {
       ok: "Completed",
       enabled: "Completed",
       failed: "Failed",
+      partial: "Partial (investigation stopped early)",
       not_configured: "Not evaluated",
       disabled_by_public_policy: "Not evaluated (public policy)",
       disabled_by_request: "Not evaluated (disabled)"
@@ -163,31 +174,99 @@
     var summary = report.changed_files.length + " file(s) changed · review " + report.review_id;
     $("result-summary").textContent = summary;
 
+    renderCompleteness(report);
     renderRuff(report);
     renderTests(report);
     renderLLM(report);
     renderFindings(report.final_findings, state.approvals);
+    renderToolTrace(report);
     updateApprovalSummary();
     renderLlmBanner(report);
   }
 
+  // V4.2: a process state, never a defect verdict. A partial review is not clean.
+  function renderCompleteness(report) {
+    var box = $("completeness-banner");
+    if (!box) { return; }
+    var c = report.completeness || {};
+    var status = report.review_status || "completed";
+    if (status === "completed") {
+      if (c.findings_signal === "no_findings_in_completed_review") {
+        box.textContent = "Review completed: no findings. This means nothing was " +
+          "flagged in this pass; it does not prove the change is free of defects.";
+        show(box, true);
+      } else {
+        show(box, false);
+      }
+      return;
+    }
+    var parts = [];
+    if (status === "unknown") {
+      box.textContent = "Completion state unknown: this report predates execution " +
+        "records, so it cannot be shown as a completed review. The findings are " +
+        "kept exactly as recorded.";
+      show(box, true);
+      return;
+    }
+    if (status === "partial") {
+      parts.push("PARTIAL review: " + partialReasonText(c.reason));
+      var executed = (c.tool_calls_executed != null ? c.tool_calls_executed
+        : (c.tool_calls_used || 0));
+      parts.push(executed + "/" + (c.tool_calls_max || 0) + " tool calls executed, " +
+        (c.tool_calls_denied || 0) + " refused" +
+        (c.tool_calls_requested != null ? " of " + c.tool_calls_requested + " requested" : ""));
+      if (!(report.final_findings || []).length) {
+        parts.push("no findings - NOT a clean review, coverage is incomplete");
+      }
+    } else if (status === "failed") {
+      parts.push("Review FAILED: " + (c.reason || report.llm_note || "unknown error"));
+    } else {
+      parts.push("Review did not run: " + (c.reason || "the model was not enabled"));
+    }
+    box.textContent = parts.join(". ") + ".";
+    show(box, true);
+  }
+
+  // One statement per llm_status. A partial run really did call the model, and the
+  // banner must never claim otherwise.
   function renderLlmBanner(report) {
     var banner = $("llm-banner");
-    if (report.llm_status === "ok") {
-      banner.textContent = "The LLM step ran with model “" + report.model_name +
-        "”. Its findings are marked suspected until a human accepts them.";
+    var status = report.llm_status;
+    if (!status) {
+      banner.textContent = "This historical report does not record whether the AI " +
+        "review ran, so its AI status is unknown. Nothing here should be read as " +
+        "either a completed AI review or one that never started.";
       show(banner, true);
       return;
     }
-    if (report.llm_status === "failed") {
-      banner.textContent = "The LLM call failed (" + (report.llm_note || "unknown error") +
-        "). Static and test evidence above are still real results.";
+    if (status === "ok") {
+      banner.textContent = "The AI review ran with model " + report.model_name +
+        ". Its findings are marked suspected until a human accepts them.";
       show(banner, true);
       return;
     }
-    banner.textContent = "LLM review did not run. " + (report.llm_note ||
-      "No API key is configured on this server.") +
-      " The Ruff and pytest results shown here are real, not simulated.";
+    if (status === "partial") {
+      banner.textContent = "The AI review ran with model " + report.model_name +
+        " but did not finish: the tool budget was exhausted, so its coverage is " +
+        "incomplete. Findings below are real, but a missing finding proves nothing.";
+      show(banner, true);
+      return;
+    }
+    if (status === "failed") {
+      banner.textContent = "The AI review FAILED (" + (report.llm_note ||
+        report.completeness && report.completeness.reason || "unknown error") +
+        "). It did not complete; the Ruff and pytest results above are still real.";
+      show(banner, true);
+      return;
+    }
+    var ran = (report.test_summary || {}).ran;
+    var staticNote = ran
+      ? "The Ruff and pytest results shown here are real and did run; only the AI " +
+        "review is missing."
+      : "The Ruff result shown here is real and did run; pytest did not run for " +
+        "this review, and the AI review did not run either.";
+    banner.textContent = "The AI review did not run (" + (report.llm_note ||
+      "no API key is configured on this server") + "). " + staticNote;
     show(banner, true);
   }
 
@@ -235,7 +314,8 @@
   function renderLLM(report) {
     var body = $("llm-body");
     var status = report.llm_status;
-    if (status !== "ok" && status !== "enabled") {
+    var partial = status === "partial";
+    if (!partial && status !== "ok" && status !== "enabled") {
       body.innerHTML = '<p><span class="badge st-noteval">not evaluated</span> ' +
         esc(llmStatusText(status)) + "</p><p class=\"muted\">" +
         esc(report.llm_note || "No model call was made for this review.") + "</p>";
@@ -243,18 +323,45 @@
     }
     var items = report.llm_findings || [];
     if (!items.length) {
+      if (partial) {
+        body.innerHTML = '<p><span class="badge st-suspected">incomplete</span> ' +
+          "The model reported no issues before the investigation stopped early, " +
+          "so this is NOT evidence that the change is clean.</p>";
+        return;
+      }
       body.innerHTML = '<p><span class="badge st-confirmed">completed</span> ' +
         "The model reported no issues.</p>" +
         '<p class="muted">Reporting nothing is a valid outcome for a clean change.</p>';
       return;
     }
-    var html = '<p class="muted">' + items.length +
+    var prefix = "";
+    if (partial) {
+      prefix = '<p><span class="badge st-suspected">incomplete coverage</span> ' +
+        "The model stopped early; the hypotheses below are what it managed to " +
+        "report, not a complete review.</p>";
+    }
+    var html = prefix + '<p class="muted">' + items.length +
       ' hypothesis(es) from <code>' + esc(report.model_name) + "</code>:</p><ul>";
     items.forEach(function (f) {
       html += "<li><code>" + esc(f.file_path) + ":" + f.start_line + "</code> — " +
         esc(f.summary) + ' <span class="badge st-suspected">suspected</span></li>';
     });
     body.innerHTML = html + "</ul>";
+  }
+
+  // provenance is not confirmation: this label never says "confirmed"
+  function evidenceBadge(finding) {
+    var status = finding.evidence_status;
+    if (status === "source_verified") {
+      return '<span class="badge evidence">evidence verified \u00b7 claim not judged</span>';
+    }
+    if (status === "source_unverified") {
+      return '<span class="badge evidence-bad">evidence not verified</span>';
+    }
+    if (status === "no_evidence_ref") {
+      return '<span class="badge evidence-bad">no evidence cited</span>';
+    }
+    return "";
   }
 
   function renderFindings(findings, approvals) {
@@ -274,10 +381,12 @@
         '<span class="finding-title">' + esc(f.summary) + "</span>" +
         '<span class="badge src-' + esc(f.source) + '">' + esc(f.source) + "</span>" +
         '<span class="badge st-' + esc(f.verification_status) + '">' + esc(f.verification_status) + "</span>" +
+        evidenceBadge(f) +
         '<span class="finding-loc">' + esc(f.file_path) + ":" + f.start_line + "</span></div>";
 
       var dl = "<dl>" +
         "<dt>Severity</dt><dd>" + esc(f.severity) + "</dd>" +
+        "<dt>Claim</dt><dd>" + esc(f.claim_status || "claim_unjudged") + "</dd>" +
         "<dt>Category</dt><dd>" + esc(f.category) + "</dd>" +
         "<dt>Evidence</dt><dd>" + esc(f.evidence || "—") + "</dd>" +
         "<dt>Explanation</dt><dd>" + esc(f.explanation || "—") + "</dd>" +
@@ -336,6 +445,82 @@
       " accepted · " + rejected + " rejected · " + (total - accepted - rejected) + " pending";
   }
 
+
+  /* ---- agent tool trace (real ReviewReport.tool_calls only) ------------- */
+
+  function renderToolTrace(report) {
+    var panel = $("trace-panel");
+    var body = $("trace-body");
+    var calls = report.tool_calls || [];
+    if (!calls.length) {
+      show(panel, false);
+      body.innerHTML = "";
+      return;
+    }
+    show(panel, true);
+    panel.open = true;
+
+    var hits = calls.filter(function (c) { return c.outcome === "hit"; }).length;
+    var misses = calls.filter(function (c) { return c.outcome === "miss"; }).length;
+    var errors = calls.filter(function (c) { return c.outcome === "error"; }).length;
+    var denied = calls.filter(function (c) { return c.outcome === "budget_denied"; }).length;
+
+    $("trace-meta").textContent =
+      (report.tool_rounds || 0) + " round(s) · " + (report.tool_model_calls || 0) +
+      " model request(s) · " + calls.length + " tool call(s) · " + hits + " hit / " +
+      misses + " miss / " + errors + " error / " + denied + " denied";
+
+    var rounds = {};
+    calls.forEach(function (c) { (rounds[c.round] = rounds[c.round] || []).push(c); });
+
+    var html = "";
+    if (report.tool_status === "tool_limit" || report.llm_status === "partial") {
+      html += '<div class="banner warn">Partial result: the tool budget ran out before ' +
+        "the model finished investigating. Findings below are from the evidence gathered " +
+        "so far, not a complete review.</div>";
+    }
+    Object.keys(rounds).sort(function (a, b) { return a - b; }).forEach(function (r) {
+      html += '<div class="trace-round"><div class="trace-round-head">Model round ' + esc(r) + "</div>";
+      rounds[r].forEach(function (c) {
+        var outcome = c.outcome || (c.ok ? "hit" : "error");
+        html += '<div class="trace-call ' + esc(outcome) + '">';
+        html += '<div class="trace-call-head"><span class="trace-name">' + esc(c.name) + "</span>" +
+          '<span class="badge oc-' + esc(outcome) + '">' + esc(outcome.replace("_", " ")) + "</span>";
+        if (c.error_code) {
+          html += '<span class="badge st-invalid">' + esc(c.error_code) + "</span>";
+        }
+        html += "</div>";
+        html += '<pre class="trace-args">' + esc(JSON.stringify(c.arguments || {})) + "</pre>";
+        var facts = [];
+        if (c.outcome === "hit") { facts.push("context retrieved"); }
+        if (c.outcome === "miss") { facts.push("no usable context found"); }
+        if (typeof c.matched === "number" && c.matched > 0) { facts.push(c.matched + " match(es)"); }
+        if (typeof c.result_chars === "number" && c.result_chars) { facts.push(c.result_chars + " chars"); }
+        if (typeof c.latency_s === "number") { facts.push(c.latency_s.toFixed(3) + "s"); }
+        if (c.error_message) { facts.push(c.error_message); }
+        html += '<div class="trace-facts">' + facts.map(function (f) {
+          return "<span>" + esc(f) + "</span>";
+        }).join("") + "</div></div>";
+      });
+      html += "</div>";
+    });
+
+    var llmFindings = report.llm_findings || [];
+    html += '<div class="trace-final"><h4>Final model output → findings (' +
+      llmFindings.length + ")</h4>";
+    if (!llmFindings.length) {
+      html += '<p class="muted">The model reported no issues after using these tools.</p>';
+    } else {
+      html += "<ul>" + llmFindings.map(function (f) {
+        return "<li><code>" + esc(f.file_path) + ":" + f.start_line + "</code> — " +
+          esc(f.summary) + ' <span class="badge st-suspected">suspected</span></li>';
+      }).join("") + "</ul>";
+    }
+    html += "</div>";
+
+    body.innerHTML = html;
+  }
+
   /* ---- export ---------------------------------------------------------- */
 
   async function exportReview(format) {
@@ -384,6 +569,10 @@
   if (CONFIG.demo_repo_error) {
     setError("Demo repository unavailable: " + CONFIG.demo_repo_error);
   }
+  // Test handle: lets the browser suite render synthetic report states in the real
+  // DOM without stubbing the backend or the pipeline.
+  window.__prGuardian = { render: renderResults };
+
   if (CONFIG.llm_status === "not_configured") {
     var banner = $("llm-banner");
     banner.textContent = "No model API key is configured on this server, so the AI step will be " +
