@@ -357,3 +357,19 @@ body {
 .badge.oc-miss { color: var(--amber); border-color: #5a4418; }
 .badge.oc-error, .badge.oc-budget_denied { color: var(--red); border-color: #6b2f2d; }
 .banner.warn { background: rgba(215,155,43,.1); border-color: #5a4418; color: #f0d9a8; }
+
+.error-text { color: #ff6b6b; font-size: 13px; margin: 8px 0 0; }
+.warn-text { color: #f0b429; font-size: 13px; margin: 8px 0 0; }
+.upload-actions { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.upload-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.upload-item { display: flex; gap: 10px; align-items: center; padding: 8px 10px;
+  border: 1px solid var(--line, #2a3442); border-radius: 8px; font-size: 13px; }
+.upload-name { flex: 1; overflow-wrap: anywhere; }
+.upload-file { border: 1px solid var(--line, #2a3442); border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 10px; }
+.upload-file summary { cursor: pointer; }
+.upload-empty { color: var(--muted); font-size: 14px; }
+.upload-notes { margin-top: 14px; border-top: 1px solid var(--line, #2a3442); padding-top: 10px; }
+.badge.sev-high { background: #3a1d20; color: #ff8b8b; border-color: #5a2a2e; }
+.badge.sev-medium { background: #3a2f16; color: #f0c674; border-color: #574521; }
+.badge.sev-low { background: #1d2a38; color: #8fbfe8; border-color: #2b4356; }

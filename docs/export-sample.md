@@ -3,13 +3,13 @@
 - **Case:** Boundary defect in discount rule
 - **Repository:** demo-repo
 - **Base / head:** `main` → `feature/boundary-bug`
-- **Review id:** `bb1de8140864`
-- **Created:** 2026-10-29T12:08:24.414124+00:00
+- **Review id:** `060e10c497dd`
+- **Created:** 2026-10-29T12:29:05.780288+00:00
 - **LLM status:** not_configured (LLM step skipped: PR_GUARDIAN_API_KEY is not set.)
 
 ## Test evidence
 
-- pytest: 1 passed, 1 failed, 0 errors (0.64s)
+- pytest: 1 passed, 1 failed, 0 errors (0.56s)
 - Failing tests: `tests/test_discount.py::test_threshold_order_gets_discount`
 
 ## Changed files

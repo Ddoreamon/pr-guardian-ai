@@ -74,13 +74,25 @@ def main() -> int:
         page.wait_for_timeout(300)
         page.screenshot(path=str(OUT / "15-upload-findings.png"), full_page=True)
 
+        # partial-review evidence: a file that cannot be parsed at all
+        page.goto(f"{args.base_url}/upload", wait_until="networkidle")
+        page.set_input_files("#upload-input", files=[{
+            "name": "broken.py", "mimeType": "text/x-python",
+            "buffer": b"def broken(:\n",
+        }])
+        page.click("#upload-run")
+        page.wait_for_selector("#upload-results-panel:not([hidden])", timeout=60_000)
+        page.wait_for_timeout(300)
+        page.screenshot(path=str(OUT / "16-upload-partial.png"), full_page=True)
+        print("partial status:", page.inner_text("#upload-status"))
+
         summary = page.inner_text("#upload-summary")
         status = page.inner_text("#upload-status")
         print("summary:", summary)
         print("status:", status)
         browser.close()
     for name in ("13-upload-empty.png", "14-upload-selected.png",
-                 "15-upload-findings.png"):
+                 "15-upload-findings.png", "16-upload-partial.png"):
         path = OUT / name
         print(name, path.stat().st_size, "bytes", "exists" if path.exists() else "MISSING")
     return 0

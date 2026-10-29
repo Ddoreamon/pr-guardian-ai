@@ -193,13 +193,13 @@ def test_uploaded_code_is_never_executed(tmp_path, monkeypatch):
 
 def test_only_ruff_and_the_worker_are_spawned(monkeypatch):
     calls: list[list[str]] = []
-    real_run = __import__("subprocess").run
+    real_popen = __import__("subprocess").Popen
 
     def spy(cmd, *args, **kwargs):
         calls.append([str(part) for part in cmd])
-        return real_run(cmd, *args, **kwargs)
+        return real_popen(cmd, *args, **kwargs)
 
-    monkeypatch.setattr("pr_guardian.upload_review.subprocess.run", spy)
+    monkeypatch.setattr("pr_guardian.upload_review.subprocess.Popen", spy)
     run_upload_review(collect_from_files([("a.py", GOOD)]), settings())
     flattened = " ".join(" ".join(call) for call in calls)
     assert "pr_guardian.upload_worker" in flattened
@@ -238,10 +238,29 @@ def test_work_directory_is_removed():
 def test_timeout_is_reported_not_hung(monkeypatch):
     import subprocess as real_subprocess
 
-    def slow(*args, **kwargs):
-        raise real_subprocess.TimeoutExpired(cmd="worker", timeout=1)
+    class SlowProcess:
+        pid = 999_999
+        returncode = -1
 
-    monkeypatch.setattr("pr_guardian.upload_review.subprocess.run", slow)
+        def poll(self):
+            return None
+
+        calls = 0
+
+        def communicate(self, timeout=None):
+            self.calls += 1
+            if self.calls == 1:
+                raise real_subprocess.TimeoutExpired(cmd="worker", timeout=1)
+            self.returncode = -9
+            return b"", b""
+
+        def kill(self):
+            self.returncode = -9
+
+    monkeypatch.setattr("pr_guardian.upload_review.subprocess.Popen",
+                        lambda *a, **k: SlowProcess())
+    monkeypatch.setattr("pr_guardian.upload_review.kill_process_tree",
+                        lambda proc: None)
     with pytest.raises(UploadRejected) as exc:
         run_upload_review(collect_from_files([("a.py", GOOD)]), settings())
     assert exc.value.code == "analysis_timeout"
@@ -344,6 +363,7 @@ def test_invalid_upload_returns_a_clear_error(monkeypatch):
 
 
 def test_concurrent_uploads_stay_independent(monkeypatch):
+    monkeypatch.setenv("PR_GUARDIAN_UPLOAD_CONCURRENCY", "4")
     results: list[int] = []
     lock = threading.Lock()
 

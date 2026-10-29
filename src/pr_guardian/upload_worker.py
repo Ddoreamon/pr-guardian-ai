@@ -114,6 +114,9 @@ def analyse(work: Path) -> dict:
         except (ValueError, OSError, TypeError):
             continue
 
+    parsed = [item for item in files if not item["syntax_error"]]
+    ast_status = ("ok" if len(parsed) == len(files)
+                  else ("partial" if parsed else "failed"))
     seen: set[tuple] = set()
     unique: list[dict] = []
     for item in findings:
@@ -123,8 +126,14 @@ def analyse(work: Path) -> dict:
             continue
         seen.add(key)
         unique.append(item)
-    return {"files": files, "findings": unique[:MAX_FINDINGS_TOTAL],
-            "ruff_status": status}
+    return {
+        "files": files,
+        "findings": unique[:MAX_FINDINGS_TOTAL],
+        "ruff_status": status,
+        "ast_status": ast_status,
+        "files_parsed": len(parsed),
+        "files_with_syntax_errors": len(files) - len(parsed),
+    }
 
 
 def _ruff_severity(code: str) -> str:

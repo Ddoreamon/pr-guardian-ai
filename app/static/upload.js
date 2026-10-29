@@ -94,10 +94,31 @@
     findings.forEach((finding) => { bySeverity[finding.severity] = (bySeverity[finding.severity] || 0) + 1; });
     const files = report.changed_files || [];
 
+    const analysis = report.upload_analysis || {};
+    const degraded =
+      (analysis.ruff_status && analysis.ruff_status !== "ok" &&
+       analysis.ruff_status !== "empty") ||
+      analysis.ast_status === "partial" || analysis.ast_status === "failed";
+    const stageText = [
+      "AST " + (analysis.ast_status || "not_run"),
+      "Ruff " + (analysis.ruff_status || "not_run"),
+      "worker " + (analysis.worker_status || "not_run"),
+      "AI " + (analysis.ai_status || "not_run"),
+    ].join(" · ");
     setStatus(
-      "Analysis complete: " + files.length + " file(s), " + findings.length +
-      " finding(s). Tests were not run: uploaded code is never executed."
+      (degraded ? "Analysis incomplete: " : "Analysis complete: ") +
+      files.length + " file(s), " + findings.length +
+      " finding(s). Tests were not run: uploaded code is never executed. (" +
+      stageText + ")"
     );
+    const notice = document.getElementById("upload-partial-notice");
+    if (notice) {
+      notice.hidden = !degraded;
+      notice.textContent = degraded
+        ? "Some checks did not complete. The findings below are real, but coverage " +
+          "is incomplete; this is not a clean result."
+        : "";
+    }
     $("upload-summary").textContent =
       "high " + (bySeverity.high || 0) + " · medium " + (bySeverity.medium || 0) +
       " · low " + (bySeverity.low || 0) +

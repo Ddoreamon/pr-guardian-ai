@@ -26,6 +26,7 @@ from pr_guardian.version import __version__
 from .demo_cases import BASE_BRANCH, CASES_BY_ID, DEMO_CASES, demo_repo
 from .export import to_json, to_markdown
 from .store import InvalidDecision, ReviewNotFound, StoredReview, review_lock, store
+from .uploads_api import MAX_REQUEST_BYTES
 from .uploads_api import router as uploads_router
 
 APP_DIR = Path(__file__).resolve().parent
@@ -49,6 +50,20 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="PR Guardian", version=__version__, lifespan=lifespan)
+@app.middleware("http")
+async def limit_upload_body(request: Request, call_next):
+    """Reject an oversized upload before multipart is parsed into memory/disk."""
+    if request.method == "POST" and request.url.path == "/api/uploads":
+        declared = request.headers.get("content-length")
+        if declared and declared.isdigit() and int(declared) > MAX_REQUEST_BYTES:
+            return JSONResponse(
+                status_code=413,
+                content={"error": "upload_too_large",
+                         "message": "The request body exceeds the upload limit."},
+            )
+    return await call_next(request)
+
+
 app.include_router(uploads_router)
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))

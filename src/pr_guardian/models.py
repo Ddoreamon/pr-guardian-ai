@@ -146,6 +146,25 @@ _LEGACY_LLM_STATUS = {
 }
 
 
+class UploadAnalysis(BaseModel):
+    """Per-stage status for an uploaded-code review (V1.1).
+
+    Additive and optional: reports written before V1.1 parse with the default. Each
+    stage reports itself, so a failed check never silently reads as a clean run.
+    """
+
+    # ast: ok | partial | failed; ruff: ok | empty | timeout | error | unavailable
+    ast_status: str = "not_run"
+    ruff_status: str = "not_run"
+    # worker: ok | timeout | error
+    worker_status: str = "not_run"
+    # ai: not_run | ok | failed | disabled_by_public_policy | budget_exhausted
+    ai_status: str = "not_run"
+    files_parsed: int = 0
+    files_with_syntax_errors: int = 0
+    detail: str = ""
+
+
 class ReviewReport(BaseModel):
     review_id: str
     repository: str
@@ -183,6 +202,8 @@ class ReviewReport(BaseModel):
     source_verified_findings: list[ReviewFinding] = Field(default_factory=list)
     source_unverified_findings: list[ReviewFinding] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    # V1.1 uploads only; None for demo reviews and every pre-V1.1 report
+    upload_analysis: UploadAnalysis | None = None
 
     @model_validator(mode="before")
     @classmethod

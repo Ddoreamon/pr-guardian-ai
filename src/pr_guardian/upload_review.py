@@ -10,7 +10,9 @@ unchanged.
 from __future__ import annotations
 
 import json
+import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -26,6 +28,7 @@ from .models import (
     ReviewFinding,
     ReviewReport,
     TestSummary,
+    UploadAnalysis,
     VerificationStatus,
 )
 from .settings import Settings
@@ -56,29 +59,68 @@ def _write_files(root: Path, files: list[UploadedFile]) -> None:
         target.write_bytes(item.content)
 
 
-def _run_worker(root: Path) -> dict:
+def kill_process_tree(proc: subprocess.Popen) -> None:
+    """Kill the worker and any child it spawned (Ruff), on both platforms.
+
+    POSIX: the worker is started in its own session, so killing the group reaches Ruff.
+    Windows: `taskkill /T` walks the child tree; a plain `proc.kill()` would leave Ruff
+    running until its own timeout.
+    """
+    if proc.poll() is not None:
+        return
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)],
+                       capture_output=True, check=False, text=True)
+        return
     try:
-        proc = subprocess.run(
-            [sys.executable, "-I", "-m", "pr_guardian.upload_worker", str(root)],
-            capture_output=True, text=True, timeout=WORKER_TIMEOUT_S,
-            cwd=str(root), env={"PATH": "", "PYTHONPATH": ""}, check=False,
-        )
-    except subprocess.TimeoutExpired as exc:
+        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        try:
+            proc.kill()
+        except ProcessLookupError:
+            pass
+
+
+def _popen_kwargs() -> dict:
+    if os.name == "nt":
+        return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+    return {"start_new_session": True}
+
+
+def _run_worker(root: Path) -> tuple[dict, str]:
+    """Run the analyser with a hard timeout. Returns (payload, worker_status)."""
+    proc = subprocess.Popen(
+        [sys.executable, "-I", "-m", "pr_guardian.upload_worker", str(root)],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        cwd=str(root), env={"PATH": "", "PYTHONPATH": ""},
+        **_popen_kwargs(),
+    )
+    try:
+        stdout, _stderr = proc.communicate(timeout=WORKER_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        kill_process_tree(proc)
+        try:
+            proc.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
         raise UploadRejected(
             "analysis_timeout",
             f"analysis exceeded {MAX_ANALYSIS_SECONDS:.0f}s and was stopped",
-        ) from exc
+        ) from None
+    finally:
+        kill_process_tree(proc)
+
     if proc.returncode != 0:
         raise UploadRejected("analysis_failed",
                              "the analyser could not process this upload")
     try:
-        payload = json.loads(proc.stdout)
+        payload = json.loads(stdout)
     except json.JSONDecodeError as exc:
         raise UploadRejected("analysis_failed",
                              "the analyser returned no usable result") from exc
     if not isinstance(payload, dict) or "files" not in payload:
         raise UploadRejected("analysis_failed", "the analyser returned no files")
-    return payload
+    return payload, "ok"
 
 
 def _finding(raw: dict, index: int) -> ReviewFinding:
@@ -132,7 +174,7 @@ def run_upload_review(files: list[UploadedFile], settings: Settings,
     root = Path(tempfile.mkdtemp(prefix="pr-guardian-upload-"))
     try:
         _write_files(root, files)
-        analysed = _run_worker(root)
+        analysed, worker_status = _run_worker(root)
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
@@ -143,9 +185,18 @@ def run_upload_review(files: list[UploadedFile], settings: Settings,
     findings.sort(key=lambda f: (f.file_path, f.start_line, f.rule or ""))
 
     notes = list(LIMIT_NOTES)
-    if analysed.get("ruff_status") not in ("ok", "empty"):
-        notes.append(f"Ruff could not complete ({analysed.get('ruff_status')}); "
+    ruff_status = str(analysed.get("ruff_status") or "not_run")
+    ast_status = str(analysed.get("ast_status") or "not_run")
+    if ruff_status not in ("ok", "empty"):
+        notes.append(f"Ruff could not complete ({ruff_status}); "
                      f"lint coverage is incomplete for this upload.")
+    if ast_status == "partial":
+        notes.append("Some files could not be parsed; those files were only checked "
+                     "for syntax, not linted or pattern-scanned.")
+    elif ast_status == "failed":
+        notes.append("No file could be parsed, so no lint or pattern check ran.")
+
+    degraded = ruff_status not in ("ok", "empty") or ast_status in ("partial", "failed")
 
     report = ReviewReport(
         review_id="upload-" + uuid.uuid4().hex[:12],
@@ -167,12 +218,22 @@ def run_upload_review(files: list[UploadedFile], settings: Settings,
         llm_note="AI review is off by default for uploads.",
         tool_status="disabled",
         tool_calls=[],
-        review_status="completed",
+        review_status="partial" if degraded else "completed",
         completeness=ReviewCompleteness(
-            status="completed",
-            reason="upload_analysis_completed",
+            status="partial" if degraded else "completed",
+            reason=("partial_analysis" if degraded else "upload_analysis_completed"),
             findings_signal=("has_findings" if findings
-                             else "no_findings_in_completed_review"),
+                             else ("not_evaluated" if degraded
+                                   else "no_findings_in_completed_review")),
+        ),
+        upload_analysis=UploadAnalysis(
+            ast_status=ast_status,
+            ruff_status=ruff_status,
+            worker_status=worker_status,
+            ai_status="not_run",
+            files_parsed=int(analysed.get("files_parsed") or 0),
+            files_with_syntax_errors=int(analysed.get("files_with_syntax_errors") or 0),
+            detail=",".join(notes[4:]),
         ),
         created_at=datetime.now(UTC),
     )

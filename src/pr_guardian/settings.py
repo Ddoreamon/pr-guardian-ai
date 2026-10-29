@@ -18,6 +18,7 @@ Supported variables:
   PR_GUARDIAN_UPLOAD_ENABLED       1 = accept uploaded .py/ZIP for analysis (default off)
   PR_GUARDIAN_UPLOAD_AI            1 = optional AI pass over uploads (default off)
   PR_GUARDIAN_UPLOAD_PUBLIC        1 = acknowledge uploads on a public instance
+  PR_GUARDIAN_UPLOAD_CONCURRENCY   concurrent analyser slots (default 2, max 4)
 """
 
 from __future__ import annotations
@@ -71,6 +72,8 @@ class Settings:
     upload_ai_enabled: bool = False
     # public deployments must opt in twice: enabled + this acknowledgement
     upload_public_ack: bool = False
+    # bounded analyser concurrency; extra requests get a 503 instead of queueing
+    upload_concurrency: int = 2
 
     @property
     def llm_configured(self) -> bool:
@@ -119,4 +122,6 @@ def get_settings() -> Settings:
         upload_enabled=_flag("PR_GUARDIAN_UPLOAD_ENABLED", default=False),
         upload_ai_enabled=_flag("PR_GUARDIAN_UPLOAD_AI", default=False),
         upload_public_ack=_flag("PR_GUARDIAN_UPLOAD_PUBLIC", default=False),
+        upload_concurrency=max(1, min(int(
+            os.environ.get("PR_GUARDIAN_UPLOAD_CONCURRENCY", "2") or 2), 4)),
     )

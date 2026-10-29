@@ -6,8 +6,10 @@ Off unless `PR_GUARDIAN_UPLOAD_ENABLED=1`; on a public instance it additionally 
 
 from __future__ import annotations
 
+import threading
 import uuid
 
+import anyio
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
@@ -26,6 +28,31 @@ from pr_guardian.uploads import (
 from .store import StoredReview, store
 
 router = APIRouter()
+
+# Bounded analyser concurrency: a slot is taken before a worker starts, so an
+# unbounded number of uploads can never spawn an unbounded number of processes.
+_slots_lock = threading.Lock()
+_slots_in_use = 0
+
+
+def try_acquire_slot(limit: int) -> bool:
+    global _slots_in_use
+    with _slots_lock:
+        if _slots_in_use >= max(1, limit):
+            return False
+        _slots_in_use += 1
+        return True
+
+
+def release_slot() -> None:
+    global _slots_in_use
+    with _slots_lock:
+        _slots_in_use = max(0, _slots_in_use - 1)
+
+
+def active_slots() -> int:
+    with _slots_lock:
+        return _slots_in_use
 
 MAX_ARCHIVE_UPLOAD_BYTES = MAX_ZIP_BYTES
 MAX_REQUEST_BYTES = MAX_TOTAL_BYTES + MAX_ARCHIVE_UPLOAD_BYTES + 1024 * 1024
@@ -76,6 +103,16 @@ def _rejected(exc: UploadRejected) -> JSONResponse:
                         content={"error": exc.code, "message": exc.message})
 
 
+def _busy_response() -> JSONResponse:
+    return JSONResponse(
+        status_code=503,
+        headers={"Retry-After": "2"},
+        content={"error": "busy",
+                 "message": "The analyser is busy. Retry in a moment.",
+                 "retry_after_s": 2},
+    )
+
+
 @router.post("/api/uploads")
 async def create_upload(
     files: list[UploadFile] = File(default=[]),  # noqa: B008 - FastAPI dependency
@@ -87,6 +124,8 @@ async def create_upload(
             "error": "uploads_disabled",
             "message": "Upload analysis is disabled on this instance.",
         })
+    if not try_acquire_slot(cfg.upload_concurrency):
+        return _busy_response()
     try:
         if archive is not None and archive.filename:
             if files:
@@ -108,9 +147,11 @@ async def create_upload(
                 pairs.append((name, data))
             uploaded = collect_from_files(pairs)
 
-        report = run_upload_review(uploaded, cfg, store=store)
+        report = await anyio.to_thread.run_sync(
+            lambda: run_upload_review(uploaded, cfg, store=store))
         if cfg.upload_ai_enabled:
-            report = apply_ai_review(report, uploaded, cfg, store)
+            report = await anyio.to_thread.run_sync(
+                lambda: apply_ai_review(report, uploaded, cfg, store))
         store.add(StoredReview(report=report, case_id="upload",
                                case_title=f"Uploaded files ({len(uploaded)})"))
     except UploadRejected as exc:
@@ -120,6 +161,8 @@ async def create_upload(
             "error": "analysis_failed",
             "message": "The upload could not be analysed. Nothing was executed.",
         })
+    finally:
+        release_slot()
 
     return JSONResponse(status_code=201, content={
         "review_id": report.review_id,
