@@ -68,8 +68,27 @@ def test_ok_with_no_findings_is_empty_list_not_failure(tmp_path, monkeypatch):
 
 
 def test_silent_output_is_reported_as_empty(tmp_path, monkeypatch):
+    """`ruff --output-format json` writes `[]` for no findings; empty stdout is not that."""
     _patch_run(monkeypatch, FakeResult(0, "   "))
     assert upload_worker._ruff(tmp_path) == ("empty", [])
+
+
+def test_empty_stdout_is_not_a_completed_review(monkeypatch):
+    payload = {
+        "files": [{"path": "a.py", "lines": 2, "syntax_error": ""}],
+        "findings": [],
+        "ruff_status": "empty",
+        "ast_status": "ok",
+        "files_parsed": 1,
+        "files_with_syntax_errors": 0,
+    }
+    monkeypatch.setattr("pr_guardian.upload_review._run_worker",
+                        lambda root: (payload, "ok"))
+    report = run_upload_review(collect_from_files([("a.py", GOOD)]), settings())
+    assert report.upload_analysis.ruff_status == "empty"
+    assert report.review_status == "partial"
+    assert report.completeness.findings_signal == "not_evaluated"
+    assert any("no output at all" in note for note in report.notes)
 
 
 def test_timeout_is_reported(tmp_path, monkeypatch):
@@ -97,7 +116,7 @@ def test_unexpected_json_shape_is_reported(tmp_path, monkeypatch):
     assert upload_worker._ruff(tmp_path) == ("unexpected", [])
 
 
-@pytest.mark.parametrize("status", ["timeout", "unavailable", "exit_error",
+@pytest.mark.parametrize("status", ["empty", "timeout", "unavailable", "exit_error",
                                     "unparsable", "unexpected", "error"])
 def test_every_ruff_failure_keeps_findings_and_marks_partial(monkeypatch, status):
     payload = {
@@ -118,7 +137,9 @@ def test_every_ruff_failure_keeps_findings_and_marks_partial(monkeypatch, status
     assert report.review_status == "partial"
     assert report.completeness.reason == "partial_analysis"
     assert [f.rule for f in report.final_findings] == ["UP001"]
-    assert any("Ruff could not complete" in note for note in report.notes)
+    expected_note = ("no output at all" if status == "empty"
+                     else "Ruff could not complete")
+    assert any(expected_note in note for note in report.notes)
 
 
 def test_ruff_ok_with_no_findings_can_be_completed():

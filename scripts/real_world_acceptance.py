@@ -198,6 +198,7 @@ def main() -> int:
             fixed_by_rule = index_findings(fixed["report"])
             disappeared = {rule: rule not in fixed_by_rule
                            for rule in spec["should_disappear"]}
+            fixed_rules = sorted(fixed_by_rule)
 
             finding_id = report["final_findings"][0]["id"]
             decision = client.post(
@@ -242,6 +243,7 @@ def main() -> int:
                 "missed": spec["missed"],
                 "fixed_status": fixed["report"]["review_status"],
                 "disappeared": disappeared,
+                "fixed_rules": fixed_rules,
                 "accept_status": decision.status_code,
                 "reject_status": rejected.status_code,
                 "export_markdown_status": markdown.status_code,

@@ -7,9 +7,9 @@ also through the real browser page. Nothing was mocked, no model was called.
 
 | case | files | LOC | findings | ruff | heuristic | status | elapsed |
 |---|---|---|---|---|---|---|---|
-| A_csv_report | 1 | 35 | 4 | 3 | 1 | completed | 0.2s |
+| A_csv_report | 1 | 35 | 4 | 3 | 1 | completed | 0.22s |
 | B_fastapi_service | 1 | 36 | 5 | 4 | 1 | completed | 0.2s |
-| C_inventory_pkg | 4 | 55 | 5 | 3 | 2 | completed | 0.3s |
+| C_inventory_pkg | 4 | 55 | 5 | 3 | 2 | completed | 0.24s |
 
 ## Human review per case
 

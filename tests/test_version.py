@@ -22,8 +22,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_version_is_a_release_string():
-    assert re.fullmatch(r"\d+\.\d+\.\d+", __version__), __version__
-    assert __version__ == "1.0.0"
+    # PEP 440: a pre-release keeps the numeric core and appends rcN
+    assert re.fullmatch(r"\d+\.\d+\.\d+(rc\d+)?", __version__), __version__
+    assert __version__ == "1.1.0rc1"
 
 
 def test_pyproject_takes_its_version_from_the_same_file():

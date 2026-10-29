@@ -11,9 +11,9 @@ versions: `fixed/`.
 
 | Case | Shape | Files | LOC | Upload | Elapsed |
 |---|---|---|---|---|---|
-| A `csv_report` | CSV → JSON data script, one file | 1 | 27 | single `.py` | 0.2 s |
-| B `api` | FastAPI service with validation and error handling | 1 | 34 | single `.py` | 0.2 s |
-| C `inventory` | package: model, service, CLI, `__init__` | 4 | 41 | ZIP | 0.3 s |
+| A `csv_report` | CSV → JSON data script, one file | 1 | 35 | single `.py` | 0.2 s |
+| B `api` | FastAPI service with validation and error handling | 1 | 36 | single `.py` | 0.2 s |
+| C `inventory` | package: model, service, CLI, `__init__` | 4 | 55 | ZIP | 0.3 s |
 
 These are ordinary files written as a developer would write them; they were **not**
 assembled to trigger `UP001`–`UP007`. The sample sources are authored for this test and
@@ -63,15 +63,16 @@ does not claim to find them.
 For each case the fixable findings were actually fixed (`fixed/` mirrors `samples/`), then
 re-uploaded:
 
-| Case | Disappeared | Remained | Review status after fix |
+| Case | Disappeared | Still present after the fix | Review status after fix |
 |---|---|---|---|
-| A | F401, F541, UP006, B006 | none | `completed` |
-| B | F401, UP005, E722 | I001, BLE001, BLE001-adjacent code untouched | `completed` |
-| C | UP002, UP006, B006 | PLW1510 | `completed` |
+| A | F401, F541, UP006, B006 | none — the fixed file returns zero findings | `completed` |
+| B | F401, UP005, E722, I001 | **BLE001** — the delete handler still catches everything; we left that code untouched | `completed` |
+| C | UP002, UP006, B006, PLW1510 | **RUF100** — the deliberate `# noqa` we kept, i.e. the recorded false positive | `completed` |
 
-The round trip works: the same finding does not come back, and the fixes did not
-introduce a new finding (the one remaining in C is the `subprocess.run(... check=False)`
-we kept on purpose; the finding is correct and we accept it).
+The round trip works: the same finding does not come back, and the remaining findings are
+explained rather than hidden. Note that `PLW1510` disappeared only because the fix passes
+`check=False` explicitly; the behaviour (silencing the exit status) is unchanged, which is
+one of the limitations of rule-level review.
 
 ## 4. Can a user understand and act on the output?
 

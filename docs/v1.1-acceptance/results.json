@@ -86,6 +86,7 @@
         "UP006": true,
         "B006": true
       },
+      "fixed_rules": [],
       "accept_status": 200,
       "reject_status": 200,
       "export_markdown_status": 200,
@@ -100,7 +101,7 @@
         "distinct_valid_issues": 3,
         "denominator": "all findings returned by the enabled checks"
       },
-      "elapsed_s": 0.2
+      "elapsed_s": 0.22
     },
     {
       "id": "B_fastapi_service",
@@ -204,6 +205,9 @@
         "F401": true,
         "UP005": true
       },
+      "fixed_rules": [
+        "BLE001"
+      ],
       "accept_status": 200,
       "reject_status": 200,
       "export_markdown_status": 200,
@@ -321,6 +325,9 @@
         "UP002": true,
         "UP006": true
       },
+      "fixed_rules": [
+        "RUF100"
+      ],
       "accept_status": 200,
       "reject_status": 200,
       "export_markdown_status": 200,
@@ -335,7 +342,7 @@
         "distinct_valid_issues": 3,
         "denominator": "all findings returned by the enabled checks"
       },
-      "elapsed_s": 0.3
+      "elapsed_s": 0.24
     }
   ],
   "security": {

@@ -188,7 +188,10 @@ def run_upload_review(files: list[UploadedFile], settings: Settings,
     notes = list(LIMIT_NOTES)
     ruff_status = str(analysed.get("ruff_status") or "not_run")
     ast_status = str(analysed.get("ast_status") or "not_run")
-    if ruff_status not in ("ok", "empty"):
+    if ruff_status == "empty":
+        notes.append("Ruff produced no output at all, which is not the same as an empty "
+                     "result; lint coverage is unknown for this upload.")
+    elif ruff_status != "ok":
         notes.append(f"Ruff could not complete ({ruff_status}); "
                      f"lint coverage is incomplete for this upload.")
     if ast_status == "partial":
@@ -197,7 +200,7 @@ def run_upload_review(files: list[UploadedFile], settings: Settings,
     elif ast_status == "failed":
         notes.append("No file could be parsed, so no lint or pattern check ran.")
 
-    degraded = ruff_status not in ("ok", "empty") or ast_status in ("partial", "failed")
+    degraded = ruff_status != "ok" or ast_status in ("partial", "failed")
 
     report = ReviewReport(
         review_id="upload-" + uuid.uuid4().hex[:12],
