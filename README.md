@@ -128,6 +128,21 @@ The public instance is deliberately boring: it can review only the self-authored
 cases, it never spends money, and it says "Not Evaluated" rather than inventing an AI
 answer.
 
+## Upload your own code (V1.1, off by default)
+
+A separate page at `/upload` accepts `.py` files or a ZIP and analyses them **without
+executing anything**: AST parse, a short list of explainable patterns, and Ruff. Every
+finding maps to a file and line; heuristic findings are marked `suspected`; exports and
+accept/reject work as in the demo. Uploads are disabled unless
+`PR_GUARDIAN_UPLOAD_ENABLED=1`, and a public instance needs a second acknowledgement
+(`PR_GUARDIAN_UPLOAD_PUBLIC=1`).
+
+Read the boundary before enabling it anywhere: [`docs/v1.1-upload-review.md`](docs/v1.1-upload-review.md).
+
+| Empty state | Findings |
+|---|---|
+| ![upload](docs/screenshots/13-upload-empty.png) | ![findings](docs/screenshots/15-upload-findings.png) |
+
 ## Function calling, MCP and BM25
 
 **Function calling** (`PR_GUARDIAN_TOOL_CALLS_ENABLED=1`, default off) lets the model

@@ -18,6 +18,9 @@ class FindingSource(str, Enum):
     RUFF = "ruff"
     PYTEST = "pytest"
     LLM = "llm"
+    # V1.1 uploads: pattern heuristics and parse failures, never executed
+    HEURISTIC = "heuristic"
+    SYNTAX = "syntax"
 
 
 class VerificationStatus(str, Enum):

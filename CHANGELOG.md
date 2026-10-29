@@ -55,4 +55,16 @@ from the release path.
 
 ## Unreleased
 
+### Upload & review (V1.1, default off)
+
+* new `/upload` page and `/api/uploads` endpoint for `.py` files or a ZIP;
+* analysis is AST parsing, `UP001`–`UP007` heuristics and Ruff — uploaded code is never
+  executed, imported, tested or installed;
+* path confinement, Zip Slip and symlink refusal, size/ratio/time limits, case-insensitive
+  duplicate detection, UTF-8 only;
+* findings reuse `ReviewReport`, so accept/reject and JSON/Markdown export work unchanged;
+* optional single-call AI pass behind `PR_GUARDIAN_UPLOAD_AI=1`, never in public mode;
+* public enablement remains **No-Go** until the analyser runs under an OS-level resource
+  sandbox and a per-IP rate limit exists.
+
 Nothing. V4.6 and any further agent/retrieval work are out of scope for 1.0.

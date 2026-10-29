@@ -26,6 +26,7 @@ from pr_guardian.version import __version__
 from .demo_cases import BASE_BRANCH, CASES_BY_ID, DEMO_CASES, demo_repo
 from .export import to_json, to_markdown
 from .store import InvalidDecision, ReviewNotFound, StoredReview, review_lock, store
+from .uploads_api import router as uploads_router
 
 APP_DIR = Path(__file__).resolve().parent
 
@@ -48,6 +49,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="PR Guardian", version=__version__, lifespan=lifespan)
+app.include_router(uploads_router)
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 
@@ -130,6 +132,19 @@ def index(request: Request):
         name="index.html",
         context={"cases": _case_payload(), "config": _config_payload(),
                  "version": __version__},
+    )
+
+
+@app.get("/upload", response_class=HTMLResponse)
+def upload_page(request: Request) -> HTMLResponse:
+    cfg = get_settings()
+    from app.uploads_api import _limits, uploads_allowed
+
+    return templates.TemplateResponse(
+        request=request,
+        name="upload.html",
+        context={"version": __version__, "enabled": uploads_allowed(cfg),
+                 "limits": _limits(), "config": _config_payload()},
     )
 
 
