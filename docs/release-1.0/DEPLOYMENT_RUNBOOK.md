@@ -3,8 +3,15 @@
 For the authorised release of `v1.0.0`. **Nothing in this file has been executed.**
 The public Render service still runs V1.
 
-Subject: `v1.0.0-rc2` = `812a3129fff3984f7d584c1ca4aba5277fdd9d18`; `main` =
-`8a8a84cc57d351c282d727c68d09705d619cc47f`.
+Subject: **merge `release/1.0-approval` @ `23b4652a2788fb22e88e375f8cd1ce57d4f3048c`**,
+whose tree is `341285621365501c3002576a49ee2ce194d61a5e`. `v1.0.0-rc2`
+(`812a3129…`) is the verified content ancestor; the approval commit adds five
+documentation/tooling files on top of it. `main` = `8a8a84c…`.
+
+> Correction: earlier revisions of this file said the merge tree must equal the **RC2**
+> tree. It must equal the **approval** tree (`3412856…`), because approval adds
+> `FINAL_APPROVAL_CHECKLIST.md`, `STATUS.md`, `scripts/verify_deployed_build.py`,
+> `tests/test_release_verification.py` and updates this runbook.
 
 Roles: one **operator** (runs the commands) and one **approver** (signs each gate). For
 the merge and the deploy the approver must be a second person. Per-step evidence and
@@ -35,7 +42,7 @@ Steps 3, 5, 7 and 9 are human actions. An agent must not perform them.
 | 2.2 | Render service settings observed, not assumed | `FINAL_APPROVAL_CHECKLIST.md` step 2 |
 | 2.3 | public instance still on `ALLOW_LIVE_LLM=0` | Render env panel |
 | 2.4 | `main` still `8a8a84c…` | `git ls-remote origin main` |
-| 2.5 | RC2 resolves to `812a3129…` | `git rev-parse v1.0.0-rc2^{commit}` |
+| 2.5 | RC2 resolves to `812a3129…` and approval to `23b4652…` | `git rev-parse v1.0.0-rc2^{commit}` / `git rev-parse release/1.0-approval` |
 
 ## 3. Render settings to record before touching anything
 
@@ -75,15 +82,16 @@ without approval.
 git fetch --all --tags
 git switch main
 git merge --ff-only origin/main
-git merge --no-ff v1.0.0-rc2 -m "release: PR Guardian 1.0.0 (rc2 verified, audited)"
+git merge --no-ff release/1.0-approval \
+  -m "release: PR Guardian 1.0.0 (pre-merge audit 23b4652)"
 git push origin main
 ```
 
 Then prove the tree:
 
 ```bash
-git diff --stat v1.0.0-rc2 HEAD          # must print nothing
-git rev-parse HEAD^{tree} v1.0.0-rc2^{tree}   # must print the same hash twice
+git diff --stat release/1.0-approval HEAD    # must print nothing
+git rev-parse HEAD^{tree} release/1.0-approval^{tree}   # both 3412856…
 ```
 
 A non-empty diff or differing tree hash means the merge introduced something: revert
@@ -113,7 +121,7 @@ equal the merge commit from §5 and the peeled commit of RC2.
 git switch release/1.0-approval
 python scripts/verify_deployed_build.py \
   --base-url https://<host> \
-  --ref v1.0.0-rc2 \
+  --ref 23b4652a2788fb22e88e375f8cd1ce57d4f3048c \
   --expect-text "Tests run only against the trusted, bundled demo repository"
 ```
 

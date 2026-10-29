@@ -3,8 +3,9 @@
 One row per step. **Nothing below has been executed.** Steps 3, 5, 7 and 9 require
 explicit human authorisation and must not be run by an agent.
 
-Subject: `v1.0.0-rc2` = `812a3129fff3984f7d584c1ca4aba5277fdd9d18`, `main` =
-`8a8a84cc57d351c282d727c68d09705d619cc47f`.
+Subject: merge `release/1.0-approval` @ `23b4652a2788fb22e88e375f8cd1ce57d4f3048c`
+(tree `3412856…`); `v1.0.0-rc2` = `812a3129…` is the verified content ancestor;
+`main` = `8a8a84c…`.
 
 Roles: **O** = operator (runs it), **A** = approver (signs it, may be the same person
 except for step 5 and step 7, where a second person is required).
@@ -16,8 +17,8 @@ except for step 5 and step 7, where a second person is required).
 | | |
 |---|---|
 | Action | Confirm the candidate is the approved one |
-| Command | `git fetch --all --tags && git rev-parse v1.0.0-rc2^{commit}` and `git rev-parse origin/main` |
-| Expected | `812a3129fff3984f7d584c1ca4aba5277fdd9d18` and `8a8a84cc57d351c282d727c68d09705d619cc47f` |
+| Command | `git fetch --all --tags && git rev-parse release/1.0-approval` and `git rev-parse origin/main` |
+| Expected | `23b4652a2788fb22e88e375f8cd1ce57d4f3048c` and `8a8a84cc57d351c282d727c68d09705d619cc47f` |
 | Evidence | command output pasted into the release ticket |
 | On failure | **STOP**. The branch moved; re-verify before anything else. |
 
@@ -75,7 +76,7 @@ except for step 5 and step 7, where a second person is required).
 
 | | |
 |---|---|
-| Command | `git switch main && git merge --ff-only origin/main && git merge --no-ff v1.0.0-rc2 -m "release: PR Guardian 1.0.0 (rc2 verified)" && git push origin main` |
+| Command | `git switch main && git merge --ff-only origin/main && git merge --no-ff release/1.0-approval -m "release: PR Guardian 1.0.0 (pre-merge audit 23b4652)" && git push origin main` |
 | Expected | merge succeeds without conflict |
 | Evidence | merge commit SHA |
 | On failure | if the merge conflicts or `--ff-only` fails: **STOP**, do not resolve by hand |
@@ -84,9 +85,9 @@ except for step 5 and step 7, where a second person is required).
 
 | | |
 |---|---|
-| Command | `git diff --stat v1.0.0-rc2 <merge-sha>` |
+| Command | `git diff --stat release/1.0-approval <merge-sha>` |
 | Expected | **empty output** |
-| Evidence | the empty diff, plus `git rev-parse <merge-sha>^{tree}` vs `git rev-parse v1.0.0-rc2^{tree}` (must be equal) |
+| Evidence | the empty diff, plus `git rev-parse <merge-sha>^{tree}` vs `git rev-parse release/1.0-approval^{tree}` — both `341285621365501c3002576a49ee2ce194d61a5e` |
 | On failure | `git revert -m 1 <merge-sha>` and stop; do not deploy |
 
 ## Step 7 — Manual deploy (O, A) · **needs authorisation**
@@ -104,7 +105,7 @@ except for step 5 and step 7, where a second person is required).
 | | |
 |---|---|
 | Primary source | Render deploy record: the **deployed commit** must equal the merge commit from step 5 |
-| Independent check | from a `release/1.0-approval` checkout (the helper is not in the rc2 tree): `python scripts/verify_deployed_build.py --base-url https://<host> --ref v1.0.0-rc2 --expect-text "Tests run only against the trusted, bundled demo repository"` |
+| Independent check | from a `release/1.0-approval` checkout (the helper is not in the rc2 tree): `python scripts/verify_deployed_build.py --base-url https://<host> --ref <merge-sha> --expect-text "Tests run only against the trusted, bundled demo repository"` |
 | Expected | `status: match`, exit 0; `health.version == 1.0.0`; `public_mode: true`; `llm_status: not_configured`; footer `PR Guardian v1.0.0` |
 | Demo | run `boundary-bug` (real Ruff/pytest, AI "Not Evaluated") and `clean` (0 findings, wording says absence is not proof) |
 | Exports | download JSON + Markdown; grep for `sk-`, `C:\Users`, `/Users/`, `OneDrive` → none |
