@@ -70,9 +70,21 @@ and were not removed.
 
 ## Verification performed on this candidate
 
-Full suite 471 tests (1 skipped on Windows for a POSIX-only test), Ruff clean, API/MCP 67,
-browser 77/77, upload acceptance 11/11. Default-off and public-mode rejection are covered
-by tests (`tests/test_uploads.py`, `tests/test_upload_hardening.py`).
+Clean clone of the branch, fresh Python 3.12.13 virtual environment, `pip install -e
+".[dev]"` → `pr-guardian 1.1.0rc1`, working tree clean before and after the gates.
+
+| Gate | Result |
+|---|---|
+| commit / tree | `d0707e3891a3b308b822615b755a4b33a2c73301` / `aea778f716f84e6f354bf8790e225e6a5c38791f` |
+| `ruff check src tests demo benchmark app scripts` | clean |
+| `pytest -q` | **473 passed, 1 skipped** (POSIX-only process-tree test on Windows) |
+| API + MCP | **67 passed** |
+| browser | **77/77** |
+| upload acceptance | **11/11** |
+| real-world acceptance | A 4 / B 5 / C 5 findings, all `completed`, same as the dev run |
+| `/health` | `version: 1.1.0rc1` |
+| default off (no env) | `/api/uploads/config` enabled false, POST 403, page says "disabled on this instance" |
+| public mode (flags set) | enabled false, POST 403 — public mode refuses unconditionally |
 
 ## Go / No-Go
 

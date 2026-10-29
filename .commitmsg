@@ -1,0 +1,11 @@
+docs(v1.1): record the clean-room verification for 1.1.0rc1
+
+Clean clone of the branch, fresh Python 3.12.13 venv, editable install -> 1.1.0rc1:
+commit d0707e3 / tree aea778f, working tree clean. ruff clean, pytest 473 passed
+(1 skipped: POSIX-only process-tree test on Windows), API/MCP 67, browser 77/77,
+upload acceptance 11/11, real-world acceptance reproduces A4/B5/C5 with all
+reviews completed, /health reports 1.1.0rc1.
+
+Default-off and public-mode refusals were executed in the clean room as well: uploads
+disabled without the env flag (403 + page notice) and refused with PUBLIC_MODE=1 even
+when the legacy acknowledgement flag is set.
