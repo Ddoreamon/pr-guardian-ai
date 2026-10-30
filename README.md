@@ -137,11 +137,24 @@ accept/reject work as in the demo. Uploads are disabled unless
 `PR_GUARDIAN_UPLOAD_ENABLED=1`, and a public instance needs a second acknowledgement
 (`PR_GUARDIAN_UPLOAD_PUBLIC=1`).
 
+Fastest path — a launcher that binds `127.0.0.1` only, enables local uploads, keeps AI
+off, and asks before installing anything:
+
 ```bash
-# local use: uploads stay off until you opt in explicitly
-PR_GUARDIAN_UPLOAD_ENABLED=1 uvicorn app.main:app --port 8000
+./start-local.sh          # macOS / Linux
+start-local.bat           # Windows
+# both open http://127.0.0.1:8000
+```
+
+Or start it yourself:
+
+```bash
+PR_GUARDIAN_UPLOAD_ENABLED=1 uvicorn app.main:app --host 127.0.0.1 --port 8000
 # then open http://127.0.0.1:8000/upload
 ```
+
+Step-by-step instructions, including how to read a finding and how to stop the server:
+[`docs/release-1.1/USER_GUIDE.md`](docs/release-1.1/USER_GUIDE.md).
 
 A public instance needs the second acknowledgement (`PR_GUARDIAN_UPLOAD_PUBLIC=1`) and is
 still **not recommended** — see the release notes. Read the boundary before enabling it
