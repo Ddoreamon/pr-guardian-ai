@@ -70,18 +70,20 @@ and were not removed.
 
 ## Verification performed on this candidate
 
-Clean clone of the branch, fresh Python 3.12.13 virtual environment, `pip install -e
+Clean clone of the **tag**, fresh Python 3.12.13 virtual environment, `pip install -e
 ".[dev]"` → `pr-guardian 1.1.0rc1`, working tree clean before and after the gates.
 
 | Gate | Result |
 |---|---|
-| commit / tree | `d0707e3891a3b308b822615b755a4b33a2c73301` / `aea778f716f84e6f354bf8790e225e6a5c38791f` |
+| tag | `v1.1.0-rc1` (annotated `cb8b26fe…`) → commit `57fab941397b41edb91ecbd870e19cf5936f80d4` |
+| commit / tree | `57fab941397b41edb91ecbd870e19cf5936f80d4` / `8599a82f6632fc434087eec4c0f544bf91b77ef0` |
 | `ruff check src tests demo benchmark app scripts` | clean |
-| `pytest -q` | **473 passed, 1 skipped** (POSIX-only process-tree test on Windows) |
+| `pytest -q` | **485 passed, 2 skipped** (POSIX-only process-tree test and the bash-only syntax test on Windows) |
 | API + MCP | **67 passed** |
 | browser | **77/77** |
 | upload acceptance | **11/11** |
 | real-world acceptance | A 4 / B 5 / C 5 findings, all `completed`, same as the dev run |
+| Windows launcher | `start-local.bat` starts on `127.0.0.1`, uploads enabled, AI off, `/health = 1.1.0rc1` |
 | `/health` | `version: 1.1.0rc1` |
 | default off (no env) | `/api/uploads/config` enabled false, POST 403, page says "disabled on this instance" |
 | public mode (flags set) | enabled false, POST 403 — public mode refuses unconditionally |
