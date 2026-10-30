@@ -1,0 +1,4 @@
+# Keep launcher line endings correct on every platform.
+* text=auto
+*.bat text eol=crlf
+*.sh  text eol=lf

@@ -1,0 +1,10 @@
+chore(v1.1): pin launcher line endings and drop the stray commit-message file
+
+.gitattributes keeps start-local.bat as CRLF and start-local.sh as LF on every
+checkout, so a Windows user gets a batch file cmd can parse and a Linux user gets a
+script bash can execute. A test asserts the attributes.
+
+Also removes .commitmsg.tmp, which git add -A picked up twice; it held only commit
+text and is not part of the release tree.
+
+Tests: 485 passed, 2 skipped (bash-only syntax test skipped on Windows); Ruff clean.

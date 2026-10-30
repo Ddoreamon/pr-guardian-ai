@@ -78,3 +78,10 @@ def test_shell_script_is_syntactically_valid():
 
 def test_shell_script_uses_lf_endings():
     assert b"\r\n" not in SH.read_bytes(), "a CRLF shell script fails on Linux"
+
+
+def test_gitattributes_pins_launcher_line_endings():
+    """A .bat must reach Windows with CRLF and a .sh must reach Linux with LF."""
+    attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+    assert "*.bat text eol=crlf" in attrs
+    assert "*.sh  text eol=lf" in attrs or "*.sh text eol=lf" in attrs
