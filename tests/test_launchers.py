@@ -59,6 +59,35 @@ def test_launchers_do_not_print_secrets(path):
         assert forbidden not in text
 
 
+def _check_env_module():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "pr_guardian_check_env", ROOT / "scripts" / "check_env.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_env_checker_rejects_python_311():
+    """Simulated version, not a second interpreter on this machine."""
+    module = _check_env_module()
+    assert module.check_python((3, 11)) == 2
+
+
+def test_env_checker_accepts_python_312_and_newer():
+    module = _check_env_module()
+    assert module.check_python((3, 12)) is None
+    assert module.check_python((3, 13)) is None
+
+
+def test_version_is_checked_before_dependencies(monkeypatch):
+    """An old interpreter must report 2 even when packages are also missing."""
+    module = _check_env_module()
+    monkeypatch.setattr(module.sys, "version_info", (3, 11, 0))
+    assert module.main() == 2
+
+
 def test_env_checker_reports_ready_here():
     proc = subprocess.run(
         [str(ROOT / ".venv" / "Scripts" / "python.exe"), "scripts/check_env.py"]
@@ -85,3 +114,22 @@ def test_gitattributes_pins_launcher_line_endings():
     attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
     assert "*.bat text eol=crlf" in attrs
     assert "*.sh  text eol=lf" in attrs or "*.sh text eol=lf" in attrs
+
+
+@pytest.mark.parametrize("path", [BAT, SH])
+def test_post_install_rechecks_classify_each_exit_code(path):
+    """After installing, 3/2/1 must each give their own message, not "bad tree"."""
+    text = _text(path)
+    if path is BAT:
+        assert ":still_missing" in text
+        assert "dependencies are still missing after the install" in text
+        install_block = text.split("\n:install_deps\n", 1)[1].split("\n:start\n", 1)[0]
+        assert "if errorlevel 3 goto :still_missing" in install_block
+        assert "if errorlevel 2 goto :old_python" in install_block
+        assert "if errorlevel 1 goto :bad_tree" in install_block
+    else:
+        install_block = text.split("AFTER=$?", 1)[1]
+        assert '"$AFTER" -eq 3' in install_block
+        assert '"$AFTER" -eq 2' in install_block
+        assert '"$AFTER" -eq 1' in install_block
+        assert "still missing after the install" in install_block

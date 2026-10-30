@@ -45,6 +45,8 @@ if errorlevel 1 (
   exit /b 1
 )
 %PYTHON% scripts\check_env.py
+if errorlevel 3 goto :still_missing
+if errorlevel 2 goto :old_python
 if errorlevel 1 goto :bad_tree
 
 :start
@@ -69,6 +71,12 @@ exit /b 0
 
 :old_python
 echo [error] Install Python 3.12 or newer, then run this script again.
+pause
+exit /b 1
+
+:still_missing
+echo [error] The dependencies are still missing after the install.
+echo         Run it manually to see the error:  %PYTHON% -m pip install -e .[dev]
 pause
 exit /b 1
 

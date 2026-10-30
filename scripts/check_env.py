@@ -20,7 +20,20 @@ REQUIRED = ("fastapi", "uvicorn", "jinja2", "pydantic", "httpx", "ruff")
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def check_python(version: tuple[int, int] | None = None) -> int | None:
+    """Return 2 when the interpreter is older than 3.12, otherwise None."""
+    current = version if version is not None else tuple(sys.version_info[:2])
+    if tuple(current[:2]) < (3, 12):
+        print(f"[error] Python 3.12 or newer is required; this interpreter is "
+              f"{current[0]}.{current[1]}.")
+        return 2
+    return None
+
+
 def main() -> int:
+    too_old = check_python()
+    if too_old is not None:
+        return too_old
     if not (ROOT / "app" / "main.py").is_file():
         print(f"[error] app/main.py was not found under {ROOT}.")
         return 1

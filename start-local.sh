@@ -38,7 +38,19 @@ elif [ "$STATUS" -eq 3 ]; then
   case "$ANSWER" in
     y|Y|yes|YES)
       "$PYTHON" -m pip install -e '.[dev]' || { echo "[error] Installation failed." >&2; exit 1; }
-      "$PYTHON" scripts/check_env.py || { echo "[error] Still not ready after installing." >&2; exit 1; }
+      "$PYTHON" scripts/check_env.py
+      AFTER=$?
+      if [ "$AFTER" -eq 3 ]; then
+        echo "[error] The dependencies are still missing after the install." >&2
+        echo "        Run it manually to see the error: $PYTHON -m pip install -e '.[dev]'" >&2
+        exit 1
+      elif [ "$AFTER" -eq 2 ]; then
+        echo "[error] Install Python 3.12 or newer, then run this script again." >&2
+        exit 1
+      elif [ "$AFTER" -eq 1 ]; then
+        echo "[error] The project files look incomplete. Re-download the repository and retry." >&2
+        exit 1
+      fi
       ;;
     *)
       echo "[stopped] Nothing was installed. Install manually with:"

@@ -88,6 +88,14 @@ Clean clone of the **tag**, fresh Python 3.12.13 virtual environment, `pip insta
 | default off (no env) | `/api/uploads/config` enabled false, POST 403, page says "disabled on this instance" |
 | public mode (flags set) | enabled false, POST 403 — public mode refuses unconditionally |
 
+## Post-RC1 fixes (branch only, tag untouched)
+
+* `scripts/check_env.py` now actually enforces Python >= 3.12 and returns 2 before any
+  dependency check (the docstring promised this; the code did not).
+* After an install, both launchers classify the re-check properly: 3 = still missing
+  dependencies, 2 = interpreter too old, 1 = project files incomplete. Previously any
+  non-zero exit was reported as "project files incomplete".
+
 ## Go / No-Go
 
 | Context | Decision |
