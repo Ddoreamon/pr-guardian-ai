@@ -1,0 +1,121 @@
+name: Launcher smoke (Linux)
+
+# Actually runs start-local.sh on Linux. The Windows launcher is exercised on the
+# development machine; this job is the only real execution of the shell script.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  launcher:
+    name: start-local.sh on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install into a venv
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -q -e ".[dev]"
+
+      - name: Syntax check
+        run: bash -n start-local.sh && echo "syntax ok"
+
+      - name: Start with dependencies present
+        run: |
+          set -euo pipefail
+          .venv/bin/python scripts/check_env.py
+          ./start-local.sh 8899 > /tmp/launcher.log 2>&1 &
+          LAUNCHER_PID=$!
+          echo "launcher pid: $LAUNCHER_PID"
+          READY=0
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8899/health > /tmp/health.json 2>/dev/null; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            echo "launcher did not become ready"
+            cat /tmp/launcher.log
+            kill "$LAUNCHER_PID" 2>/dev/null || true
+            exit 1
+          fi
+          cat /tmp/health.json
+          python -c 'import json; d=json.load(open("/tmp/health.json")); assert d["version"]=="1.1.0rc1", d; assert d["public_mode"] is False, d; assert d["llm_status"]=="not_configured", d; print("health ok")'
+          curl -fsS http://127.0.0.1:8899/api/uploads/config > /tmp/uploads.json
+          python -c 'import json; d=json.load(open("/tmp/uploads.json")); assert d["enabled"] is True, d; assert d["ai_enabled"] is False, d; print("uploads enabled, ai off")'
+          echo "--- listeners ---"
+          ss -ltnp | tee /tmp/listeners.txt
+          grep -q "127.0.0.1:8899" /tmp/listeners.txt
+          if grep -q "0.0.0.0:8899" /tmp/listeners.txt; then
+            echo "bound to 0.0.0.0, which is forbidden"
+            kill "$LAUNCHER_PID" 2>/dev/null || true
+            exit 1
+          fi
+          echo "--- launcher log ---"
+          cat /tmp/launcher.log
+          kill "$LAUNCHER_PID" 2>/dev/null || true
+          wait "$LAUNCHER_PID" 2>/dev/null || true
+          sleep 2
+          if curl -fsS --max-time 2 http://127.0.0.1:8899/health > /dev/null 2>&1; then
+            echo "server still answering after shutdown"
+            exit 1
+          fi
+          echo "shutdown ok"
+          leftovers=$(find /tmp -maxdepth 1 -name 'pr-guardian-upload-*' | wc -l)
+          echo "temp dirs left: $leftovers"
+          test "$leftovers" -eq 0
+
+      - name: Missing dependencies ask first and do not install on "n"
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/bare-venv
+          set +e
+          PATH="/tmp/bare-venv/bin:$PATH" bash -c 'printf "n\n" | ./start-local.sh 8901' > /tmp/bare.log 2>&1
+          BARE_STATUS=$?
+          set -e
+          cat /tmp/bare.log
+          test "$BARE_STATUS" -ne 0
+          grep -q "Install the project dependencies now?" /tmp/bare.log
+          grep -q "\[stopped\] Nothing was installed" /tmp/bare.log
+          if /tmp/bare-venv/bin/python -c "import fastapi" 2>/dev/null; then
+            echo "dependencies were installed without consent"
+            exit 1
+          fi
+          echo "no silent install"
+
+      - name: Install Python 3.11 for the version-gate check
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Python 3.11 is rejected before anything else
+        run: |
+          set -euo pipefail
+          python -c "import sys; print(sys.version)"
+          set +e
+          python scripts/check_env.py > /tmp/old.log 2>&1
+          STATUS=$?
+          set -e
+          cat /tmp/old.log
+          test "$STATUS" -eq 2
+          grep -q "Python 3.12 or newer is required" /tmp/old.log
+          mkdir -p /tmp/only311
+          ln -sf "$(command -v python)" /tmp/only311/python3
+          set +e
+          PATH="/tmp/only311:/usr/bin:/bin" bash -c './start-local.sh 8902' > /tmp/old-launcher.log 2>&1
+          LAUNCH_STATUS=$?
+          set -e
+          cat /tmp/old-launcher.log
+          test "$LAUNCH_STATUS" -ne 0
+          grep -q "Install Python 3.12 or newer" /tmp/old-launcher.log

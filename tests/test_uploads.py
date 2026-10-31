@@ -417,3 +417,46 @@ def test_upload_page_is_disabled_by_default(monkeypatch):
         assert page.status_code == 200
         assert "disabled on this instance" in page.text
         assert http.get("/api/uploads/config").json()["enabled"] is False
+
+
+def test_lying_zip_headers_cannot_bypass_the_total_limit(monkeypatch):
+    """Header sizes are attacker-controlled; the decompressed total is what matters."""
+    from pr_guardian import uploads
+
+    class LyingArchive:
+        def __init__(self, *args, **kwargs):
+            self.entries = [zipfile.ZipInfo(f"f{index}.py") for index in range(24)]
+            for entry in self.entries:
+                entry.file_size = 1024          # header claims 1 KiB
+                entry.compress_size = 1024
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def infolist(self):
+            return self.entries
+        def read(self, info):
+            # each entry stays under the per-file cap, but 24 of them exceed the total
+            return b"x = 1\n" * 30_000
+
+    monkeypatch.setattr(uploads.zipfile, "ZipFile", LyingArchive)
+    with pytest.raises(UploadRejected) as exc:
+        uploads.collect_from_zip(b"PK\x03\x04pretend")
+    assert exc.value.code == "upload_too_large"
+
+
+def test_temp_dir_is_cleaned_when_analysis_fails(monkeypatch):
+    """A worker crash must not leave the uploaded source on disk."""
+    import tempfile
+
+    from pr_guardian.uploads import UploadRejected
+
+    def boom(root):
+        raise UploadRejected("analysis_failed", "worker crashed")
+
+    monkeypatch.setattr("pr_guardian.upload_review._run_worker", boom)
+    before = set(Path(tempfile.gettempdir()).glob("pr-guardian-upload-*"))
+    with pytest.raises(UploadRejected):
+        run_upload_review(collect_from_files([("a.py", GOOD)]), settings())
+    after = set(Path(tempfile.gettempdir()).glob("pr-guardian-upload-*"))
+    assert after == before

@@ -154,6 +154,7 @@ def collect_from_zip(data: bytes) -> list[UploadedFile]:
             _reject("too_many_entries", "the archive contains too many entries")
 
         total_uncompressed = 0
+        actual_total = 0
         for info in infos:
             mode = (info.external_attr >> 16) & 0o170000
             if mode == 0o120000:
@@ -183,6 +184,12 @@ def collect_from_zip(data: bytes) -> list[UploadedFile]:
                                      f"{path!r} cannot be extracted: {exc}") from exc
             if len(content) > MAX_FILE_BYTES:
                 _reject("file_too_large", f"{path!r} expands past the file limit")
+            # Re-check the running total against what was actually decompressed: the
+            # sizes in the archive headers are attacker-controlled and can lie.
+            actual_total += len(content)
+            if actual_total > MAX_TOTAL_BYTES:
+                _reject("upload_too_large",
+                        f"the archive expands beyond {MAX_TOTAL_BYTES // 1024} KiB")
             pairs.append((path, content))
 
     return _build(pairs)
