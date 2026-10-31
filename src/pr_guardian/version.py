@@ -6,4 +6,4 @@ version describes the running build, not what the README promises: a deployment
 that runs older code keeps reporting the older version.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0rc1"

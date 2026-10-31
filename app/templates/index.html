@@ -2,6 +2,11 @@
 
 {% block content %}
 {% set live_model = config.llm_status in ['enabled', 'ok'] %}
+<p class="hint" id="upload-link">
+  Have your own Python files?
+  <a href="/upload">Upload &amp; review</a> — parsed and linted, never executed.
+</p>
+
 <section class="notice" id="demo-notice" role="note">
   {% if live_model %}
   <p>

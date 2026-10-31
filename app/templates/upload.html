@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="notice" id="upload-notice" role="note">
+  <p>
+    <strong>Uploaded code is never executed.</strong>
+    Files are parsed and linted only: no import, no tests, no <code>pip install</code>,
+    no shell. Pattern findings are heuristics marked <em>suspected</em>; Ruff findings
+    are lint evidence, not a logic or security proof.
+  </p>
+  <p class="muted">
+    <a href="/">← Back to the preset demos</a> ·
+    limits: {{ limits.max_files }} files, {{ limits.max_file_bytes // 1024 }} KiB each,
+    {{ limits.max_total_bytes // 1024 // 1024 }} MiB total
+  </p>
+</section>
+
+<section class="panel" id="upload-panel">
+  <div class="panel-head">
+    <h2>1 · Choose Python files or a ZIP</h2>
+    <p class="hint">Accepted: <code>.py</code> files, or one <code>.zip</code> containing <code>.py</code> files.</p>
+  </div>
+
+  <div id="upload-disabled" class="muted" hidden>
+    Upload analysis is disabled on this instance. The preset demo cases still work.
+  </div>
+
+  <div id="upload-form" hidden>
+    <input id="upload-input" type="file" multiple accept=".py,.zip" hidden>
+    <div class="upload-actions">
+      <button class="btn" id="upload-pick" type="button">Choose files…</button>
+      <button class="btn primary" id="upload-run" type="button" disabled>Analyse</button>
+      <button class="btn" id="upload-clear" type="button" disabled>Clear</button>
+      <span class="muted" id="upload-count">No files selected</span>
+    </div>
+    <ul class="upload-list" id="upload-list"></ul>
+    <p class="muted" id="upload-limit-hint"></p>
+  </div>
+</section>
+
+<section class="panel" id="upload-status-panel" hidden>
+  <div class="panel-head"><h2>2 · Analysis</h2></div>
+  <p id="upload-status" class="muted" role="status"></p>
+  <p id="upload-error" class="error-text" hidden></p>
+  <p id="upload-partial-notice" class="warn-text" hidden></p>
+</section>
+
+<section class="panel" id="upload-results-panel" hidden>
+  <div class="panel-head">
+    <h2>3 · Findings</h2>
+    <p class="hint" id="upload-summary"></p>
+  </div>
+  <div id="upload-files"></div>
+  <div class="export-row">
+    <button class="btn" id="upload-export-md" type="button">Export Markdown</button>
+    <button class="btn" id="upload-export-json" type="button">Export JSON</button>
+  </div>
+</section>
+
+<script>
+  window.PR_GUARDIAN_UPLOAD = {
+    limits: {{ limits | tojson }},
+    enabled: {{ enabled | tojson }},
+    version: {{ version | tojson }}
+  };
+</script>
+<script src="/static/upload.js"></script>
+{% endblock %}

@@ -1,6 +1,6 @@
 # PR Guardian — Evidence-Based AI Code Review
 
-**v1.0.0** · Python 3.12 · FastAPI · MIT
+**v1.1.0rc1** · Python 3.12 · FastAPI · MIT
 
 PR Guardian reviews a Python pull request and returns findings a reviewer can audit:
 every AI claim is tied to source lines that were actually delivered to the model, and
@@ -15,9 +15,9 @@ refuses to dress a partial review up as a clean one.
 | **Public demo** | **https://pr-guardian-ai-uodn.onrender.com** |
 | Live model calls there | **off** (`PR_GUARDIAN_ALLOW_LIVE_LLM=0`). It runs the V1 build: Ruff + pytest evidence, no paid AI. |
 | Local AI mode | your own DeepSeek (or any OpenAI-compatible) key, see [Run it locally](#run-it-locally) |
-| This repository | 1.0.0, not yet deployed — the footer of any deployment reports its own running version |
+| This repository | 1.1.0rc1 (local release candidate) — the footer of any deployment reports its own running version |
 
-> The public instance is **not** running this 1.0 build. The page footer reports the
+> The public instance is **not** running this build. The page footer reports the
 > version it actually runs; nothing here claims otherwise.
 
 ---
@@ -127,6 +127,43 @@ More in [`docs/screenshots/`](docs/screenshots).
 The public instance is deliberately boring: it can review only the self-authored demo
 cases, it never spends money, and it says "Not Evaluated" rather than inventing an AI
 answer.
+
+## Upload your own code (V1.1, off by default)
+
+A separate page at `/upload` accepts `.py` files or a ZIP and analyses them **without
+executing anything**: AST parse, a short list of explainable patterns, and Ruff. Every
+finding maps to a file and line; heuristic findings are marked `suspected`; exports and
+accept/reject work as in the demo. Uploads are disabled unless
+`PR_GUARDIAN_UPLOAD_ENABLED=1`, and a public instance needs a second acknowledgement
+(`PR_GUARDIAN_UPLOAD_PUBLIC=1`).
+
+Fastest path — a launcher that binds `127.0.0.1` only, enables local uploads, keeps AI
+off, and asks before installing anything:
+
+```bash
+./start-local.sh          # macOS / Linux
+start-local.bat           # Windows
+# both open http://127.0.0.1:8000
+```
+
+Or start it yourself:
+
+```bash
+PR_GUARDIAN_UPLOAD_ENABLED=1 uvicorn app.main:app --host 127.0.0.1 --port 8000
+# then open http://127.0.0.1:8000/upload
+```
+
+Step-by-step instructions, including how to read a finding and how to stop the server:
+[`docs/release-1.1/USER_GUIDE.md`](docs/release-1.1/USER_GUIDE.md).
+
+A public instance needs the second acknowledgement (`PR_GUARDIAN_UPLOAD_PUBLIC=1`) and is
+still **not recommended** — see the release notes. Read the boundary before enabling it
+anywhere: [`docs/v1.1-upload-review.md`](docs/v1.1-upload-review.md) and
+[`docs/release-1.1/RELEASE_NOTES.md`](docs/release-1.1/RELEASE_NOTES.md).
+
+| Empty state | Findings |
+|---|---|
+| ![upload](docs/screenshots/13-upload-empty.png) | ![findings](docs/screenshots/15-upload-findings.png) |
 
 ## Function calling, MCP and BM25
 

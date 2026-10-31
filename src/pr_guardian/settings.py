@@ -15,6 +15,10 @@ Supported variables:
   PR_GUARDIAN_MAX_TOOL_CALLS       max tool executions per review (default 4, max 8)
   PR_GUARDIAN_TOOL_BACKEND         local (default) or mcp: transport for the tools
   PR_GUARDIAN_EVIDENCE_PLANNER     1 = evidence-first planning guidance (V4.4, default off)
+  PR_GUARDIAN_UPLOAD_ENABLED       1 = accept uploaded .py/ZIP for analysis (default off)
+  PR_GUARDIAN_UPLOAD_AI            1 = optional AI pass over uploads (default off)
+  PR_GUARDIAN_UPLOAD_PUBLIC        1 = acknowledge uploads on a public instance
+  PR_GUARDIAN_UPLOAD_CONCURRENCY   concurrent analyser slots (default 2, max 4)
 """
 
 from __future__ import annotations
@@ -63,6 +67,13 @@ class Settings:
     tool_backend: str = "local"
     # V4.4: opt-in evidence-first planning guidance; default stays exactly as before
     evidence_planner: bool = False
+    # V1.1: untrusted upload analysis; off by default, separately gated in public mode
+    upload_enabled: bool = False
+    upload_ai_enabled: bool = False
+    # retained for compatibility; public mode refuses uploads regardless of this flag
+    upload_public_ack: bool = False
+    # bounded analyser concurrency; extra requests get a 503 instead of queueing
+    upload_concurrency: int = 2
 
     @property
     def llm_configured(self) -> bool:
@@ -108,4 +119,9 @@ def get_settings() -> Settings:
         max_tool_calls=max(1, min(int(os.environ.get("PR_GUARDIAN_MAX_TOOL_CALLS", "4") or 4), 8)),
         tool_backend=_tool_backend(),
         evidence_planner=_flag("PR_GUARDIAN_EVIDENCE_PLANNER", default=False),
+        upload_enabled=_flag("PR_GUARDIAN_UPLOAD_ENABLED", default=False),
+        upload_ai_enabled=_flag("PR_GUARDIAN_UPLOAD_AI", default=False),
+        upload_public_ack=_flag("PR_GUARDIAN_UPLOAD_PUBLIC", default=False),
+        upload_concurrency=max(1, min(int(
+            os.environ.get("PR_GUARDIAN_UPLOAD_CONCURRENCY", "2") or 2), 4)),
     )
