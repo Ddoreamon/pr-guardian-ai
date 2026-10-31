@@ -112,25 +112,46 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Python 3.11 is rejected before anything else
+      - name: check_env exits 2 on Python 3.11
         run: |
           set -euo pipefail
-          python -c "import sys; print(sys.version)"
+          echo "python: $(command -v python) -> $(python -V 2>&1)"
           set +e
           python scripts/check_env.py > /tmp/old.log 2>&1
           STATUS=$?
           set -e
           echo "--- check_env exit $STATUS ---"
           cat /tmp/old.log
-          test "$STATUS" -eq 2
-          grep -q "Python 3.12 or newer is required" /tmp/old.log
+          if [ "$STATUS" -ne 2 ]; then
+            echo "::error::check_env exit was $STATUS, expected 2"
+            exit 1
+          fi
+          grep -q "Python 3.12 or newer is required" /tmp/old.log || {
+            echo "::error::missing version message"
+            exit 1
+          }
+
+      - name: launcher refuses Python 3.11
+        run: |
+          set -euo pipefail
           mkdir -p /tmp/only311
-          ln -sf "$(command -v python)" /tmp/only311/python3
+          REAL=$(command -v python)
+          ln -sf "$REAL" /tmp/only311/python3.12
+          ln -sf "$REAL" /tmp/only311/python3
+          ln -sf "$REAL" /tmp/only311/python
+          ls -l /tmp/only311
+          echo "shim resolves to: $(PATH=/tmp/only311:/usr/bin:/bin command -v python3.12)"
           set +e
-          PATH="/tmp/only311:/usr/bin:/bin" bash -c './start-local.sh 8902' > /tmp/old-launcher.log 2>&1
+          PATH="/tmp/only311:/usr/bin:/bin" timeout 20 bash -c './start-local.sh 8902' > /tmp/old-launcher.log 2>&1
           LAUNCH_STATUS=$?
           set -e
           echo "--- launcher exit $LAUNCH_STATUS ---"
           cat /tmp/old-launcher.log
-          test "$LAUNCH_STATUS" -ne 0
-          grep -q "Install Python 3.12 or newer" /tmp/old-launcher.log
+          if [ "$LAUNCH_STATUS" -eq 0 ] || [ "$LAUNCH_STATUS" -eq 124 ]; then
+            echo "::error::launcher exit $LAUNCH_STATUS (0 = started on old python, 124 = hung)"
+            exit 1
+          fi
+          grep -q "Install Python 3.12 or newer" /tmp/old-launcher.log || {
+            echo "::error::launcher did not explain the old interpreter"
+            exit 1
+          }
