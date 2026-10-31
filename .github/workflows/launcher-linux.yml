@@ -1,7 +1,8 @@
 name: Launcher smoke (Linux)
 
-# Actually runs start-local.sh on Linux. The Windows launcher is exercised on the
-# development machine; this job is the only real execution of the shell script.
+# Actually runs start-local.sh on Linux. Steps are deliberately small so a failure
+# names its own cause: the GitHub API log endpoint is not readable with this token,
+# only step conclusions and the printed markers are.
 
 on:
   push:
@@ -29,55 +30,63 @@ jobs:
       - name: Syntax check
         run: bash -n start-local.sh && echo "syntax ok"
 
-      - name: Start with dependencies present
+      - name: Launch with dependencies present
         run: |
           set -euo pipefail
-          # the launcher resolves python from PATH, so use the venv that has the deps
           export PATH="$PWD/.venv/bin:$PATH"
+          python -c "import fastapi, uvicorn, ruff; print('deps import ok')"
           python scripts/check_env.py
           chmod +x start-local.sh
-          ./start-local.sh 8899 > /tmp/launcher.log 2>&1 &
-          LAUNCHER_PID=$!
-          echo "launcher pid: $LAUNCHER_PID"
-          READY=0
-          for _ in $(seq 1 60); do
-            if curl -fsS http://127.0.0.1:8899/health > /tmp/health.json 2>/dev/null; then
-              READY=1
+          nohup ./start-local.sh 8899 > /tmp/launcher.log 2>&1 &
+          echo $! > /tmp/launcher.pid
+          echo "launcher pid: $(cat /tmp/launcher.pid)"
+          for i in $(seq 1 60); do
+            if curl -fsS --max-time 2 http://127.0.0.1:8899/health > /tmp/health.json 2>/dev/null; then
+              echo "ready after ${i}s"
               break
             fi
             sleep 1
           done
-          if [ "$READY" -ne 1 ]; then
-            echo "launcher did not become ready"
-            cat /tmp/launcher.log
-            kill "$LAUNCHER_PID" 2>/dev/null || true
-            exit 1
-          fi
+          echo "--- health ---"
           cat /tmp/health.json
-          python -c 'import json; d=json.load(open("/tmp/health.json")); assert d["version"]=="1.1.0rc1", d; assert d["public_mode"] is False, d; assert d["llm_status"]=="not_configured", d; print("health ok")'
-          curl -fsS http://127.0.0.1:8899/api/uploads/config > /tmp/uploads.json
-          python -c 'import json; d=json.load(open("/tmp/uploads.json")); assert d["enabled"] is True, d; assert d["ai_enabled"] is False, d; print("uploads enabled, ai off")'
-          echo "--- listeners ---"
-          ss -ltnp | tee /tmp/listeners.txt
-          grep -q "127.0.0.1:8899" /tmp/listeners.txt
-          if grep -q "0.0.0.0:8899" /tmp/listeners.txt; then
-            echo "bound to 0.0.0.0, which is forbidden"
-            kill "$LAUNCHER_PID" 2>/dev/null || true
-            exit 1
-          fi
           echo "--- launcher log ---"
           cat /tmp/launcher.log
-          kill "$LAUNCHER_PID" 2>/dev/null || true
-          wait "$LAUNCHER_PID" 2>/dev/null || true
-          sleep 2
+          test -s /tmp/health.json
+
+      - name: Health contract
+        run: |
+          set -euo pipefail
+          python -c 'import json; d=json.load(open("/tmp/health.json")); assert d["version"]=="1.1.0rc1", d; assert d["public_mode"] is False, d; assert d["llm_status"]=="not_configured", d; print("health contract ok")'
+
+      - name: Uploads on, AI off
+        run: |
+          set -euo pipefail
+          curl -fsS http://127.0.0.1:8899/api/uploads/config > /tmp/uploads.json
+          cat /tmp/uploads.json
+          python -c 'import json; d=json.load(open("/tmp/uploads.json")); assert d["enabled"] is True, d; assert d["ai_enabled"] is False, d; print("uploads on, ai off")'
+
+      - name: Loopback only
+        run: |
+          set -euo pipefail
+          python scripts/check_loopback.py 8899
+
+      - name: Shutdown and cleanup
+        run: |
+          set -euo pipefail
+          PID=$(cat /tmp/launcher.pid)
+          kill "$PID" 2>/dev/null || true
+          for _ in $(seq 1 30); do
+            if ! kill -0 "$PID" 2>/dev/null; then break; fi
+            sleep 0.5
+          done
           if curl -fsS --max-time 2 http://127.0.0.1:8899/health > /dev/null 2>&1; then
             echo "server still answering after shutdown"
             exit 1
           fi
-          echo "shutdown ok"
           leftovers=$(find /tmp -maxdepth 1 -name 'pr-guardian-upload-*' | wc -l)
           echo "temp dirs left: $leftovers"
           test "$leftovers" -eq 0
+          echo "shutdown ok"
 
       - name: Missing dependencies ask first and do not install on "n"
         run: |
@@ -87,6 +96,7 @@ jobs:
           PATH="/tmp/bare-venv/bin:$PATH" bash -c 'printf "n\n" | ./start-local.sh 8901' > /tmp/bare.log 2>&1
           BARE_STATUS=$?
           set -e
+          echo "--- bare log (exit $BARE_STATUS) ---"
           cat /tmp/bare.log
           test "$BARE_STATUS" -ne 0
           grep -q "Install the project dependencies now?" /tmp/bare.log
@@ -110,6 +120,7 @@ jobs:
           python scripts/check_env.py > /tmp/old.log 2>&1
           STATUS=$?
           set -e
+          echo "--- check_env exit $STATUS ---"
           cat /tmp/old.log
           test "$STATUS" -eq 2
           grep -q "Python 3.12 or newer is required" /tmp/old.log
@@ -119,6 +130,7 @@ jobs:
           PATH="/tmp/only311:/usr/bin:/bin" bash -c './start-local.sh 8902' > /tmp/old-launcher.log 2>&1
           LAUNCH_STATUS=$?
           set -e
+          echo "--- launcher exit $LAUNCH_STATUS ---"
           cat /tmp/old-launcher.log
           test "$LAUNCH_STATUS" -ne 0
           grep -q "Install Python 3.12 or newer" /tmp/old-launcher.log

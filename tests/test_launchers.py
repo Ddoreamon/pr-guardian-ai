@@ -146,3 +146,18 @@ def test_shell_script_is_executable_in_git():
         pytest.skip("not a git checkout")
     mode = proc.stdout.split()[0]
     assert mode == "100755", f"start-local.sh is stored as {mode}"
+
+
+def test_parse_listen_finds_loopback_and_wildcard():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "pr_guardian_check_loopback", ROOT / "scripts" / "check_loopback.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    header = "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt"
+    loopback = header + "\n   0: 0100007F:22C3 00000000:0000 0A 00000000:00000000"
+    wildcard = header + "\n   0: 00000000:22C3 00000000:0000 0A 00000000:00000000"
+    assert module.parse_listen(loopback, 8899) == ["0100007F"]
+    assert module.parse_listen(wildcard, 8899) == ["00000000"]
+    assert module.parse_listen(loopback, 8898) == []
