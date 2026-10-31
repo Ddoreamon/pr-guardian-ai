@@ -32,7 +32,10 @@ jobs:
       - name: Start with dependencies present
         run: |
           set -euo pipefail
-          .venv/bin/python scripts/check_env.py
+          # the launcher resolves python from PATH, so use the venv that has the deps
+          export PATH="$PWD/.venv/bin:$PATH"
+          python scripts/check_env.py
+          chmod +x start-local.sh
           ./start-local.sh 8899 > /tmp/launcher.log 2>&1 &
           LAUNCHER_PID=$!
           echo "launcher pid: $LAUNCHER_PID"

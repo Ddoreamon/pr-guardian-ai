@@ -133,3 +133,16 @@ def test_post_install_rechecks_classify_each_exit_code(path):
         assert '"$AFTER" -eq 2' in install_block
         assert '"$AFTER" -eq 1' in install_block
         assert "still missing after the install" in install_block
+
+
+def test_shell_script_is_executable_in_git():
+    """A 100644 shell script fails with "permission denied" on a fresh clone."""
+    git = shutil.which("git")
+    if git is None:
+        pytest.skip("git is not available")
+    proc = subprocess.run([git, "ls-files", "-s", "start-local.sh"], cwd=ROOT,
+                          capture_output=True, text=True, check=False)
+    if proc.returncode != 0 or not proc.stdout.strip():
+        pytest.skip("not a git checkout")
+    mode = proc.stdout.split()[0]
+    assert mode == "100755", f"start-local.sh is stored as {mode}"
